@@ -16,15 +16,21 @@
 # Proton load RED4ext's winmm.dll loader.
 #
 # Usage:
-#   ./nightcoop-bazzite-install.sh install [options]   full install (default)
-#   ./nightcoop-bazzite-install.sh check               report current state, change nothing
-#   ./nightcoop-bazzite-install.sh restore <backupdir> put back files replaced by an earlier install
+#   ./nightcoop-bazzite-install.sh [install] [options]  install, or update to the latest build (default)
+#   ./nightcoop-bazzite-install.sh check                report current state and whether an update exists
+#   ./nightcoop-bazzite-install.sh restore <backupdir>  put back files replaced by an earlier install
+#
+# Running it again on a machine where the mod is already installed compares the
+# installed build with the latest one on nightcoop.net and updates only when they
+# differ; when everything is current it changes nothing.
 #
 # Options for install:
 #   --nightcoop-zip FILE   use an already-downloaded NightCoop-<version>.zip
 #   --red4ext-zip FILE     use an already-downloaded red4ext-1.31.0.zip
 #   --vcredist FILE        use an already-downloaded VC_redist.x64.exe
-#   --no-save-backup       skip the copy of the save folder (default: back it up)
+#   --force                reinstall the mod files even when they are already the latest
+#   --backup-saves         copy the save folder (default on a first install)
+#   --no-save-backup       do not copy the save folder (default on an update)
 #   --dry-run              detect and verify everything, change nothing
 #   --yes                  do not ask for confirmation
 #
@@ -45,7 +51,8 @@ MODE="install"
 NIGHTCOOP_ZIP=""
 RED4EXT_ZIP=""
 VCREDIST=""
-SAVE_BACKUP=1
+SAVE_BACKUP=""      # 1 / 0 / "" = decide (first install: yes, update: no)
+FORCE=0
 DRY_RUN=0
 ASSUME_YES=0
 RESTORE_DIR=""
@@ -119,8 +126,9 @@ steam_running() { pgrep -x steam >/dev/null 2>&1 || pgrep -x steamwebhelper >/de
 # ---------------------------------------------------------- argument parse ----
 if [ $# -gt 0 ]; then
     case "$1" in
-        install|check|restore) MODE="$1"; shift ;;
-        -h|--help) sed -n '2,32p' "$0"; exit 0 ;;
+        install|update) MODE=install; shift ;;
+        check|restore) MODE="$1"; shift ;;
+        -h|--help) sed -n '2,38p' "$0"; exit 0 ;;
     esac
 fi
 if [ "$MODE" = restore ]; then
@@ -133,9 +141,11 @@ while [ $# -gt 0 ]; do
         --red4ext-zip)   RED4EXT_ZIP="$2"; shift 2 ;;
         --vcredist)      VCREDIST="$2"; shift 2 ;;
         --no-save-backup) SAVE_BACKUP=0; shift ;;
+        --backup-saves)  SAVE_BACKUP=1; shift ;;
+        --force)         FORCE=1; shift ;;
         --dry-run)       DRY_RUN=1; shift ;;
         --yes|-y)        ASSUME_YES=1; shift ;;
-        -h|--help)       sed -n '2,32p' "$0"; exit 0 ;;
+        -h|--help)       sed -n '2,38p' "$0"; exit 0 ;;
         *) fail "unknown option: $1" ;;
     esac
 done
@@ -173,6 +183,8 @@ done
 [ -n "$GAME_DIR" ] || fail "Cyberpunk 2077 is not installed in any Steam library (looked in: ${LIBS[*]})"
 ok "Game folder: $GAME_DIR"
 
+NC_DLL="$GAME_DIR/red4ext/plugins/NightCoop/NightCoop.dll"
+STATE_FILE="$GAME_DIR/red4ext/plugins/NightCoop/nightcoop-bazzite-installed.txt"   # what this script installed
 GAME_VER="$(pe_version "$GAME_DIR/bin/x64/Cyberpunk2077.exe" product || true)"
 [ -n "$GAME_VER" ] && ok "Game version: $GAME_VER" || warn "could not read the game version from the executable"
 
@@ -308,6 +320,66 @@ PY
     done
 }
 
+# ------------------------------------------------------- release picking ----
+NC_VER=""; NC_URL=""; NC_SHA=""; NC_GAMES=""; NC_PROTO=""; NC_R4=""; NC_BUILD=""; NC_SHA_OK=0
+fetch_release() {   # fills NC_* with the site's latest build for this game version; 1 when offline
+    local json="$1"
+    curl -fsSL --connect-timeout 20 -o "$json" "$NIGHTCOOP_SITE/releases.json" || return 1
+    read -r NC_VER NC_URL NC_SHA NC_GAMES NC_PROTO NC_R4 NC_BUILD < <(python3 -I - "$json" "${GAME_VER:-}" "$NIGHTCOOP_SITE" <<'PY'
+import json, sys
+d = json.load(open(sys.argv[1])); gv = sys.argv[2]; site = sys.argv[3]
+rels = [r for r in d.get('releases', []) if not r.get('yanked')]
+def short(v):  # "2.5" matches "2.50"
+    return v.rstrip('0').rstrip('.') if '.' in v else v
+match = [r for r in rels if gv and any(short(g) == short(gv) for g in r.get('game', []))]
+pick = (match or rels or [None])[0]
+if not pick: print("none - - - - - -"); sys.exit(0)
+# newer releases ship one archive per game version (each file lists its own "game");
+# older ones ship a single archive with no "game" key
+mods = [x for x in pick.get('files', []) if x.get('kind') == 'mod']
+f = next((x for x in mods if gv and any(short(g) == short(gv) for g in x.get('game', []))), None) \
+    or next((x for x in mods if not x.get('game')), None) or (mods[0] if mods else None)
+url = f['url'] if f else '-'
+if url != '-' and not url.startswith('http'): url = site.rstrip('/') + '/' + url.lstrip('/')
+games = ",".join((f or {}).get('game') or pick.get('game', [])) or "-"
+print(pick["version"], url, (f or {}).get("sha256", "-"), games, pick.get("protocol", "-"), (f or {}).get("red4ext", "-"), pick.get("build", "-"))
+PY
+)
+    [ "$NC_VER" = none ] && NC_VER=""
+    return 0
+}
+
+installed_version() {   # version of the NightCoop this script installed; empty if unknown or not installed
+    [ -f "$NC_DLL" ] && [ -f "$STATE_FILE" ] || return 0
+    local sha; sha="$(sha256sum "$NC_DLL" | cut -d' ' -f1)"
+    grep -q "^dll_sha256=$sha\$" "$STATE_FILE" && sed -n 's/^version=//p' "$STATE_FILE" | head -1 || true
+}
+
+write_state() {   # version protocol build
+    [ -f "$NC_DLL" ] || return 0
+    { echo "version=$1"; echo "protocol=$2"; echo "build=$3"
+      echo "dll_sha256=$(sha256sum "$NC_DLL" | cut -d' ' -f1)"; echo "installed=$(date -Is)"
+      echo "# written by nightcoop-bazzite-install.sh; used to tell whether an update is needed"; } > "$STATE_FILE"
+}
+
+nc_up_to_date() {   # 0 when the installed NightCoop is the site's latest for this game version
+    [ -n "$NC_VER" ] || return 1
+    local inst; inst="$(installed_version)"
+    [ -n "$inst" ] && [ "$inst" = "$NC_VER" ]
+}
+
+print_manual_launch_options() {
+    bold "One manual step left"
+    cat <<EOF
+  In Steam: right-click Cyberpunk 2077 > Properties > General > Launch Options, paste exactly:
+
+      $LAUNCH_OPTS
+
+  Without it Proton ignores RED4ext's loader and the mod never starts.
+EOF
+    echo
+}
+
 # ------------------------------------------------------------------ check ----
 do_check() {
     bold "Current state"
@@ -315,7 +387,8 @@ do_check() {
     r4="$(red4ext_version)"; rv="$(runtime_version)"
     [ -n "$r4" ] && info "RED4ext.dll:          $r4 $(ver_ge "$r4" "$RED4EXT_VER" && echo '(ok)' || echo "(needs $RED4EXT_VER)")" || info "RED4ext.dll:          not installed"
     nc="$GAME_DIR/red4ext/plugins/NightCoop/NightCoop.dll"
-    [ -f "$nc" ] && info "NightCoop.dll:        present ($(stat -c %s "$nc") bytes, $(date -r "$nc" +%F))" || info "NightCoop.dll:        not installed"
+    local inst; inst="$(installed_version)"
+    [ -f "$nc" ] && info "NightCoop.dll:        ${inst:-unknown build (not installed by this script)} ($(stat -c %s "$nc") bytes, $(date -r "$nc" +%F))" || info "NightCoop.dll:        not installed"
     [ -f "$GAME_DIR/bin/x64/winmm.dll" ] && info "loader winmm.dll:     present" || info "loader winmm.dll:     missing"
     [ -n "$rv" ] && info "prefix C++ runtime:   $rv $(ver_ge "$rv" "$MIN_RUNTIME" && echo '(ok)' || echo "(too old, needs >= $MIN_RUNTIME)")" || info "prefix C++ runtime:   msvcp140.dll missing"
     lv="$(launch_options_status)"
@@ -336,6 +409,18 @@ do_check() {
     fi
     local nlog; nlog="$(ls -t "$GAME_DIR"/red4ext/plugins/NightCoop/logs/*.log 2>/dev/null | head -1 || true)"
     [ -n "$nlog" ] && info "latest NightCoop log: $(basename "$nlog")"
+    local tj; tj="$(mktemp)"
+    if fetch_release "$tj"; then
+        if [ -n "$NC_VER" ]; then
+            info "latest on the site:   $NC_VER (protocol $NC_PROTO, for game $NC_GAMES)"
+            if [ ! -f "$nc" ]; then info "status:               not installed; run '$0' to install"
+            elif nc_up_to_date; then ok "NightCoop is up to date"
+            else warn "update available: run '$0' to update ${inst:+from $inst }to $NC_VER"; fi
+        fi
+    else
+        info "latest on the site:   unknown (could not reach $NIGHTCOOP_SITE)"
+    fi
+    rm -f "$tj"
 }
 
 # ---------------------------------------------------------------- restore ----
@@ -366,33 +451,12 @@ do_install() {
 
     # ---- pick the NightCoop build
     bold "NightCoop build"
-    local NC_VER NC_URL NC_SHA NC_GAMES NC_PROTO NC_R4
     if [ -n "$NIGHTCOOP_ZIP" ]; then
         [ -f "$NIGHTCOOP_ZIP" ] || fail "no such file: $NIGHTCOOP_ZIP"
         ok "using local archive $NIGHTCOOP_ZIP"
     fi
-    if curl -fsSL --connect-timeout 20 -o "$TMP/releases.json" "$NIGHTCOOP_SITE/releases.json"; then
-        read -r NC_VER NC_URL NC_SHA NC_GAMES NC_PROTO NC_R4 < <(python3 -I - "$TMP/releases.json" "${GAME_VER:-}" "$NIGHTCOOP_SITE" <<'PY'
-import json, sys
-d = json.load(open(sys.argv[1])); gv = sys.argv[2]; site = sys.argv[3]
-rels = [r for r in d.get('releases', []) if not r.get('yanked')]
-def short(v):  # "2.5" matches "2.50"
-    return v.rstrip('0').rstrip('.') if '.' in v else v
-match = [r for r in rels if gv and any(short(g) == short(gv) for g in r.get('game', []))]
-pick = (match or rels or [None])[0]
-if not pick: print("none - - - - -"); sys.exit(0)
-# newer releases ship one archive per game version (each file lists its own "game");
-# older ones ship a single archive with no "game" key
-mods = [x for x in pick.get('files', []) if x.get('kind') == 'mod']
-f = next((x for x in mods if gv and any(short(g) == short(gv) for g in x.get('game', []))), None) \
-    or next((x for x in mods if not x.get('game')), None) or (mods[0] if mods else None)
-url = f['url'] if f else '-'
-if url != '-' and not url.startswith('http'): url = site.rstrip('/') + '/' + url.lstrip('/')
-games = ",".join((f or {}).get('game') or pick.get('game', [])) or "-"
-print(pick["version"], url, (f or {}).get("sha256", "-"), games, pick.get("protocol", "-"), (f or {}).get("red4ext", "-"))
-PY
-)
-        if [ "$NC_VER" = none ]; then
+    if fetch_release "$TMP/releases.json"; then
+        if [ -z "$NC_VER" ]; then
             warn "the site lists no builds; you need --nightcoop-zip"
         else
             ok "latest build for this game version: $NC_VER (for game $NC_GAMES, protocol $NC_PROTO, bundles RED4ext ${NC_R4})"
@@ -400,28 +464,54 @@ PY
         fi
     else
         warn "could not reach $NIGHTCOOP_SITE; working offline"
-        NC_VER=""; NC_URL=""; NC_SHA=""
     fi
-    if [ -z "$NIGHTCOOP_ZIP" ]; then
+    local NEED_NC=1 UPDATE=0 INSTALLED; INSTALLED="$(installed_version)"
+    if [ -f "$NC_DLL" ]; then
+        if [ -z "$NIGHTCOOP_ZIP" ] && [ "$FORCE" = 0 ] && nc_up_to_date; then
+            ok "installed: $INSTALLED, already the latest; the mod files stay as they are (--force reinstalls them)"
+            NEED_NC=0
+        else
+            UPDATE=1
+            if [ "$FORCE" = 1 ] && [ -n "$INSTALLED" ] && [ "$INSTALLED" = "$NC_VER" ]; then info "installed: $INSTALLED; --force: the mod files will be reinstalled"
+            else info "installed: ${INSTALLED:-unknown build (not installed by this script)}; will be replaced with ${NIGHTCOOP_ZIP:+the given archive}${NIGHTCOOP_ZIP:-$NC_VER}"; fi
+        fi
+    fi
+    if [ "$NEED_NC" = 1 ] && [ -z "$NIGHTCOOP_ZIP" ]; then
         [ -n "${NC_URL:-}" ] && [ "$NC_URL" != "-" ] || fail "no download URL available; download the archive from $NIGHTCOOP_SITE/download.html and pass --nightcoop-zip"
         NIGHTCOOP_ZIP="$TMP/$(basename "$NC_URL")"
         [ "$DRY_RUN" = 1 ] && info "(dry run) would download $NC_URL" || download "$NC_URL" "$NIGHTCOOP_ZIP"
     fi
     if [ -f "$NIGHTCOOP_ZIP" ] && [ -n "${NC_SHA:-}" ] && [ "$NC_SHA" != "-" ]; then
-        if sha_check "$NIGHTCOOP_ZIP" "$NC_SHA"; then ok "NightCoop archive SHA-256 matches the site's releases.json"
+        if sha_check "$NIGHTCOOP_ZIP" "$NC_SHA"; then ok "NightCoop archive SHA-256 matches the site's releases.json"; NC_SHA_OK=1
         else
             if [ -n "$NC_VER" ] && [[ "$(basename "$NIGHTCOOP_ZIP")" == *"$NC_VER"* ]]; then fail "SHA-256 mismatch for $NIGHTCOOP_ZIP"; else warn "local archive is a different build than the site's latest ($NC_VER); hash not compared"; fi
         fi
     fi
+    # a NightCoop that was put in by hand: if its DLL is byte-for-byte the one in the archive, just record it
+    if [ "$NEED_NC" = 1 ] && [ -z "$INSTALLED" ] && [ -f "$NC_DLL" ] && [ "$FORCE" = 0 ] && [ "$NC_SHA_OK" = 1 ] && [ -f "$NIGHTCOOP_ZIP" ]; then
+        rm -rf "$TMP/nc"; mkdir -p "$TMP/nc"; unzip -q -o "$NIGHTCOOP_ZIP" -d "$TMP/nc"
+        local ZDLL; ZDLL="$(find "$TMP/nc" -type f -iname NightCoop.dll -path '*red4ext/plugins/NightCoop/*' | head -1)"
+        if [ -n "$ZDLL" ] && [ "$(sha256sum "$ZDLL" | cut -d' ' -f1)" = "$(sha256sum "$NC_DLL" | cut -d' ' -f1)" ]; then
+            write_state "$NC_VER" "$NC_PROTO" "$NC_BUILD"; INSTALLED="$NC_VER"
+            ok "the NightCoop.dll already in the game folder is $NC_VER; recorded, nothing to replace"
+            NEED_NC=0; UPDATE=0
+        fi
+    fi
+    [ -n "$SAVE_BACKUP" ] || { [ "$UPDATE" = 1 ] && SAVE_BACKUP=0 || SAVE_BACKUP=1; }
 
     # ---- RED4ext
     bold "RED4ext $RED4EXT_VER"
-    if [ -z "$RED4EXT_ZIP" ]; then
-        RED4EXT_ZIP="$TMP/red4ext-${RED4EXT_VER}.zip"
-        [ "$DRY_RUN" = 1 ] && info "(dry run) would download $RED4EXT_URL" || download "$RED4EXT_URL" "$RED4EXT_ZIP"
-    fi
-    if [ -f "$RED4EXT_ZIP" ]; then
-        sha_check "$RED4EXT_ZIP" "$RED4EXT_SHA" && ok "red4ext zip SHA-256 verified" || fail "SHA-256 mismatch for $RED4EXT_ZIP (expected $RED4EXT_SHA)"
+    local NEED_R4=1 R4NOW; R4NOW="$(red4ext_version)"
+    if [ "$NEED_NC" = 0 ] && [ -n "$R4NOW" ] && ver_ge "$R4NOW" "$RED4EXT_VER"; then
+        ok "already $R4NOW"; NEED_R4=0
+    else
+        if [ -z "$RED4EXT_ZIP" ]; then
+            RED4EXT_ZIP="$TMP/red4ext-${RED4EXT_VER}.zip"
+            [ "$DRY_RUN" = 1 ] && info "(dry run) would download $RED4EXT_URL" || download "$RED4EXT_URL" "$RED4EXT_ZIP"
+        fi
+        if [ -f "$RED4EXT_ZIP" ]; then
+            sha_check "$RED4EXT_ZIP" "$RED4EXT_SHA" && ok "red4ext zip SHA-256 verified" || fail "SHA-256 mismatch for $RED4EXT_ZIP (expected $RED4EXT_SHA)"
+        fi
     fi
 
     # ---- C++ runtime
@@ -456,13 +546,29 @@ PY
         *) warn "could not find Steam's per-user config; set the launch options by hand (see the end)" ;;
     esac
 
+    # ---- nothing to do?
+    if [ "$NEED_NC" = 0 ] && [ "$NEED_R4" = 0 ] && [ "$NEED_RT" = 0 ]; then
+        echo
+        if [ "$LO" = missing ] && ! steam_running && [ "$DRY_RUN" = 0 ]; then
+            bold "Writing launch options"
+            set_launch_options
+            LO="$(launch_options_status)"
+            [ "$LO" = ok ] && ok "launch options set" || warn "could not set them automatically"
+        fi
+        if [ "$LO" = ok ]; then ok "everything is up to date; nothing to do"
+        else warn "the mod files are current, but the launch options are not set"; echo; print_manual_launch_options; fi
+        return 0
+    fi
+
     # ---- plan
     echo
     bold "Plan"
-    [ "$SAVE_BACKUP" = 1 ] && [ -d "$SAVES" ] && info "backup saves  -> $BACKUP/Saved Games ($(du -sh "$SAVES" 2>/dev/null | cut -f1))"
+    [ "$UPDATE" = 1 ] && info "update        NightCoop ${INSTALLED:-unknown build} -> ${NC_VER:-$(basename "$NIGHTCOOP_ZIP")}"
+    if [ "$SAVE_BACKUP" = 1 ] && [ -d "$SAVES" ]; then info "backup saves  -> $BACKUP/Saved Games ($(du -sh "$SAVES" 2>/dev/null | cut -f1))"
+    elif [ "$UPDATE" = 1 ] && [ -d "$SAVES" ]; then info "backup saves  skipped on an update (add --backup-saves to copy them)"; fi
     info "backup files  -> $BACKUP/game and $BACKUP/prefix-runtime"
-    info "install       NightCoop $(basename "$NIGHTCOOP_ZIP") into the game folder"
-    info "overlay       RED4ext $RED4EXT_VER (replaces whatever the archive bundles)"
+    [ "$NEED_NC" = 1 ] && info "install       NightCoop $(basename "$NIGHTCOOP_ZIP") into the game folder"
+    [ "$NEED_R4" = 1 ] && info "overlay       RED4ext $RED4EXT_VER (replaces whatever the archive bundles)"
     [ "$NEED_RT" = 1 ] && info "run           VC_redist.x64.exe quietly inside the game's Proton prefix"
     [ "$LO" = missing ] && ! steam_running && info "write         launch options: $LAUNCH_OPTS"
     [ "$DRY_RUN" = 1 ] && { echo; ok "dry run finished, nothing changed"; return 0; }
@@ -481,20 +587,31 @@ PY
     ok "backup folder: $BACKUP"
 
     # ---- NightCoop files
-    bold "Installing NightCoop"
-    rm -rf "$TMP/nc"; mkdir -p "$TMP/nc"; unzip -q -o "$NIGHTCOOP_ZIP" -d "$TMP/nc"
-    local ROOT; ROOT="$(dirname "$(dirname "$(dirname "$(dirname "$(find "$TMP/nc" -type f -iname NightCoop.dll -path '*red4ext/plugins/NightCoop/*' | head -1)")")")")"
-    [ -f "$ROOT/red4ext/plugins/NightCoop/NightCoop.dll" ] || fail "the archive does not contain red4ext/plugins/NightCoop/NightCoop.dll"
-    cp -a "$ROOT/." "$GAME_DIR/"
-    ok "NightCoop.dll in place ($(date -r "$GAME_DIR/red4ext/plugins/NightCoop/NightCoop.dll" +%F))"
+    if [ "$NEED_NC" = 1 ]; then
+        bold "Installing NightCoop"
+        rm -rf "$TMP/nc"; mkdir -p "$TMP/nc"; unzip -q -o "$NIGHTCOOP_ZIP" -d "$TMP/nc"
+        local ROOT; ROOT="$(dirname "$(dirname "$(dirname "$(dirname "$(find "$TMP/nc" -type f -iname NightCoop.dll -path '*red4ext/plugins/NightCoop/*' | head -1)")")")")"
+        [ -f "$ROOT/red4ext/plugins/NightCoop/NightCoop.dll" ] || fail "the archive does not contain red4ext/plugins/NightCoop/NightCoop.dll"
+        cp -a "$ROOT/." "$GAME_DIR/"
+        # remember what was installed, so the next run can tell whether an update is needed
+        local SVER="$NC_VER"
+        if [ "$NC_SHA_OK" != 1 ]; then   # a local archive the site did not vouch for: name it after the file
+            SVER="$(basename "$NIGHTCOOP_ZIP" | sed -E 's/^NightCoop-//; s/\.zip$//; s/-[0-9]+\.[0-9]+$//')"
+            [ -n "$SVER" ] || SVER="local"
+        fi
+        write_state "$SVER" "${NC_PROTO:--}" "${NC_BUILD:--}"
+        ok "NightCoop $SVER in place ($(date -r "$NC_DLL" +%F))"
+    fi
 
     # ---- RED4ext overlay
-    bold "Installing RED4ext $RED4EXT_VER"
-    rm -rf "$TMP/r4"; mkdir -p "$TMP/r4"; unzip -q -o "$RED4EXT_ZIP" -d "$TMP/r4"
-    [ -f "$TMP/r4/red4ext/RED4ext.dll" ] && [ -f "$TMP/r4/bin/x64/winmm.dll" ] || fail "unexpected red4ext zip layout"
-    cp -a "$TMP/r4/." "$GAME_DIR/"
-    local R4; R4="$(red4ext_version)"
-    ver_ge "$R4" "$RED4EXT_VER" && ok "RED4ext.dll is $R4" || fail "RED4ext.dll reports $R4 after install"
+    if [ "$NEED_R4" = 1 ]; then
+        bold "Installing RED4ext $RED4EXT_VER"
+        rm -rf "$TMP/r4"; mkdir -p "$TMP/r4"; unzip -q -o "$RED4EXT_ZIP" -d "$TMP/r4"
+        [ -f "$TMP/r4/red4ext/RED4ext.dll" ] && [ -f "$TMP/r4/bin/x64/winmm.dll" ] || fail "unexpected red4ext zip layout"
+        cp -a "$TMP/r4/." "$GAME_DIR/"
+        local R4; R4="$(red4ext_version)"
+        ver_ge "$R4" "$RED4EXT_VER" && ok "RED4ext.dll is $R4" || fail "RED4ext.dll reports $R4 after install"
+    fi
 
     # ---- runtime
     if [ "$NEED_RT" = 1 ]; then
@@ -521,17 +638,7 @@ PY
     bold "Done"
     do_check
     echo
-    if [ "$LO" != ok ]; then
-        bold "One manual step left"
-        cat <<EOF
-  In Steam: right-click Cyberpunk 2077 > Properties > General > Launch Options, paste exactly:
-
-      $LAUNCH_OPTS
-
-  Without it Proton ignores RED4ext's loader and the mod never starts.
-EOF
-        echo
-    fi
+    [ "$LO" != ok ] && print_manual_launch_options
     cat <<EOF
   Now launch Cyberpunk 2077 from Steam. In the main menu a Co-op entry
   ("Совместная игра" / "Co-op") should appear. If it does not, run:

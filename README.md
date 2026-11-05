@@ -11,7 +11,8 @@ The script in this folder fixes both and installs the mod.
    (since 0.1.2-beta there is a separate archive per game version), verifying its
    SHA-256 against the site's own release list.
 3. Backs up your saves and every file it is about to replace into
-   `~/nightcoop-backup-<date>/`.
+   `~/nightcoop-backup-<date>/`. If the mod is already installed, it compares the
+   installed build with the site's latest and only replaces it when they differ.
 4. Installs NightCoop, then overlays **RED4ext 1.31** on top of whatever the archive
    bundles. Older archives shipped 1.30, which does not work on game patch 2.5.
 5. Installs the **Visual C++ 2022 runtime** into the game's Proton prefix. Proton ships
@@ -42,10 +43,34 @@ It prints a plan and asks for confirmation before changing anything. Add `--yes`
 to skip the question, `--dry-run` to only look, and `--no-save-backup` to skip the
 save copy (it can be a couple of GB).
 
+## Updating
+
+Run the same command again whenever a new NightCoop build comes out:
+
+```bash
+./nightcoop-bazzite-install.sh
+```
+
+The script remembers which build it installed (a small text file next to
+`NightCoop.dll`) and asks nightcoop.net for the latest one for your game version.
+If they match, it says so and changes nothing. If they differ, it backs up the
+current mod files and installs the new build. On an update the save folder is not
+copied again unless you add `--backup-saves`. `--force` reinstalls the mod files
+even when they are already current.
+
+A NightCoop that was installed by hand is recognised too: when the DLL on disk is
+identical to the one in the latest archive, the script just records it.
+
+To see what is installed and whether an update exists without changing anything:
+
+```bash
+./nightcoop-bazzite-install.sh check
+```
+
 If you already downloaded the archives:
 
 ```bash
-./nightcoop-bazzite-install.sh --nightcoop-zip ~/Downloads/NightCoop-0.1.2-beta-2.5.zip --red4ext-zip ~/Downloads/red4ext-1.31.0.zip
+./nightcoop-bazzite-install.sh --nightcoop-zip ~/Downloads/NightCoop-0.2.0-beta-2.5.zip --red4ext-zip ~/Downloads/red4ext-1.31.0.zip
 ```
 
 ## Afterwards
@@ -73,8 +98,8 @@ options stay; clear them in Steam if you want.
 ## Good to know
 
 - Everyone in a session needs the same NightCoop build. Only builds with the same
-  protocol number can connect. To update when a new build comes out, just run the
-  script again; it backs up and replaces the current one.
+  protocol number can connect. When one of you updates, the other runs the script
+  again too.
 - A major Proton version upgrade rebuilds the prefix and brings the old 2020 runtime
   back. If error 998 returns after such an update, just run the script again; it
   skips what is already done.
