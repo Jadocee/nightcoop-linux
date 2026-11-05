@@ -1,0 +1,1779 @@
+#!/usr/bin/env bash
+# nightcoop-install.sh - NightCoop co-op mod for Cyberpunk 2077 on Arch Linux and SteamOS
+#
+# Installs NightCoop (https://nightcoop.net) into the Steam version of Cyberpunk 2077
+# running under Proton. Written for:
+#   - SteamOS 3 (Steam Deck and other SteamOS devices), run from Desktop Mode
+#   - CachyOS, including its proton-cachyos builds
+#   - Arch Linux and Arch-based systems (EndeavourOS, Manjaro, Garuda, ...)
+# Other distributions with the native or Flatpak Steam client take the same path.
+#
+# Under Proton three things stop NightCoop, a RED4ext plugin, from loading:
+#   1. Wine prefers its built-in winmm.dll to RED4ext's loader. The script adds a
+#      per-game DLL override to the Proton prefix (this works while Steam is open)
+#      and, when Steam is closed, merges it into the game's launch options as well.
+#   2. Proton's prefix carries an old Microsoft C++ runtime. RED4ext and NightCoop
+#      are built with a newer MSVC toolset and crash in it with
+#      "RED4ext (error 998) No access to memory location". The script installs the
+#      current Visual C++ runtime into the prefix.
+#   3. Some NightCoop archives bundle a RED4ext that is too old for the game patch.
+#      The script keeps the newest of the bundled, the pinned and the installed one.
+#
+# Usage:
+#   nightcoop-install.sh [install] [options]   install or update NightCoop (default)
+#   nightcoop-install.sh check                 report the current state, change nothing
+#   nightcoop-install.sh restore [BACKUP_DIR]  undo the latest install (or the given one)
+#   nightcoop-install.sh uninstall             undo every install, newest first
+#
+# Options:
+#   --nightcoop-zip FILE  use a downloaded NightCoop archive instead of the latest
+#   --red4ext-zip FILE    use a downloaded RED4ext release archive
+#   --vcredist FILE       use a downloaded VC_redist.x64.exe
+#   --steam-root DIR      use this Steam installation instead of detecting one
+#   --close-steam         close Steam to write the launch options, then reopen it
+#   --no-save-backup      do not copy the save games before installing
+#   --dry-run             detect, download and verify everything; change nothing
+#   -y, --yes             do not ask for confirmation
+#   -h, --help            show this help
+#
+# Needs bash, python3, curl, coreutils, findutils and procps-ng. SteamOS and CachyOS
+# ship all of them; on a minimal Arch install: sudo pacman -S --needed python curl
+
+set -euo pipefail
+
+SCRIPT_VERSION="2.0.0"
+APPID=1091500
+GAME_EXE_REL="bin/x64/Cyberpunk2077.exe"
+RED4EXT_VER="1.31.0"
+RED4EXT_URL="https://github.com/wopss/RED4ext/releases/download/v${RED4EXT_VER}/red4ext-${RED4EXT_VER}.zip"
+RED4EXT_SHA="b9ae4351f547f90af58dfbf7445d45c55cd5ba24fbee27fb16fb5d91e9df621e"
+NIGHTCOOP_SITE="https://nightcoop.net"
+# The v14 link serves the newest runtime (VS 2017-2026); the VS 2022 link is a fallback.
+VCREDIST_URLS=("https://aka.ms/vc14/vc_redist.x64.exe" "https://aka.ms/vs/17/release/vc_redist.x64.exe")
+# MSVC 14.40 changed std::mutex: anything built with it or later fails with error 998
+# on an older msvcp140.dll. Newer builds should get a runtime at least as new as
+# their toolset, which is read from the DLLs themselves.
+RUNTIME_FLOOR="14.40"
+REG_KEY='Software\Wine\AppDefaults\Cyberpunk2077.exe\DllOverrides'
+RED4EXT_CORE=("red4ext/RED4ext.dll" "bin/x64/winmm.dll" "red4ext/LICENSE.txt" "red4ext/THIRD_PARTY_LICENSES.txt")
+
+DATA_DIR="${XDG_DATA_HOME:-$HOME/.local/share}/nightcoop-linux"
+CACHE_DIR="${XDG_CACHE_HOME:-$HOME/.cache}/nightcoop-linux"
+BACKUP_ROOT="$DATA_DIR/backups"
+
+MODE="install"
+NIGHTCOOP_ZIP=""
+RED4EXT_ZIP=""
+VCREDIST=""
+OPT_STEAM_ROOT=""
+CLOSE_STEAM=0
+SAVE_BACKUP=1
+DRY_RUN=0
+ASSUME_YES=0
+RESTORE_DIR=""
+
+# ----------------------------------------------------------- python helper ----
+# Binary and structured-file work (PE version resources, Valve KeyValues files,
+# Wine registry, zip archives, file manifests) lives here; bash drives the flow.
+IFS= read -r -d '' PYHELPER <<'PY' || true
+import glob, json, os, re, shutil, struct, sys, time, zipfile
+
+SEP = '\x1f'
+CRT_PREFIXES = ('msvcp140', 'vcruntime140', 'concrt140', 'vccorlib140')
+
+
+def out(*fields):
+    print(SEP.join('' if f is None else str(f) for f in fields))
+
+
+def die(msg, code=2):
+    sys.stderr.write(msg + '\n')
+    sys.exit(code)
+
+
+# ------------------------------------------------------------------ versions
+def vtuple(v):
+    m = re.search(r'\d+(?:\.\d+)*', re.sub(r'\s*,\s*', '.', str(v or '')))
+    return [int(x) for x in m.group(0).split('.')] if m else []
+
+
+def vcmp(a, b):
+    x, y = vtuple(a), vtuple(b)
+    n = max(len(x), len(y))
+    x, y = x + [0] * (n - len(x)), y + [0] * (n - len(y))
+    return (x > y) - (x < y)
+
+
+def norm_game(v):
+    """'2.5', '2.50', '2.5.0' and '2.5.0.0' all become '2.5'."""
+    m = re.search(r'\d+(?:\.\d+)*', str(v or ''))
+    if not m:
+        return str(v or '').strip().lower()
+    parts = m.group(0).split('.')
+    while len(parts) > 1 and not parts[-1].strip('0'):
+        parts.pop()
+    if len(parts) > 1:
+        parts[-1] = parts[-1].rstrip('0')
+    return '.'.join(parts)
+
+
+# ----------------------------------------------------------------- PE files
+class PE:
+    def __init__(self, path):
+        self.f = f = open(path, 'rb')
+        try:
+            mz = f.read(64)
+            if len(mz) < 64 or mz[:2] != b'MZ':
+                raise ValueError('not a PE file')
+            f.seek(struct.unpack_from('<I', mz, 0x3c)[0])
+            h = f.read(24)
+            if len(h) < 24 or h[:4] != b'PE\0\0':
+                raise ValueError('not a PE file')
+            nsec, = struct.unpack_from('<H', h, 6)
+            optsz, = struct.unpack_from('<H', h, 20)
+            opt = f.read(optsz)
+            base = {0x20b: 112, 0x10b: 96}.get(struct.unpack_from('<H', opt, 0)[0])
+            if base is None:
+                raise ValueError('unknown optional header')
+            self.linker = '%d.%d' % (opt[2], opt[3])
+            self.dirs = [struct.unpack_from('<II', opt, base + 8 * i)
+                         for i in range(16) if base + 8 * i + 8 <= len(opt)]
+            st = f.read(40 * nsec)
+            self.secs = [struct.unpack_from('<IIII', st, 40 * i + 8) for i in range(nsec)]
+        except Exception:
+            f.close()
+            raise
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *a):
+        self.f.close()
+
+    def dir(self, i):
+        return self.dirs[i] if i < len(self.dirs) else (0, 0)
+
+    def read(self, rva, n):
+        for vsz, va, rsz, rptr in self.secs:
+            if va <= rva < va + max(vsz, rsz):
+                self.f.seek(rptr + rva - va)
+                return self.f.read(n)
+        return b''
+
+    def imports(self):
+        rva, names = self.dir(1)[0], []
+        while rva and len(names) < 1024:
+            e = self.read(rva, 20)
+            if len(e) < 20 or not any(e):
+                break
+            names.append(self.read(struct.unpack_from('<I', e, 12)[0], 256).split(b'\0', 1)[0].decode('latin-1'))
+            rva += 20
+        return names
+
+    def version_data(self):
+        base = self.dir(2)[0]
+        if not base:
+            return b''
+
+        def entries(off):
+            h = self.read(base + off, 16)
+            if len(h) < 16:
+                return []
+            nn, ni = struct.unpack_from('<HH', h, 12)
+            raw = self.read(base + off + 16, 8 * (nn + ni))
+            return [struct.unpack_from('<II', raw, 8 * k) for k in range(len(raw) // 8)]
+
+        node = next((off for name, off in entries(0) if name == 16), None)   # RT_VERSION
+        for _ in range(2):                                                     # name, language
+            if node is None or not node & 0x80000000:
+                return b''
+            sub = entries(node & 0x7fffffff)
+            node = sub[0][1] if sub else None
+        if node is None or node & 0x80000000:
+            return b''
+        rva, size = struct.unpack_from('<II', self.read(base + node, 8))
+        return self.read(rva, size)
+
+    def version_info(self):
+        data, fixed, strings = self.version_data(), None, {}
+
+        def walk(off, end, depth):
+            nonlocal fixed
+            while off + 6 <= end:
+                wlen, vlen, _ = struct.unpack_from('<HHH', data, off)
+                if wlen < 6:
+                    break
+                bend = min(off + wlen, end)
+                k = off + 6
+                while k + 1 < bend and data[k:k + 2] != b'\0\0':
+                    k += 2
+                key = data[off + 6:k].decode('utf-16le', 'replace')
+                v = (k + 2 + 3) & ~3
+                if depth == 0:
+                    if vlen >= 52 and data[v:v + 4] == b'\xbd\x04\xef\xfe':
+                        fixed = data[v:v + 52]
+                    walk((v + vlen + 3) & ~3, bend, 1)
+                elif depth == 1:
+                    if key == 'StringFileInfo':
+                        walk(v, bend, 2)
+                elif depth == 2:
+                    walk(v, bend, 3)
+                else:
+                    strings.setdefault(key, data[v:bend].decode('utf-16le', 'replace').split('\0', 1)[0].strip())
+                off = (off + wlen + 3) & ~3
+
+        if data:
+            walk(0, len(data), 0)
+        return fixed, strings
+
+
+def fixed_version(fixed, kind):
+    ms, ls = struct.unpack_from('<II', fixed, 16 if kind == 'product' else 8)
+    return '%d.%d.%d.%d' % (ms >> 16, ms & 0xffff, ls >> 16, ls & 0xffff)
+
+
+def scan_version(path, kind):
+    """Last resort for an unusual resource layout: find the string anywhere."""
+    with open(path, 'rb') as fh:
+        data = fh.read()
+    key = ('ProductVersion' if kind == 'product' else 'FileVersion').encode('utf-16le') + b'\0\0'
+    i = data.find(key)
+    if i < 0:
+        return ''
+    i += len(key)
+    while data[i:i + 2] == b'\0\0':
+        i += 2
+    j = i
+    while j + 1 < len(data) and data[j:j + 2] != b'\0\0':
+        j += 2
+    return data[i:j].decode('utf-16le', 'ignore').strip()
+
+
+def pe_info(path):
+    try:
+        with PE(path) as pe:
+            return pe.version_info()
+    except (OSError, ValueError, struct.error):
+        return None, {}
+
+
+def pe_version(path, kind):
+    fixed, strings = pe_info(path)
+    s = strings.get('ProductVersion' if kind == 'product' else 'FileVersion', '')
+    if vtuple(s):
+        return re.sub(r'\s*,\s*', '.', s)
+    if fixed:
+        return fixed_version(fixed, kind)
+    try:
+        return scan_version(path, kind)
+    except OSError:
+        return ''
+
+
+def cmd_pever(path, kind='file'):
+    out(pe_version(path, kind))
+
+
+def cmd_gamever(path):
+    fixed, _ = pe_info(path)
+    out(pe_version(path, 'product'), fixed_version(fixed, 'product') if fixed else '')
+
+
+def cmd_pestr(path, key):
+    out(pe_info(path)[1].get(key, ''))
+
+
+def cmd_vge(a, b):
+    sys.exit(0 if vcmp(a, b) >= 0 else 1)
+
+
+def cmd_pecrt(top, *extra):
+    """Newest MSVC toolset among the DLLs that link the C++ runtime dynamically."""
+    files = [p for p in extra if os.path.isfile(p)]
+    for dp, _, fns in os.walk(top):
+        files += [os.path.join(dp, f) for f in fns if f.lower().endswith(('.dll', '.asi'))]
+    best = who = ''
+    for p in files:
+        try:
+            with PE(p) as pe:
+                if any(n.lower().startswith(CRT_PREFIXES) for n in pe.imports()) and \
+                        (not best or vcmp(pe.linker, best) > 0):
+                    best, who = pe.linker, os.path.basename(p)
+        except (OSError, ValueError, struct.error):
+            pass
+    out(best, who)
+
+
+# ------------------------------------------------- Valve KeyValues (VDF) text
+TOK = re.compile(r'"((?:[^"\\]|\\.)*)"|([{}])|(//[^\n]*)|([^\s{}"]+)')
+
+
+def unesc(s):
+    return re.sub(r'\\(.)', lambda m: {'n': '\n', 't': '\t'}.get(m.group(1), m.group(1)), s)
+
+
+def esc(s):
+    return s.replace('\\', '\\\\').replace('"', '\\"')
+
+
+def vdf_parse(text):
+    root = []
+    stack, key = [root], None
+    for m in TOK.finditer(text):
+        q, br, com, bare = m.groups()
+        if com is not None:
+            continue
+        if br == '{':
+            node = []
+            stack[-1].append((key or '', node))
+            stack.append(node)
+            key = None
+        elif br == '}':
+            if len(stack) > 1:
+                stack.pop()
+            key = None
+        else:
+            s = unesc(q) if q is not None else bare
+            if key is None:
+                key = s
+            else:
+                stack[-1].append((key, s))
+                key = None
+    return root
+
+
+def vdf_load(path):
+    try:
+        with open(path, encoding='utf-8', errors='replace') as fh:
+            return vdf_parse(fh.read())
+    except OSError:
+        return []
+
+
+def vget(node, *path):
+    for p in path:
+        if not isinstance(node, list):
+            return None
+        node = next((v for k, v in node if k.lower() == str(p).lower()), None)
+        if node is None:
+            return None
+    return node
+
+
+# ------------------------------------------------------- Steam and Proton
+def translate(p, root, kind):
+    """Host paths for a path Steam wrote: Flatpak sandbox and pressure-vessel views."""
+    home, cands = os.path.expanduser('~'), []
+    if kind == 'flatpak':
+        for pre in (home + '/.local/share/Steam', home + '/.steam/steam', home + '/.steam/root'):
+            if p == pre or p.startswith(pre + '/'):
+                cands.append(root + p[len(pre):])
+                break
+    cands.append(p)
+    if p.startswith('/run/host/'):
+        cands.append(p[len('/run/host'):])
+    return cands
+
+
+def cmd_libs(root, kind, appid):
+    libs, seen = [], set()
+
+    def add(p):
+        rp = os.path.realpath(p)
+        if rp not in seen and os.path.isdir(os.path.join(rp, 'steamapps')):
+            seen.add(rp)
+            libs.append(rp)
+
+    add(root)
+    for rel in ('steamapps/libraryfolders.vdf', 'config/libraryfolders.vdf'):
+        lf = vget(vdf_load(os.path.join(root, rel)), 'libraryfolders')
+        for _, v in lf if isinstance(lf, list) else []:
+            path = vget(v, 'path') if isinstance(v, list) else v
+            if isinstance(path, str) and path.startswith('/'):
+                for c in translate(path, root, kind):
+                    if os.path.isdir(os.path.join(c, 'steamapps')):
+                        add(c)
+                        break
+    for lib in libs:
+        inst = vget(vdf_load(os.path.join(lib, 'steamapps', 'appmanifest_%s.acf' % appid)), 'AppState', 'installdir')
+        out(lib, inst if isinstance(inst, str) else '')
+
+
+def proton_ok(d):
+    return bool(d) and os.path.isfile(os.path.join(d, 'proton'))
+
+
+def compat_setting(root, appid):
+    m = vget(vdf_load(os.path.join(root, 'config', 'config.vdf')),
+             'InstallConfigStore', 'Software', 'Valve', 'Steam', 'CompatToolMapping')
+    for key in (appid, '0'):
+        n = vget(m, key, 'name')
+        if isinstance(n, str) and n:
+            return n
+    return ''
+
+
+def resolve_tool(name, tools, official):
+    n = name.lower()
+    if n in tools:
+        return tools[n]
+    cands = {'proton_experimental': ['Proton - Experimental'], 'proton_hotfix': ['Proton Hotfix']}.get(n, [])
+    m = re.fullmatch(r'proton_(\d+)', n)
+    if m:
+        d = m.group(1)
+        if len(d) <= 2 and int(d) >= 7:
+            cands.append('Proton %s.0' % d)
+        if len(d) >= 2:
+            cands.append('Proton %s.%s' % (d[0], d[1:]))
+    return next((official[c] for c in cands if c in official), '')
+
+
+def cmd_proton(root, kind, compat, appid, *libs):
+    # 1. the Proton that last ran this prefix
+    ci = os.path.join(compat, 'config_info') if compat else ''
+    if ci and os.path.isfile(ci):
+        with open(ci, encoding='utf-8', errors='replace') as fh:
+            for line in fh:
+                m = re.match(r'\s*(/.+?)/(?:files|dist)/', line)
+                for c in translate(m.group(1), root, kind) if m else []:
+                    if proton_ok(c):
+                        out(c, 'the prefix\'s last launch')
+                        return
+    # 2. the compatibility tool chosen in Steam
+    home, tools, official = os.path.expanduser('~'), {}, {}
+    for td in (os.path.join(root, 'compatibilitytools.d'), os.path.join(home, '.steam', 'root', 'compatibilitytools.d'),
+               '/usr/share/steam/compatibilitytools.d', '/usr/local/share/steam/compatibilitytools.d'):
+        for d in sorted(glob.glob(os.path.join(td, '*'))):
+            ct = vget(vdf_load(os.path.join(d, 'compatibilitytool.vdf')), 'compatibilitytools', 'compat_tools')
+            for name, spec in ct if isinstance(ct, list) else []:
+                ip = vget(spec, 'install_path')
+                p = os.path.normpath(os.path.join(d, ip if isinstance(ip, str) and ip else '.'))
+                if proton_ok(p):
+                    tools.setdefault(name.lower(), p)
+            if proton_ok(d):
+                tools.setdefault(os.path.basename(d).lower(), d)
+    for lib in libs:
+        for d in sorted(glob.glob(os.path.join(lib, 'steamapps', 'common', '*'))):
+            if proton_ok(d):
+                official.setdefault(os.path.basename(d), d)
+    name = compat_setting(root, appid)
+    d = resolve_tool(name, tools, official) if name else ''
+    if d:
+        out(d, 'Steam setting "%s"' % name)
+        return
+    # 3. best guess
+    order = [official.get('Proton - Experimental')]
+    order += [official[k] for k in sorted(official, key=lambda k: vtuple(k) or [0], reverse=True)]
+    order += list(tools.values())
+    d = next((x for x in order if proton_ok(x)), '')
+    if d:
+        out(d, 'best guess')
+
+
+def cmd_slr(proton_dir, *libs):
+    """_v2-entry-point of the Steam Linux Runtime the Proton build asks for, if any."""
+    req = vget(vdf_load(os.path.join(proton_dir, 'toolmanifest.vdf')), 'manifest', 'require_tool_appid')
+    if not isinstance(req, str) or not req:
+        return
+    known = {'1628350': 'SteamLinuxRuntime_sniper', '1391110': 'SteamLinuxRuntime_soldier'}
+    for lib in libs:
+        inst = vget(vdf_load(os.path.join(lib, 'steamapps', 'appmanifest_%s.acf' % req)), 'AppState', 'installdir')
+        for n in [x for x in (inst if isinstance(inst, str) else '', known.get(req, '')) if x]:
+            ep = os.path.join(lib, 'steamapps', 'common', n, '_v2-entry-point')
+            if os.access(ep, os.X_OK):
+                out(ep)
+                return
+
+
+# ---------------------------------------------------- Steam launch options
+WDO = re.compile(r'''(?<![\w$])WINEDLLOVERRIDES=("[^"]*"|'[^']*'|[^\s"']*)''')
+APPS_PATH = ['userlocalconfigstore', 'software', 'valve', 'steam', 'apps']
+
+
+def dll_names(spec):
+    return [n.strip().lower()[:-4] if n.strip().lower().endswith('.dll') else n.strip().lower() for n in spec.split(',')]
+
+
+def lo_state(s):
+    s = s or ''
+    m = WDO.search(s)
+    if not m:
+        return 'missing'
+    mode = None
+    for e in m.group(1).strip('"\'').split(';'):
+        names, _, md = e.partition('=')
+        if 'winmm' in dll_names(names):
+            mode = md.strip().lower()
+            break
+    if not mode or not mode.startswith('n'):
+        return 'missing'
+    return 'ok' if '%command%' in s and m.start() < s.index('%command%') else 'broken'
+
+
+def lo_merge(s):
+    """Add winmm=n,b, keeping every other override, wrapper and argument."""
+    s = (s or '').strip()
+    m = WDO.search(s)
+    keep = []
+    for e in m.group(1).strip('"\'').split(';') if m else []:
+        names, eq, md = e.partition('=')
+        rest = [n for n in names.split(',') if n.strip() and dll_names(n)[0] != 'winmm']
+        if rest:
+            keep.append(','.join(rest) + eq + md)
+    tok = 'WINEDLLOVERRIDES="' + ';'.join(keep + ['winmm=n,b']) + '"'
+    if m and '%command%' in s and m.start() < s.index('%command%'):
+        return s[:m.start()] + tok + s[m.end():]
+    if m:
+        s = re.sub(r'\s+', ' ', (s[:m.start()] + ' ' + s[m.end():]).strip())
+    if '%command%' in s:
+        return tok + ' ' + s
+    return (tok + ' %command% ' + s).strip()
+
+
+def lo_files(root):
+    files = glob.glob(os.path.join(root, 'userdata', '*', 'config', 'localconfig.vdf'))
+    recent = ''
+    users = vget(vdf_load(os.path.join(root, 'config', 'loginusers.vdf')), 'users')
+    for sid, u in users if isinstance(users, list) else []:
+        if isinstance(u, list) and vget(u, 'MostRecent') == '1' and sid.isdigit():
+            recent = str(int(sid) - 76561197960265728)
+    files.sort(key=lambda f: (f.split(os.sep)[-3] != recent, f))
+    return files
+
+
+def lo_scan(text, appid):
+    stack, key = [], None
+    apps_open = app_open = lo = None
+    for m in TOK.finditer(text):
+        q, br, com, bare = m.groups()
+        if com is not None:
+            continue
+        if br == '{':
+            stack.append((key or '').lower())
+            key = None
+            if stack == APPS_PATH and apps_open is None:
+                apps_open = m.end()
+            if stack == APPS_PATH + [appid] and app_open is None:
+                app_open = m.end()
+        elif br == '}':
+            if stack:
+                stack.pop()
+            key = None
+        else:
+            s = q if q is not None else bare
+            if key is None:
+                key = s
+            else:
+                if lo is None and stack == APPS_PATH + [appid] and key.lower() == 'launchoptions':
+                    lo = (m.start(), m.end(), unesc(s))
+                key = None
+    return apps_open, app_open, lo
+
+
+def read_text(path):
+    with open(path, encoding='utf-8', errors='surrogateescape') as fh:
+        return fh.read()
+
+
+def write_text(path, text):
+    tmp = path + '.nightcoop-tmp'
+    with open(tmp, 'w', encoding='utf-8', errors='surrogateescape') as fh:
+        fh.write(text)
+    shutil.copymode(path, tmp)
+    os.replace(tmp, path)
+
+
+def cmd_lo_status(root, appid):
+    files = lo_files(root)
+    if not files:
+        out('nofile', '')
+        return
+    lo = lo_scan(read_text(files[0]), appid)[2]
+    cur = lo[2] if lo else ''
+    out(lo_state(cur), cur)
+
+
+def cmd_lo_merge(s):
+    out(lo_state(s), lo_merge(s))
+
+
+def cmd_lo_set(root, appid):
+    for f in lo_files(root):
+        text = read_text(f)
+        apps_open, app_open, lo = lo_scan(text, appid)
+        cur = lo[2] if lo else ''
+        if lo_state(cur) == 'ok':
+            out(f, 'already set')
+            continue
+        new = lo_merge(cur)
+        if lo:
+            text = text[:lo[0]] + '"' + esc(new) + '"' + text[lo[1]:]
+        else:
+            at = app_open if app_open is not None else apps_open
+            if at is None:
+                out(f, 'skipped (no apps section)')
+                continue
+            nl = text.find('\n', at)
+            nl = len(text) if nl < 0 else nl
+            indent = re.match(r'[ \t]*', text[nl + 1:]).group(0) or '\t'
+            if app_open is not None:
+                block = indent + '"LaunchOptions"\t\t"' + esc(new) + '"\n'
+            else:
+                block = (indent + '"' + appid + '"\n' + indent + '{\n' + indent + '\t"LaunchOptions"\t\t"' +
+                         esc(new) + '"\n' + indent + '}\n')
+            text = text[:nl + 1] + block + text[nl + 1:]
+        shutil.copy2(f, f + '.nightcoop-backup-' + time.strftime('%Y%m%d-%H%M%S'))
+        write_text(f, text)
+        out(f, new)
+
+
+# ------------------------------------------------------ NightCoop releases
+def cmd_pick(path, gamevers, site, local_sha=''):
+    try:
+        with open(path, encoding='utf-8') as fh:
+            d = json.load(fh)
+        allrels = [r for r in d.get('releases', []) if isinstance(r, dict) and r.get('version')]
+    except (OSError, ValueError, AttributeError) as e:
+        out('error', str(e).replace('\n', ' '))
+        return
+    gvs = {norm_game(g) for g in gamevers.split(',') if g.strip()}
+
+    def games(x):
+        g = x.get('game') or []
+        return [g] if isinstance(g, str) else [str(i) for i in g]
+
+    def fits(x):
+        return any(norm_game(g) in gvs for g in games(x))
+
+    def mods(r):
+        return [f for f in r.get('files') or [] if isinstance(f, dict) and f.get('url') and f.get('kind', 'mod') == 'mod']
+
+    def url_of(f):
+        u = str(f['url'])
+        return u if re.match(r'^[a-z]+://', u) else site.rstrip('/') + '/' + u.lstrip('/')
+
+    def emit(status, r, f):
+        f = f or {}
+        fits_file = fits(f) or (not games(f) and fits(r))
+        out(status, r.get('version'), url_of(f) if f.get('url') else '', f.get('sha256', ''),
+            ','.join(games(f) or games(r)), r.get('protocol', ''), f.get('red4ext', ''),
+            1 if fits_file else 0, 1 if r.get('yanked') else 0)
+
+    if local_sha:
+        for r in allrels:
+            for f in mods(r):
+                if str(f.get('sha256', '')).lower() == local_sha.lower():
+                    emit('match', r, f)
+                    return
+    rels = [r for r in allrels if not r.get('yanked')]
+    if not rels:
+        out('none')
+        return
+    pick = next((r for r in rels if fits(r) or any(fits(f) for f in mods(r))), rels[0])
+    ms = mods(pick)
+    f = next((x for x in ms if fits(x)), None) or next((x for x in ms if not games(x)), None) or (ms[0] if ms else None)
+    emit('ok', pick, f)
+
+
+# ------------------------------------------------------------ Wine registry
+def reg_header(key):
+    return '[' + key.replace('\\', '\\\\') + ']'
+
+
+def reg_load(path):
+    with open(path, 'rb') as fh:
+        return fh.read().decode('latin-1').split('\n')
+
+
+def reg_save(path, lines):
+    tmp = path + '.nightcoop-tmp'
+    with open(tmp, 'wb') as fh:
+        fh.write('\n'.join(lines).encode('latin-1'))
+    shutil.copymode(path, tmp)
+    os.replace(tmp, path)
+
+
+def reg_find(lines, key, name):
+    hdr = reg_header(key).lower()
+    for i, line in enumerate(lines):
+        low = line.lower()
+        if low.startswith(hdr) and (len(low) == len(hdr) or low[len(hdr)] in ' \t'):
+            j = i + 1
+            while j < len(lines) and not lines[j].startswith('['):
+                j += 1
+            pre = '"' + name.lower() + '"='
+            k = next((x for x in range(i + 1, j) if lines[x].lower().startswith(pre)), None)
+            return i, j, k
+    return None, None, None
+
+
+def reg_quote(s):
+    return '"' + s.replace('\\', '\\\\').replace('"', '\\"') + '"'
+
+
+def cmd_reg_get(path, key, name):
+    try:
+        lines = reg_load(path)
+    except OSError:
+        sys.exit(1)
+    _, _, k = reg_find(lines, key, name)
+    if k is None:
+        sys.exit(1)
+    v = lines[k].split('=', 1)[1]
+    if v.startswith('"') and v.endswith('"'):
+        v = re.sub(r'\\(.)', r'\1', v[1:-1])
+    out(v)
+
+
+def cmd_reg_set(path, key, name, value):
+    lines = reg_load(path)
+    i, j, k = reg_find(lines, key, name)
+    entry = reg_quote(name) + '=' + reg_quote(value)
+    if k is not None:
+        lines[k] = entry
+    elif i is not None:
+        at = i + 1
+        while at < j and lines[at].startswith('#'):
+            at += 1
+        lines.insert(at, entry)
+    else:
+        while lines and lines[-1] == '':
+            lines.pop()
+        now = int(time.time())
+        lines += ['', '%s %d' % (reg_header(key), now), '#time=%x' % ((now + 11644473600) * 10000000), entry, '']
+    reg_save(path, lines)
+
+
+def cmd_reg_del(path, key, name):
+    lines = reg_load(path)
+    _, _, k = reg_find(lines, key, name)
+    if k is not None:
+        del lines[k]
+        reg_save(path, lines)
+
+
+def cmd_wsrv(pfx):
+    """PIDs of wineserver processes serving this prefix."""
+    target = os.path.realpath(pfx)
+    for pid in filter(str.isdigit, os.listdir('/proc')):
+        try:
+            with open('/proc/%s/comm' % pid) as fh:
+                if fh.read().strip() != 'wineserver':
+                    continue
+            with open('/proc/%s/environ' % pid, 'rb') as fh:
+                env = fh.read().split(b'\0')
+        except OSError:
+            continue
+        for e in env:
+            if e.startswith(b'WINEPREFIX=') and os.path.realpath(e[11:].decode(errors='replace')) == target:
+                print(pid)
+
+
+# ---------------------------------------------------- archives and folders
+def cmd_unzip(zpath, dest):
+    try:
+        z = zipfile.ZipFile(zpath)
+    except (zipfile.BadZipFile, OSError) as e:
+        die('not a usable zip archive: %s (%s)' % (zpath, e))
+    with z:
+        for info in z.infolist():
+            name = info.filename.replace('\\', '/')
+            parts = [p for p in name.split('/') if p not in ('', '.')]
+            if name.startswith('/') or re.match(r'^[A-Za-z]:', name) or '..' in parts:
+                die('refusing unsafe path in archive: ' + info.filename)
+            if (info.external_attr >> 16) & 0o170000 == 0o120000:
+                die('refusing symbolic link in archive: ' + info.filename)
+            if not parts:
+                continue
+            target = os.path.join(dest, *parts)
+            if name.endswith('/'):
+                os.makedirs(target, exist_ok=True)
+                continue
+            os.makedirs(os.path.dirname(target), exist_ok=True)
+            try:
+                with z.open(info) as src, open(target, 'wb') as dst:
+                    shutil.copyfileobj(src, dst)
+            except (RuntimeError, zipfile.BadZipFile, NotImplementedError) as e:
+                die('cannot extract %s: %s' % (info.filename, e))
+            t = time.mktime(info.date_time + (0, 0, -1))
+            os.utime(target, (t, t))
+
+
+def cmd_ncroot(top):
+    """Folder that holds red4ext/plugins/<name>/NightCoop.dll, plus that path."""
+    best = None
+    for dp, _, fns in os.walk(top):
+        for fn in fns:
+            if fn.lower() != 'nightcoop.dll':
+                continue
+            parts = os.path.relpath(os.path.join(dp, fn), top).split(os.sep)
+            low = [p.lower() for p in parts]
+            if len(low) >= 4 and low[-3] == 'plugins' and low[-4] == 'red4ext':
+                cand = (len(parts), os.path.normpath(os.path.join(top, *parts[:-4])), '/'.join(parts[-4:]))
+                best = min(best, cand) if best else cand
+    if not best:
+        sys.exit(1)
+    out(best[1], best[2])
+
+
+def ci_resolve(top, rel):
+    cur = top
+    for comp in [c for c in rel.replace('\\', '/').split('/') if c]:
+        try:
+            names = os.listdir(cur)
+        except OSError:
+            return None
+        if comp not in names:
+            alt = sorted(n for n in names if n.lower() == comp.lower())
+            if not alt:
+                return None
+            comp = alt[0]
+        cur = os.path.join(cur, comp)
+    return cur
+
+
+def cmd_findci(top, rel):
+    p = ci_resolve(top, rel)
+    if not p or not os.path.lexists(p):
+        sys.exit(1)
+    out(p)
+
+
+def cmd_rmci(top, *rels):
+    for rel in rels:
+        p = ci_resolve(top, rel)
+        if p and os.path.isfile(p):
+            os.remove(p)
+
+
+def tree_map(src_top, dst_top):
+    """(source, destination-relative) pairs; existing folder and file names win on case."""
+    cache, res = {}, []
+
+    def names(d):
+        if d not in cache:
+            try:
+                cache[d] = os.listdir(d)
+            except OSError:
+                cache[d] = []
+        return cache[d]
+
+    for dp, dns, fns in os.walk(src_top):
+        dns.sort()
+        for fn in sorted(fns):
+            src = os.path.join(dp, fn)
+            cur, mapped = dst_top, []
+            for comp in os.path.relpath(src, src_top).split(os.sep):
+                ns = names(cur)
+                if comp not in ns:
+                    alt = sorted(n for n in ns if n.lower() == comp.lower())
+                    comp = alt[0] if alt else comp
+                mapped.append(comp)
+                cur = os.path.join(cur, comp)
+            rel = '/'.join(mapped)
+            if '\t' in rel or '\n' in rel:
+                die('unsupported character in file name: %r' % rel)
+            res.append((src, rel))
+    return res
+
+
+def cmd_merge(src_top, dst_top):
+    for src, rel in tree_map(src_top, dst_top):
+        dst = os.path.join(dst_top, rel)
+        os.makedirs(os.path.dirname(dst), exist_ok=True)
+        shutil.copy2(src, dst)
+
+
+def read_manifest(path):
+    ents = []
+    if path and os.path.isfile(path):
+        with open(path, encoding='utf-8', errors='surrogateescape') as fh:
+            for line in fh:
+                line = line.rstrip('\n')
+                if line and not line.startswith('#'):
+                    st, _, rel = line.partition('\t')
+                    ents.append((st, rel))
+    return ents
+
+
+def tree_stale(mapping, game, prev, protect):
+    """Files the previous install put in place that the new archive no longer has."""
+    current = {rel.lower() for _, rel in mapping} | {p.lower() for p in protect}
+    stale = []
+    for st, rel in read_manifest(prev):
+        if st in ('added', 'replaced') and rel.lower() not in current:
+            p = ci_resolve(game, rel)
+            r = os.path.relpath(p, game).replace(os.sep, '/') if p else ''
+            if p and os.path.isfile(p) and r not in stale:
+                stale.append(r)
+    return stale
+
+
+def plan(stage, game, prev, protect):
+    mapping = tree_map(stage, game)
+    stale = tree_stale(mapping, game, prev, protect)
+    mk, ents = [], []
+    for _, rel in mapping:
+        parts = rel.split('/')
+        for i in range(1, len(parts)):
+            d = '/'.join(parts[:i])
+            full = os.path.join(game, d)
+            if not os.path.isdir(full):
+                if os.path.lexists(full):
+                    die('a file is in the way of the folder ' + d)
+                if d not in mk:
+                    mk.append(d)
+        dst = os.path.join(game, rel)
+        if os.path.isdir(dst) and not os.path.islink(dst):
+            die('a folder is in the way of ' + rel)
+        ents.append(('replaced' if os.path.lexists(dst) else 'added', rel))
+    ents += [('removed', rel) for rel in stale]
+    return mapping, mk, ents
+
+
+def cmd_tree_plan(stage, game, prev, *protect):
+    _, _, ents = plan(stage, game, prev, protect)
+    out(*[sum(1 for e in ents if e[0] == s) for s in ('added', 'replaced', 'removed')])
+    for st, rel in ents:
+        if st == 'removed':
+            out('stale', rel)
+
+
+def cmd_tree_apply(stage, game, bgame, manifest, prev, *protect):
+    mapping, mk, ents = plan(stage, game, prev, protect)
+    for st, rel in ents:                      # 1. back up everything that will change
+        if st in ('replaced', 'removed'):
+            b = os.path.join(bgame, rel)
+            os.makedirs(os.path.dirname(b), exist_ok=True)
+            shutil.copy2(os.path.join(game, rel), b, follow_symlinks=False)
+    with open(manifest, 'w', encoding='utf-8', errors='surrogateescape') as fh:   # 2. record it
+        fh.write('# nightcoop-install manifest v1; paths are relative to the game folder\n')
+        fh.writelines('mkdir\t%s\n' % d for d in mk)
+        fh.writelines('%s\t%s\n' % e for e in ents)
+    for src, rel in mapping:                  # 3. change it
+        dst = os.path.join(game, rel)
+        os.makedirs(os.path.dirname(dst), exist_ok=True)
+        shutil.copy2(src, dst + '.nightcoop-tmp')
+        os.replace(dst + '.nightcoop-tmp', dst)
+    for st, rel in ents:
+        if st == 'removed':
+            os.remove(os.path.join(game, rel))
+    out(*[sum(1 for e in ents if e[0] == s) for s in ('added', 'replaced', 'removed')])
+
+
+def cmd_tree_restore(manifest, bgame, game):
+    ents, missing = read_manifest(manifest), 0
+    for st, rel in reversed(ents):
+        dst = os.path.join(game, rel)
+        if st == 'added':
+            if os.path.islink(dst) or os.path.isfile(dst):
+                os.remove(dst)
+        elif st in ('replaced', 'removed'):
+            b = os.path.join(bgame, rel)
+            if not os.path.lexists(b):
+                missing += 1
+                continue
+            os.makedirs(os.path.dirname(dst), exist_ok=True)
+            if os.path.islink(dst) or os.path.isfile(dst):
+                os.remove(dst)
+            shutil.copy2(b, dst, follow_symlinks=False)
+    left = []
+    for st, rel in reversed(ents):
+        if st == 'mkdir':
+            try:
+                os.rmdir(os.path.join(game, rel))
+            except OSError:
+                if os.path.isdir(os.path.join(game, rel)):
+                    left.append(rel)
+    # report only the top-most folders that had to stay
+    left = [d for d in left if not any(d != o and d.startswith(o + '/') for o in left)]
+    out(missing, ' '.join(sorted(left)))
+
+
+CMDS = {
+    'pever': cmd_pever, 'gamever': cmd_gamever, 'pestr': cmd_pestr, 'vge': cmd_vge, 'pecrt': cmd_pecrt,
+    'libs': cmd_libs, 'proton': cmd_proton, 'slr': cmd_slr,
+    'lo-status': cmd_lo_status, 'lo-set': cmd_lo_set, 'lo-merge': cmd_lo_merge,
+    'pick': cmd_pick, 'reg-get': cmd_reg_get, 'reg-set': cmd_reg_set, 'reg-del': cmd_reg_del, 'wsrv': cmd_wsrv,
+    'unzip': cmd_unzip, 'ncroot': cmd_ncroot, 'findci': cmd_findci, 'rmci': cmd_rmci, 'merge': cmd_merge,
+    'tree-plan': cmd_tree_plan, 'tree-apply': cmd_tree_apply, 'tree-restore': cmd_tree_restore,
+}
+if len(sys.argv) < 2 or sys.argv[1] not in CMDS:
+    die('nightcoop helper: unknown command %r' % sys.argv[1:2])
+CMDS[sys.argv[1]](*sys.argv[2:])
+PY
+
+py()     { python3 -I -c "$PYHELPER" "$@"; }
+pever()  { py pever "$1" "${2:-file}"; }
+ver_ge() { py vge "$1" "$2"; }
+findci() { py findci "$@"; }
+
+# Hidden entry point for the test suite and for debugging: run one helper command.
+if [ "${1:-}" = "__py" ]; then shift; py "$@"; exit $?; fi
+
+# ---------------------------------------------------------------- output ----
+if [ -t 1 ] && [ -z "${NO_COLOR:-}" ]; then
+    C_B=$'\033[1m' C_G=$'\033[32m' C_Y=$'\033[33m' C_R=$'\033[31m' C_0=$'\033[0m'
+else
+    C_B="" C_G="" C_Y="" C_R="" C_0=""
+fi
+bold() { printf '%s== %s%s\n' "$C_B" "$*" "$C_0"; }
+info() { printf '  %s\n' "$*"; }
+ok()   { printf '  %s[ok]%s %s\n' "$C_G" "$C_0" "$*"; }
+warn() { printf '  %s[!!]%s %s\n' "$C_Y" "$C_0" "$*"; }
+fail() { printf '  %s[XX]%s %s\n' "$C_R" "$C_0" "$*" >&2; exit 1; }
+row()  { printf '  %-22s %s\n' "$1:" "$2"; }
+human() { numfmt --to=iec --suffix=B "$1" 2>/dev/null || echo "$1 bytes"; }
+
+confirm() {
+    [ "$ASSUME_YES" = 1 ] && return 0
+    if [ ! -t 0 ]; then info "no terminal to ask on; rerun with --yes to proceed"; return 1; fi
+    local a
+    read -r -p "  $1 [y/N] " a
+    [[ "$a" =~ ^[Yy]([Ee][Ss])?$ ]]
+}
+
+usage() { awk 'NR > 1 && /^#/ { sub(/^# ?/, ""); print; next } NR > 1 { exit }' "$0"; }
+
+# ---------------------------------------------------------- argument parse ----
+need_arg() { [ "$2" -ge 2 ] || fail "$1 needs a value"; }
+if [ $# -gt 0 ]; then
+    case "$1" in
+        install|check|restore|uninstall) MODE="$1"; shift ;;
+        -h|--help) usage; exit 0 ;;
+        --version) echo "nightcoop-install $SCRIPT_VERSION"; exit 0 ;;
+    esac
+fi
+if [ "$MODE" = restore ] && [ $# -gt 0 ] && [ "${1#-}" = "$1" ]; then RESTORE_DIR="$1"; shift; fi
+while [ $# -gt 0 ]; do
+    case "$1" in
+        --nightcoop-zip)  need_arg "$1" $#; NIGHTCOOP_ZIP="$(readlink -m "$2")"; shift 2 ;;
+        --red4ext-zip)    need_arg "$1" $#; RED4EXT_ZIP="$(readlink -m "$2")"; shift 2 ;;
+        --vcredist)       need_arg "$1" $#; VCREDIST="$(readlink -m "$2")"; shift 2 ;;
+        --steam-root)     need_arg "$1" $#; OPT_STEAM_ROOT="$(readlink -m "$2")"; shift 2 ;;
+        --close-steam)    CLOSE_STEAM=1; shift ;;
+        --no-save-backup) SAVE_BACKUP=0; shift ;;
+        --dry-run)        DRY_RUN=1; shift ;;
+        -y|--yes)         ASSUME_YES=1; shift ;;
+        -h|--help)        usage; exit 0 ;;
+        *) fail "unknown option: $1 (see --help)" ;;
+    esac
+done
+
+# --------------------------------------------------------------- system ----
+OS_ID="" OS_LIKE="" OS_NAME="Linux" OS_FAMILY="other" DEVICE=""
+detect_os() {
+    local f="${NIGHTCOOP_OS_RELEASE:-/etc/os-release}"
+    osr() { sed -n "s/^$1=//p" "$f" 2>/dev/null | head -n1 | sed -e 's/^["'\'']//' -e 's/["'\'']$//'; }
+    if [ -r "$f" ]; then
+        OS_ID="$(osr ID)"; OS_LIKE="$(osr ID_LIKE)"
+        OS_NAME="$(osr PRETTY_NAME)"; OS_NAME="${OS_NAME:-${OS_ID:-Linux}}"
+    fi
+    case "$OS_ID" in
+        steamos) OS_FAMILY=steamos ;;
+        cachyos) OS_FAMILY=cachyos ;;
+        arch)    OS_FAMILY=arch ;;
+        *) case " $OS_LIKE " in *" arch "*) OS_FAMILY=archlike ;; esac ;;
+    esac
+    case "$(cat /sys/class/dmi/id/board_vendor 2>/dev/null || true):$(cat /sys/class/dmi/id/product_name 2>/dev/null || true)" in
+        Valve:Jupiter) DEVICE="Steam Deck LCD" ;;
+        Valve:Galileo) DEVICE="Steam Deck OLED" ;;
+    esac
+}
+is_arch_family() { case "$OS_FAMILY" in cachyos|arch|archlike) return 0 ;; esac; return 1; }
+
+need_tools() {
+    local t missing=() pkgs=()
+    for t in python3 curl sha256sum timeout find pgrep; do
+        command -v "$t" >/dev/null 2>&1 && continue
+        missing+=("$t")
+        case "$t" in python3) pkgs+=(python) ;; sha256sum|timeout) pkgs+=(coreutils) ;;
+                     find) pkgs+=(findutils) ;; pgrep) pkgs+=(procps-ng) ;; *) pkgs+=("$t") ;; esac
+    done
+    [ ${#missing[@]} -eq 0 ] && return 0
+    if is_arch_family; then
+        fail "missing tools: ${missing[*]}. Install them with: sudo pacman -S --needed ${pkgs[*]}"
+    elif [ "$OS_FAMILY" = steamos ]; then
+        fail "missing tools: ${missing[*]}. SteamOS ships these; a missing one points to a damaged system image (Settings > System > Software updates, or a SteamOS repair)."
+    else
+        fail "missing tools: ${missing[*]}. Install them with your package manager."
+    fi
+}
+
+game_running()  { pgrep -u "$(id -u)" -x 'Cyberpunk2077.e' >/dev/null 2>&1 || pgrep -u "$(id -u)" -x 'REDprelauncher.' >/dev/null 2>&1; }
+steam_running() { pgrep -u "$(id -u)" -x steam >/dev/null 2>&1 || pgrep -u "$(id -u)" -x steamwebhelper >/dev/null 2>&1; }
+in_game_mode()  { [ "${XDG_CURRENT_DESKTOP:-}" = gamescope ] || [ "${XDG_SESSION_DESKTOP:-}" = gamescope ]; }
+fs_type()       { findmnt -n -o FSTYPE --target "$1" 2>/dev/null || stat -f -c %T "$1" 2>/dev/null || echo unknown; }
+
+sha_check() { [ "$(sha256sum "$1" | cut -d' ' -f1)" = "${2,,}" ]; }
+
+download() {    # download <url> <dest> [quiet]
+    local -a progress=(-sS)
+    [ -z "${3:-}" ] && info "downloading $(basename "${1%%\?*}")" && [ -t 1 ] && progress=(--progress-bar)
+    curl -fL "${progress[@]}" --proto '=https,file' --proto-redir '=https' --retry 3 \
+         --connect-timeout 20 -o "$2" "$1"
+}
+
+# ----------------------------------------------------- locate Steam & game ----
+STEAM_ROOT="" STEAM_KIND="" GAME_LIB="" GAME_DIR="" GAME_VER="" GAME_VER_ALT=""
+COMPAT="" PFX="" SYS32="" USERREG="" SAVES="" PROTON_DIR="" PROTON_SRC="" SLR_ENTRY=""
+LIBS=()
+
+steam_candidates() {
+    local c
+    if [ -n "$OPT_STEAM_ROOT" ]; then echo "$OPT_STEAM_ROOT"; return 0; fi
+    for c in "$HOME/.local/share/Steam" "$HOME/.steam/steam" "$HOME/.steam/root" "$HOME/.steam/debian-installation" \
+             "$HOME/.var/app/com.valvesoftware.Steam/.local/share/Steam" "$HOME/.var/app/com.valvesoftware.Steam/data/Steam"; do
+        if [ -d "$c/steamapps" ]; then readlink -f "$c"; fi
+    done | awk '!seen[$0]++'
+}
+steam_kind() { case "$1" in */.var/app/com.valvesoftware.Steam/*) echo flatpak ;; *) echo native ;; esac; }
+
+locate_game() {
+    bold "Steam and Cyberpunk 2077"
+    local root kind lib inst checked=()
+    local -a roots
+    if [ -n "$OPT_STEAM_ROOT" ] && [ ! -d "$OPT_STEAM_ROOT/steamapps" ]; then fail "--steam-root $OPT_STEAM_ROOT has no steamapps folder"; fi
+    mapfile -t roots < <(steam_candidates)
+    [ ${#roots[@]} -gt 0 ] || fail "no Steam installation found in ~/.local/share/Steam, ~/.steam or the Flatpak location; pass --steam-root DIR if it is elsewhere"
+    for root in "${roots[@]}"; do
+        kind="$(steam_kind "$root")"; LIBS=()
+        while IFS=$'\x1f' read -r lib inst; do
+            LIBS+=("$lib"); checked+=("$lib")
+            if [ -z "$GAME_DIR" ] && [ -f "$lib/steamapps/common/${inst:-Cyberpunk 2077}/$GAME_EXE_REL" ]; then
+                GAME_LIB="$lib"; GAME_DIR="$lib/steamapps/common/${inst:-Cyberpunk 2077}"
+            fi
+        done < <(py libs "$root" "$kind" "$APPID")
+        if [ -n "$GAME_DIR" ]; then STEAM_ROOT="$root"; STEAM_KIND="$kind"; break; fi
+    done
+    [ -n "$GAME_DIR" ] || fail "Cyberpunk 2077 is not installed in any Steam library (checked: ${checked[*]:-none}). Install it, or mount the drive or SD card that holds it."
+    ok "Steam ($STEAM_KIND client): $STEAM_ROOT"
+    [ "$STEAM_KIND" = flatpak ] && info "Flatpak Steam: the files are reachable from outside the sandbox, so the install works the same way"
+    ok "game folder: $GAME_DIR"
+    IFS=$'\x1f' read -r GAME_VER GAME_VER_ALT < <(py gamever "$GAME_DIR/$GAME_EXE_REL") || true
+    GAME_VER="${GAME_VER:-$GAME_VER_ALT}"
+    if [ -n "$GAME_VER" ]; then ok "game version: $GAME_VER"; else warn "could not read the game version from Cyberpunk2077.exe"; fi
+}
+
+no_prefix_help() {
+    warn "no Proton prefix yet for Cyberpunk 2077"
+    if [ "$OS_FAMILY" = steamos ]; then
+        cat <<'EOF'
+
+  The game has not been started on this device yet. Launch Cyberpunk 2077 once
+  from Steam (Game Mode is fine), wait for the main menu, quit, then run this again.
+EOF
+    else
+        local tool="Proton Experimental"
+        [ "$OS_FAMILY" = cachyos ] && tool="Proton Experimental (or proton-cachyos)"
+        cat <<EOF
+
+  The game has never been started with Proton here. Do this first:
+    1. In Steam: right-click Cyberpunk 2077 > Properties > Compatibility, tick
+       "Force the use of a specific Steam Play compatibility tool" and pick
+       $tool.
+    2. Launch the game once, wait for the main menu, then quit.
+    3. Run this script again.
+EOF
+    fi
+}
+
+locate_prefix() {
+    local lib c fs
+    for lib in "$GAME_LIB" "${LIBS[@]}"; do
+        c="$lib/steamapps/compatdata/$APPID"
+        if [ -d "$c/pfx/drive_c/windows/system32" ]; then COMPAT="$c"; break; fi
+    done
+    [ -n "$COMPAT" ] || return 1
+    PFX="$COMPAT/pfx"; SYS32="$PFX/drive_c/windows/system32"; USERREG="$PFX/user.reg"
+    SAVES="$PFX/drive_c/users/steamuser/Saved Games/CD Projekt Red/Cyberpunk 2077"
+    fs="$(fs_type "$COMPAT")"
+    ok "Proton prefix: $COMPAT ($fs)"
+    case "$fs" in
+        ntfs|ntfs3|fuseblk|exfat|vfat|msdos)
+            warn "the prefix is on $fs. Proton prefixes on Windows file systems break in odd ways; move the game to an ext4 or btrfs library (Steam > Settings > Storage)." ;;
+    esac
+    return 0
+}
+
+locate_proton() {
+    IFS=$'\x1f' read -r PROTON_DIR PROTON_SRC < <(py proton "$STEAM_ROOT" "$STEAM_KIND" "$COMPAT" "$APPID" "${LIBS[@]}") || true
+    if [ -z "$PROTON_DIR" ]; then
+        warn "could not find the Proton build this game uses"
+        return 0
+    fi
+    ok "Proton: $(proton_label) (from $PROTON_SRC)"
+    SLR_ENTRY="$(py slr "$PROTON_DIR" "${LIBS[@]}" || true)"
+}
+proton_label() {
+    local v=""
+    [ -f "$PROTON_DIR/version" ] && v="$(head -n1 "$PROTON_DIR/version" | cut -s -d' ' -f2-)"
+    echo "$(basename "$PROTON_DIR")${v:+ ($v)}"
+}
+
+# ----------------------------------------------------------- state readers ----
+runtime_version() {
+    local f
+    f="$(findci "$SYS32" msvcp140.dll 2>/dev/null)" || { echo ""; return 0; }
+    pever "$f" file
+}
+red4ext_core_version() {   # red4ext_core_version <dir> : version if RED4ext.dll and its loader are both there
+    local f
+    if f="$(findci "$1" red4ext/RED4ext.dll 2>/dev/null)" && findci "$1" bin/x64/winmm.dll >/dev/null 2>&1; then
+        pever "$f" product
+    else
+        echo ""
+    fi
+}
+reg_state() {   # prints: ok | missing | noreg
+    local v
+    [ -f "$USERREG" ] || { echo noreg; return 0; }
+    if v="$(py reg-get "$USERREG" "$REG_KEY" winmm)" && [[ "${v,,}" == n* ]]; then echo ok; else echo missing; fi
+}
+latest_backup() {   # newest backup that has not been restored yet (new or legacy layout)
+    local d
+    for d in "$BACKUP_ROOT"/*/ "$HOME"/nightcoop-backup-*/; do
+        d="${d%/}"
+        [ -d "$d" ] && [ ! -e "$d/RESTORED" ] || continue
+        [ -f "$d/manifest.tsv" ] || [ -d "$d/game" ] || continue
+        printf '%s\t%s\n' "$(basename "$d" | sed 's/^nightcoop-backup-//')" "$d"
+    done | sort -r | head -n1 | cut -f2
+}
+wait_prefix_idle() {   # wait up to $1 s for the prefix's wineserver to exit
+    local t="${1:-20}"
+    while [ -n "$(py wsrv "$PFX")" ]; do
+        [ "$t" -le 0 ] && return 1
+        sleep 1; t=$((t - 1))
+    done
+    return 0
+}
+
+newest() {   # newest <dir> <depth> : most recently modified *.log below dir
+    find "$1" -maxdepth "$2" -type f -name '*.log' -printf '%T@ %p\n' 2>/dev/null | sort -rn | head -n1 | cut -d' ' -f2- || true
+}
+
+runtime_verdict() {   # runtime_verdict <version> <wanted>
+    if [ -z "$1" ]; then echo "msvcp140.dll missing"
+    elif ver_ge "$1" "$2"; then echo "$1 (ok)"
+    elif ver_ge "$1" "$RUNTIME_FLOOR"; then echo "$1 (works; $2 or newer recommended)"
+    else echo "$1 (too old: RED4ext fails with error 998; needs $RUNTIME_FLOOR or newer)"; fi
+}
+
+# ------------------------------------------------------------------ check ----
+do_check() {
+    bold "Current state"
+    local f v crt who lo lo_val mm log nlog
+    v="$(red4ext_core_version "$GAME_DIR")"
+    if [ -n "$v" ]; then row "RED4ext" "$v $(ver_ge "$v" "$RED4EXT_VER" && echo '(ok)' || echo "(older than $RED4EXT_VER)")"
+    elif f="$(findci "$GAME_DIR" red4ext/RED4ext.dll 2>/dev/null)"; then row "RED4ext" "RED4ext.dll present but bin/x64/winmm.dll (its loader) is missing"
+    else row "RED4ext" "not installed"; fi
+    local plugins; plugins="$(findci "$GAME_DIR" red4ext/plugins 2>/dev/null || true)"
+    f=""; [ -n "$plugins" ] && f="$(find "$plugins" -maxdepth 2 -type f -iname nightcoop.dll 2>/dev/null | head -n1 || true)"
+    if [ -n "$f" ]; then
+        v="$(pever "$f" product)"
+        row "NightCoop" "${v:+$v, }$(date -r "$f" +%F)${NC_INSTALLED:+, release $NC_INSTALLED}"
+    else row "NightCoop" "not installed"; fi
+    if [ -z "$COMPAT" ]; then row "Proton prefix" "missing (launch the game once)"; return 0; fi
+    IFS=$'\x1f' read -r crt who < <(py pecrt "$GAME_DIR/red4ext" "$GAME_DIR/bin/x64/winmm.dll") || true
+    local want="$RUNTIME_FLOOR"; [ -n "$crt" ] && ver_ge "$crt" "$want" && want="$crt"
+    local rv; rv="$(runtime_version)"
+    row "C++ runtime (prefix)" "$(runtime_verdict "$rv" "$want")"
+    if [ -z "$rv" ] || ! ver_ge "$rv" "$RUNTIME_FLOOR"; then
+        info "fix: run '$0' again (it installs the runtime); if that does not help:"
+        protontricks_hint
+    fi
+    [ -n "$crt" ] && row "DLLs built with" "MSVC $crt (newest: $who)"
+    case "$(reg_state)" in
+        ok) row "winmm override" "set in the prefix registry" ;;
+        noreg) row "winmm override" "prefix has no user.reg" ;;
+        *) row "winmm override" "not in the prefix registry" ;;
+    esac
+    IFS=$'\x1f' read -r lo lo_val < <(py lo-status "$STEAM_ROOT" "$APPID") || true
+    case "$lo" in
+        ok) row "launch options" "set ($lo_val)" ;;
+        broken) row "launch options" "WINEDLLOVERRIDES present but placed after %command% or without it: $lo_val" ;;
+        missing) row "launch options" "no winmm override${lo_val:+ (current: $lo_val)}" ;;
+        *) row "launch options" "Steam user config not found" ;;
+    esac
+    if [ "$(reg_state)" != ok ] && [ "$lo" != ok ]; then
+        warn "neither override is set: Proton will ignore RED4ext's loader and the mod will not start"
+    fi
+    mm="$(cat /proc/sys/vm/max_map_count 2>/dev/null || echo 0)"
+    if [ "$mm" -ge 1048576 ] 2>/dev/null; then row "vm.max_map_count" "$mm"
+    else
+        warn "vm.max_map_count is $mm; Cyberpunk 2077 wants 1048576 or more"
+        is_arch_family && info "fix: echo 'vm.max_map_count = 1048576' | sudo tee /etc/sysctl.d/80-cyberpunk.conf && sudo sysctl --system"
+    fi
+    log="$(newest "$(findci "$GAME_DIR" red4ext/logs 2>/dev/null || echo /nonexistent)" 1)"
+    if [ -n "$log" ]; then
+        row "latest RED4ext log" "$(basename "$log")"
+        grep -E 'is initializing|Product version|plugin\(s\) loaded|has been loaded|\[error|\[critical' "$log" 2>/dev/null | head -n8 | sed 's/^/      /' || true
+        [ -s "$log" ] || warn "the log is empty: RED4ext crashed before it could write (the error 998 symptom; run install again)"
+    else
+        row "latest RED4ext log" "none yet (game not started since install)"
+    fi
+    nlog=""; [ -n "$plugins" ] && nlog="$(newest "$plugins" 3)"
+    [ -n "$nlog" ] && row "latest plugin log" "${nlog#"$GAME_DIR"/}"
+    f="$(latest_backup)"; [ -n "$f" ] && row "latest backup" "$f"
+    return 0
+}
+
+# ------------------------------------------------------- restore/uninstall ----
+restore_one() {   # restore_one <backup dir>
+    local b="$1" missing left had key name prev
+    bold "Restoring from $b"
+    if [ -f "$b/info.tsv" ]; then
+        local recorded; recorded="$(sed -n 's/^game_dir\t//p' "$b/info.tsv")"
+        [ -z "$recorded" ] || [ "$recorded" = "$GAME_DIR" ] || warn "this backup was made for $recorded; restoring into $GAME_DIR"
+    fi
+    if [ -f "$b/manifest.tsv" ]; then
+        IFS=$'\x1f' read -r missing left < <(py tree-restore "$b/manifest.tsv" "$b/game" "$GAME_DIR") \
+            || fail "restoring the game folder from $b failed"
+        ok "game folder restored"
+        [ "${missing:-0}" = 0 ] || warn "$missing backed-up file(s) were missing from the backup"
+        [ -z "$left" ] || info "left in place because they now hold other files (logs, other mods): $left"
+    elif [ -d "$b/game" ]; then   # backup made by the 1.x (Bazzite) script
+        if [ -f "$b/game/bin/x64/winmm.dll" ]; then cp -a "$b/game/bin/x64/winmm.dll" "$GAME_DIR/bin/x64/winmm.dll"; else rm -f "$GAME_DIR/bin/x64/winmm.dll"; fi
+        rm -rf "$GAME_DIR/red4ext"
+        if [ -d "$b/game/red4ext" ]; then cp -a "$b/game/red4ext" "$GAME_DIR/red4ext"; fi
+        ok "game folder restored (backup from the earlier script)"
+    fi
+    if [ -n "$COMPAT" ] && [ -d "$b/prefix-runtime" ] && [ -n "$(ls -A "$b/prefix-runtime" 2>/dev/null)" ]; then
+        cp -a "$b/prefix-runtime/." "$SYS32/"
+        ok "prefix C++ runtime restored ($(runtime_version))"
+    fi
+    if [ -n "$COMPAT" ] && [ -f "$b/registry.tsv" ] && [ -f "$USERREG" ]; then
+        wait_prefix_idle 30 || fail "Wine is still running in the game's prefix; wait a moment and try again"
+        while IFS=$'\t' read -r had key name prev; do
+            if [ "$had" = 1 ]; then py reg-set "$USERREG" "$key" "$name" "$prev"; else py reg-del "$USERREG" "$key" "$name"; fi
+        done < "$b/registry.tsv"
+        ok "prefix registry override restored"
+    fi
+    date -Is > "$b/RESTORED"
+}
+
+do_restore() {
+    game_running && fail "Cyberpunk 2077 is running; quit it first"
+    local b="${RESTORE_DIR:-$(latest_backup)}"
+    [ -n "$b" ] || fail "no backup to restore (looked in $BACKUP_ROOT)"
+    [ -d "$b" ] || fail "no such backup folder: $b"
+    [ -n "$RESTORE_DIR" ] || info "most recent backup: $b"
+    confirm "Restore the game folder and prefix from this backup?" || { info "aborted"; exit 1; }
+    restore_one "$b"
+    info "Steam launch options were not changed; clear them under Properties > General if you wish."
+}
+
+do_uninstall() {
+    game_running && fail "Cyberpunk 2077 is running; quit it first"
+    local b n=0
+    [ -n "$(latest_backup)" ] || fail "nothing to uninstall: no install backups in $BACKUP_ROOT"
+    confirm "Undo every NightCoop install made by this script, newest first?" || { info "aborted"; exit 1; }
+    while b="$(latest_backup)" && [ -n "$b" ]; do restore_one "$b"; n=$((n + 1)); done
+    rm -f "$DATA_DIR/installed.tsv"
+    echo
+    ok "$n install(s) undone; backups (and any save copies) remain in $BACKUP_ROOT"
+    info "Steam launch options were not changed; remove WINEDLLOVERRIDES under Properties > General if you wish."
+}
+
+# ---------------------------------------------------------------- install ----
+NC_STATUS="" NC_VER="" NC_URL="" NC_SHA="" NC_GAMES="" NC_PROTO="" NC_R4="" NC_MATCHED="" NC_YANKED=""
+NC_ROOT="" NC_DLL_REL="" R4_CHOICE="" R4_FINAL="" RT_WANT="" RT_TARGET="" RV="" NEED_RT=0 VCREDIST_VER=""
+REG_STATE="" LO_STATE="" LO_VALUE="" RESTART_STEAM=0
+
+step_nightcoop() {
+    bold "NightCoop build"
+    local local_sha=""
+    if [ -n "$NIGHTCOOP_ZIP" ]; then
+        [ -f "$NIGHTCOOP_ZIP" ] || fail "no such file: $NIGHTCOOP_ZIP"
+        local_sha="$(sha256sum "$NIGHTCOOP_ZIP" | cut -d' ' -f1)"
+        ok "local archive: $NIGHTCOOP_ZIP"
+    fi
+    NC_STATUS=offline
+    if download "$NIGHTCOOP_SITE/releases.json" "$TMP/releases.json" quiet 2>/dev/null; then
+        IFS=$'\x1f' read -r NC_STATUS NC_VER NC_URL NC_SHA NC_GAMES NC_PROTO NC_R4 NC_MATCHED NC_YANKED \
+            < <(py pick "$TMP/releases.json" "$GAME_VER,$GAME_VER_ALT" "$NIGHTCOOP_SITE" "$local_sha") || NC_STATUS=error
+    else
+        warn "could not reach $NIGHTCOOP_SITE; working offline"
+    fi
+    case "$NC_STATUS" in
+        match)
+            ok "archive verified: NightCoop $NC_VER for game $NC_GAMES, protocol $NC_PROTO${NC_R4:+, bundles RED4ext $NC_R4} (SHA-256 matches the site)"
+            [ "$NC_YANKED" = 1 ] && warn "the developers have withdrawn (yanked) this build"
+            [ "$NC_MATCHED" = 1 ] || warn "this build does not list game version '${GAME_VER:-unknown}'; it may refuse to load" ;;
+        ok)
+            if [ -n "$NIGHTCOOP_ZIP" ]; then
+                [ "$(basename "$NIGHTCOOP_ZIP")" != "$(basename "${NC_URL:-none}")" ] || \
+                    fail "SHA-256 mismatch: $NIGHTCOOP_ZIP has the name of the published $NC_VER archive but different content; delete it and run again without --nightcoop-zip"
+                warn "this archive is not listed on $NIGHTCOOP_SITE, so it cannot be verified (the site's build for this game version is $NC_VER)"
+                NC_VER="local:$(basename "$NIGHTCOOP_ZIP")"; NC_PROTO=""
+            else
+                ok "build for game ${GAME_VER:-?}: NightCoop $NC_VER (for game $NC_GAMES, protocol $NC_PROTO${NC_R4:+, bundles RED4ext $NC_R4})"
+                [ "$NC_MATCHED" = 1 ] || warn "NightCoop $NC_VER does not list game version '${GAME_VER:-unknown}'; it may refuse to load"
+                [ -n "$NC_URL" ] || fail "the site lists no download for $NC_VER; download it from $NIGHTCOOP_SITE and pass --nightcoop-zip FILE"
+                NIGHTCOOP_ZIP="$TMP/$(basename "${NC_URL%%\?*}")"
+                download "$NC_URL" "$NIGHTCOOP_ZIP" || fail "download failed: $NC_URL"
+                if [ -z "$NC_SHA" ]; then warn "the site publishes no checksum for this archive"
+                elif sha_check "$NIGHTCOOP_ZIP" "$NC_SHA"; then ok "SHA-256 matches the site's release list"
+                else fail "SHA-256 mismatch for the downloaded $NIGHTCOOP_ZIP"; fi
+            fi ;;
+        none|error|offline)
+            [ "$NC_STATUS" = none ] && warn "the site lists no builds"
+            [ "$NC_STATUS" = error ] && warn "the site's release list could not be read"
+            [ -n "$NIGHTCOOP_ZIP" ] || fail "cannot work out what to download; get the archive from $NIGHTCOOP_SITE and pass --nightcoop-zip FILE"
+            warn "installing $NIGHTCOOP_ZIP without verification"
+            NC_VER="local:$(basename "$NIGHTCOOP_ZIP")" ;;
+    esac
+    return 0
+}
+
+step_stage() {
+    mkdir -p "$TMP/nc" "$TMP/stage"
+    py unzip "$NIGHTCOOP_ZIP" "$TMP/nc" || fail "could not unpack $NIGHTCOOP_ZIP"
+    IFS=$'\x1f' read -r NC_ROOT NC_DLL_REL < <(py ncroot "$TMP/nc") \
+        || fail "the archive has no red4ext/plugins/<name>/NightCoop.dll; is it a NightCoop release?"
+    find "$NC_ROOT" -mindepth 1 -maxdepth 1 -type d ! -name __MACOSX -exec cp -a {} "$TMP/stage/" \;
+    local skipped; skipped="$(find "$NC_ROOT" -mindepth 1 -maxdepth 1 -type f -printf '%f ' || true)"
+    ok "archive holds $(find "$TMP/stage" -type f | wc -l) files for the game folder, plugin $NC_DLL_REL"
+    [ -z "$skipped" ] || info "top-level documents left out of the game folder: $skipped"
+}
+
+step_red4ext() {
+    bold "RED4ext"
+    local inst bundled pin_ver="$RED4EXT_VER" src r4dir="$TMP/r4"
+    inst="$(red4ext_core_version "$GAME_DIR")"
+    bundled="$(red4ext_core_version "$TMP/stage")"
+    if [ -n "$RED4EXT_ZIP" ]; then   # a local archive may be a newer release than the pinned one
+        [ -f "$RED4EXT_ZIP" ] || fail "no such file: $RED4EXT_ZIP"
+        mkdir -p "$r4dir"; py unzip "$RED4EXT_ZIP" "$r4dir" || fail "could not unpack $RED4EXT_ZIP"
+        pin_ver="$(red4ext_core_version "$r4dir")"
+        [ -n "$pin_ver" ] || fail "$RED4EXT_ZIP is not a RED4ext release (needs red4ext/RED4ext.dll and bin/x64/winmm.dll)"
+    fi
+    info "installed: ${inst:-none}; bundled with NightCoop: ${bundled:-none}; ${RED4EXT_ZIP:+local }release: $pin_ver"
+    if [ -n "$bundled" ] && ver_ge "$bundled" "$pin_ver" && { [ -z "$inst" ] || ver_ge "$bundled" "$inst"; }; then
+        R4_CHOICE=bundled; R4_FINAL="$bundled"
+        ok "using RED4ext $bundled from the NightCoop archive"
+    elif [ -n "$inst" ] && ! ver_ge "$pin_ver" "$inst" && { [ -z "$bundled" ] || ! ver_ge "$bundled" "$inst"; }; then
+        R4_CHOICE=installed; R4_FINAL="$inst"
+        py rmci "$TMP/stage" "${RED4EXT_CORE[@]}"
+        ok "keeping the installed RED4ext $inst, which is newer"
+    else
+        R4_CHOICE=release; R4_FINAL="$pin_ver"
+        if [ -n "$RED4EXT_ZIP" ]; then
+            src="$RED4EXT_ZIP"
+        else
+            src="$TMP/red4ext-$RED4EXT_VER.zip"
+            download "$RED4EXT_URL" "$src" || fail "download failed: $RED4EXT_URL"
+            mkdir -p "$r4dir"; py unzip "$src" "$r4dir" || fail "could not unpack $src"
+            [ -n "$(red4ext_core_version "$r4dir")" ] || fail "unexpected RED4ext archive layout"
+        fi
+        if sha_check "$src" "$RED4EXT_SHA"; then ok "RED4ext $pin_ver archive verified (SHA-256)"
+        elif [ -n "$RED4EXT_ZIP" ] && [ "$(py vge "$pin_ver" "$RED4EXT_VER" && py vge "$RED4EXT_VER" "$pin_ver" && echo same)" != same ]; then
+            warn "RED4ext $pin_ver from $RED4EXT_ZIP cannot be verified (only $RED4EXT_VER is pinned)"
+        else fail "SHA-256 mismatch for $src (expected $RED4EXT_SHA)"; fi
+        py rmci "$TMP/stage" "${RED4EXT_CORE[@]}"
+        py merge "$r4dir" "$TMP/stage"
+        if [ -n "$bundled" ]; then ok "RED4ext $pin_ver will replace the bundled $bundled"; else ok "RED4ext $pin_ver will be installed"; fi
+    fi
+}
+
+pick_vcredist() {   # sets VCREDIST and VCREDIST_VER to the newest installer at hand
+    local c v best="" bestv="" lib cache="$CACHE_DIR/vc_redist.x64.exe" url
+    vc_ok() { [[ "$(py pestr "$1" FileDescription)$(py pestr "$1" ProductName)" == *"Visual C++"* ]] && ver_ge "$(pever "$1")" 14.0; }
+    consider() { v="$(pever "$1")"; if [ -n "$v" ] && { [ -z "$bestv" ] || ! ver_ge "$bestv" "$v"; }; then best="$1"; bestv="$v"; fi; }
+    if [ -n "$VCREDIST" ]; then
+        if [ ! -f "$VCREDIST" ] || ! vc_ok "$VCREDIST"; then fail "$VCREDIST is not a Visual C++ redistributable installer"; fi
+        consider "$VCREDIST"
+    else
+        for lib in "${LIBS[@]}"; do
+            for c in "$lib/steamapps/common/Steamworks Shared/_CommonRedist/vcredist"/*/VC_redist.x64.exe; do
+                if [ -f "$c" ] && vc_ok "$c"; then consider "$c"; fi
+            done
+        done
+        if [ -f "$cache" ] && vc_ok "$cache"; then consider "$cache"; fi
+        if { [ -z "$bestv" ] || ! ver_ge "$bestv" "$RT_WANT"; } && ! { [ -f "$cache" ] && [ -n "$(find "$cache" -mtime -7 2>/dev/null)" ]; }; then
+            if [ "$DRY_RUN" = 1 ]; then
+                VCREDIST="${VCREDIST_URLS[0]}"; VCREDIST_VER="newest from Microsoft"; return 0
+            else
+                mkdir -p "$CACHE_DIR"
+                for url in "${VCREDIST_URLS[@]}"; do
+                    if download "$url" "$cache.part" && vc_ok "$cache.part"; then mv -f "$cache.part" "$cache"; consider "$cache"; break; fi
+                    rm -f "$cache.part"; warn "no usable installer from $url"
+                done
+            fi
+        fi
+    fi
+    VCREDIST="$best"; VCREDIST_VER="$bestv"
+}
+
+step_runtime() {
+    bold "Microsoft Visual C++ runtime in the Proton prefix"
+    local crt who
+    local -a extra=()
+    if [ "$R4_CHOICE" = installed ]; then
+        extra=("$(findci "$GAME_DIR" red4ext/RED4ext.dll)" "$(findci "$GAME_DIR" bin/x64/winmm.dll)")
+    fi
+    IFS=$'\x1f' read -r crt who < <(py pecrt "$TMP/stage" "${extra[@]}") || true
+    RT_WANT="$RUNTIME_FLOOR"; [ -n "$crt" ] && ver_ge "$crt" "$RT_WANT" && RT_WANT="$crt"
+    RV="$(runtime_version)"
+    info "the mod's DLLs are built with MSVC ${crt:-unknown}${who:+ ($who)}; the prefix has ${RV:-no msvcp140.dll}"
+    if [ -n "$RV" ] && ver_ge "$RV" "$RT_WANT"; then ok "runtime $RV is new enough"; return 0; fi
+    pick_vcredist
+    if [ "$DRY_RUN" = 1 ] && [[ "$VCREDIST" == *://* ]]; then
+        NEED_RT=1; RT_TARGET="$RT_WANT"; info "(dry run) would download the newest runtime from Microsoft"; return 0
+    fi
+    if [ -z "$VCREDIST" ]; then
+        if [ -n "$RV" ] && ver_ge "$RV" "$RUNTIME_FLOOR"; then warn "no installer available; keeping runtime $RV, which usually works"; return 0; fi
+        fail "no Visual C++ runtime installer available; download VC_redist.x64.exe from Microsoft and pass --vcredist FILE"
+    fi
+    if [ -n "$RV" ] && ver_ge "$RV" "$VCREDIST_VER"; then
+        if ver_ge "$RV" "$RUNTIME_FLOOR"; then ok "runtime $RV is the newest Microsoft offers right now; it works with builds from MSVC $RT_WANT"
+        else warn "runtime $RV is too old and no newer installer is available"; fi
+        return 0
+    fi
+    NEED_RT=1
+    RT_TARGET="$RT_WANT"; ver_ge "$VCREDIST_VER" "$RT_WANT" || RT_TARGET="$VCREDIST_VER"
+    ok "installer: ${VCREDIST} ($VCREDIST_VER)"
+    [ -n "$PROTON_DIR" ] || warn "no Proton build found to run it with; the runtime step will be skipped"
+}
+
+step_override() {
+    bold "DLL override for RED4ext's loader"
+    REG_STATE="$(reg_state)"
+    case "$REG_STATE" in
+        ok) ok "prefix registry already has winmm = native,builtin" ;;
+        missing) info "prefix registry: will add winmm = native,builtin for Cyberpunk2077.exe" ;;
+        *) warn "the prefix has no user.reg; relying on the launch options" ;;
+    esac
+    IFS=$'\x1f' read -r LO_STATE LO_VALUE < <(py lo-status "$STEAM_ROOT" "$APPID") || LO_STATE=nofile
+    case "$LO_STATE" in
+        ok) ok "launch options already contain the override" ;;
+        nofile) warn "Steam's per-user config was not found; launch options cannot be checked" ;;
+        *)
+            if ! steam_running; then info "launch options: will be set to $(py lo-merge "$LO_VALUE" | cut -d$'\x1f' -f2)"
+            elif [ "$CLOSE_STEAM" = 1 ]; then
+                in_game_mode && fail "--close-steam would end the Game Mode session; run this from Desktop Mode"
+                steam_launcher_ok || fail "--close-steam: the steam command was not found in PATH"
+                info "launch options: Steam will be closed and reopened to write them"
+            else info "launch options: Steam is running, so they will not be written (the registry override is enough)"; fi ;;
+    esac
+}
+
+print_plan() {
+    echo
+    bold "Plan"
+    local added replaced removed rel stale=()
+    { IFS=$'\x1f' read -r added replaced removed
+      while IFS=$'\x1f' read -r _ rel; do stale+=("$rel"); done
+    } < <(py tree-plan "$TMP/stage" "$GAME_DIR" "${PREV_BACKUP:+$PREV_BACKUP/manifest.tsv}" "${RED4EXT_CORE[@]}")
+    if [ "$SAVE_BACKUP" = 1 ] && [ -d "$SAVES" ]; then info "back up saves   -> $BACKUP/Saved Games ($(du -sh "$SAVES" 2>/dev/null | cut -f1))"; fi
+    info "back up files   -> $BACKUP"
+    info "install         NightCoop ${NC_VER:-?}: $added new, $replaced replaced file(s) in the game folder"
+    [ "${removed:-0}" = 0 ] || info "remove          $removed file(s) the previous install left behind: ${stale[*]}"
+    info "RED4ext         $R4_FINAL ($R4_CHOICE)"
+    [ "$NEED_RT" = 1 ] && info "run             VC_redist.x64.exe ${VCREDIST_VER} quietly in the game's Proton prefix"
+    [ "$REG_STATE" = missing ] && info "registry        winmm = native,builtin for Cyberpunk2077.exe"
+    if [ "$LO_STATE" = missing ] || [ "$LO_STATE" = broken ]; then
+        if ! steam_running || [ "$CLOSE_STEAM" = 1 ]; then info "launch options  $(py lo-merge "$LO_VALUE" | cut -d$'\x1f' -f2)"; fi
+    fi
+    return 0
+}
+
+run_in_prefix() {   # run_in_prefix direct|slr <windows exe> [args...]
+    local how="$1"; shift
+    local libpaths; libpaths="$(IFS=:; echo "${LIBS[*]}")"
+    local -a cmd=("$PROTON_DIR/proton" run "$@")
+    [ "$how" = slr ] && cmd=("$SLR_ENTRY" --verb=waitforexitandrun -- "$PROTON_DIR/proton" waitforexitandrun "$@")
+    env STEAM_COMPAT_CLIENT_INSTALL_PATH="$STEAM_ROOT" STEAM_COMPAT_DATA_PATH="$COMPAT" \
+        STEAM_COMPAT_INSTALL_PATH="$GAME_DIR" STEAM_COMPAT_LIBRARY_PATHS="$libpaths" \
+        STEAM_COMPAT_APP_ID="$APPID" SteamAppId="$APPID" SteamGameId="$APPID" \
+        PRESSURE_VESSEL_FILESYSTEMS_RO="$(dirname "$1")" PROTONFIXES_DISABLE=1 \
+        timeout 900 "${cmd[@]}"
+}
+
+apply_runtime() {
+    [ "$NEED_RT" = 1 ] && [ -n "$PROTON_DIR" ] || return 0
+    bold "Installing the Visual C++ runtime into the prefix"
+    [ -n "${DISPLAY:-}${WAYLAND_DISPLAY:-}" ] || warn "no graphical session found (DISPLAY is unset); if the installer fails, run this from a desktop terminal (Steam Deck: Desktop Mode > Konsole)"
+    info "running the Microsoft installer with $(proton_label); this takes a minute or two"
+    local how rc
+    for how in direct slr; do
+        if [ "$how" = slr ]; then
+            [ -n "$SLR_ENTRY" ] || break
+            info "retrying inside the Steam Linux Runtime ($(basename "$(dirname "$SLR_ENTRY")"))"
+        fi
+        rc=0; run_in_prefix "$how" "$VCREDIST" /install /quiet /norestart >>"$BACKUP/vcredist.log" 2>&1 || rc=$?
+        wait_prefix_idle 60 || true
+        case "$rc" in
+            0) ;; 194) info "the installer asked for a reboot (Windows code 3010); not needed under Proton" ;;
+            102) info "the installer reports a newer runtime is already registered (code 1638)" ;;
+            124) warn "the installer timed out" ;; *) warn "the installer exited with code $rc" ;;
+        esac
+        RV="$(runtime_version)"
+        if [ -n "$RV" ] && ver_ge "$RV" "$RT_TARGET"; then ok "prefix runtime is now $RV"; return 0; fi
+    done
+    warn "the prefix runtime is still ${RV:-missing} (log: $BACKUP/vcredist.log)"
+    protontricks_hint
+}
+
+protontricks_hint() {
+    info "Fallback: install the runtime with protontricks, then run '$0 check':"
+    case "$OS_FAMILY" in
+        steamos)
+            info "  1. Desktop Mode > Discover: install \"Protontricks\" (Flathub)"
+            info "  2. flatpak run com.github.Matoking.protontricks $APPID --force vcrun2022"
+            info "  If the game is on an SD card, first: flatpak override --user --filesystem=/run/media com.github.Matoking.protontricks" ;;
+        cachyos|arch|archlike)
+            info "  paru -S protontricks   (any AUR helper; or Flathub com.github.Matoking.protontricks)"
+            info "  protontricks $APPID --force vcrun2022" ;;
+        *)
+            info "  protontricks $APPID --force vcrun2022   (Flathub: com.github.Matoking.protontricks)" ;;
+    esac
+}
+
+close_steam() {
+    if [ "$STEAM_KIND" = flatpak ]; then flatpak run com.valvesoftware.Steam -shutdown >/dev/null 2>&1 &
+    else steam -shutdown >/dev/null 2>&1 & fi
+    local _
+    for _ in $(seq 1 60); do steam_running || return 0; sleep 1; done
+    return 1
+}
+start_steam() {
+    if [ "$STEAM_KIND" = flatpak ]; then setsid -f flatpak run com.valvesoftware.Steam >/dev/null 2>&1 </dev/null || warn "could not reopen Steam"
+    else setsid -f steam >/dev/null 2>&1 </dev/null || warn "could not reopen Steam"; fi
+}
+steam_launcher_ok() { if [ "$STEAM_KIND" = flatpak ]; then command -v flatpak >/dev/null 2>&1; else command -v steam >/dev/null 2>&1; fi; }
+
+apply_launch_options() {
+    case "$LO_STATE" in ok|nofile) return 0 ;; esac
+    if steam_running; then
+        [ "$CLOSE_STEAM" = 1 ] || return 0
+        bold "Closing Steam to write the launch options"
+        if close_steam; then RESTART_STEAM=1; else warn "Steam did not close within a minute; launch options not written"; return 0; fi
+    fi
+    bold "Writing Steam launch options"
+    local f res
+    while IFS=$'\x1f' read -r f res; do info "user $(basename "$(dirname "$(dirname "$f")")"): $res"; done < <(py lo-set "$STEAM_ROOT" "$APPID")
+    IFS=$'\x1f' read -r LO_STATE LO_VALUE < <(py lo-status "$STEAM_ROOT" "$APPID") || true
+    if [ "$LO_STATE" = ok ]; then ok "launch options set"; else warn "could not set the launch options automatically"; fi
+}
+
+do_install() {
+    game_running && fail "Cyberpunk 2077 is running. Quit it and run this again."
+    [ -n "$COMPAT" ] || { no_prefix_help; exit 1; }
+    STAMP="$(date +%Y-%m-%d-%H%M%S)"; BACKUP="$BACKUP_ROOT/$STAMP"
+    PREV_BACKUP="$(latest_backup)"
+    [ -n "$PREV_BACKUP" ] && [ ! -f "$PREV_BACKUP/manifest.tsv" ] && PREV_BACKUP=""
+
+    step_nightcoop
+    step_stage
+    step_red4ext
+    step_runtime
+    step_override
+    print_plan
+    if [ "$DRY_RUN" = 1 ]; then echo; ok "dry run finished; nothing was changed"; return 0; fi
+    echo
+    confirm "Go ahead?" || { info "aborted"; exit 1; }
+
+    bold "Backing up"
+    mkdir -p "$BACKUP/game"
+    printf 'created\t%s\nscript\t%s\ngame_dir\t%s\nprefix\t%s\nnightcoop\t%s\nred4ext\t%s\n' \
+        "$(date -Is)" "$SCRIPT_VERSION" "$GAME_DIR" "$COMPAT" "${NC_VER:-unknown}" "$R4_FINAL" > "$BACKUP/info.tsv"
+    if [ "$SAVE_BACKUP" = 1 ] && [ -d "$SAVES" ]; then
+        local need avail
+        need="$(du -sb "$SAVES" | cut -f1)"; avail="$(df -B1 --output=avail "$BACKUP" | tail -n1 | tr -d ' ')"
+        if [ "$need" -lt $((avail - 1073741824)) ]; then
+            cp -a --reflink=auto "$SAVES" "$BACKUP/Saved Games"
+            ok "saves copied ($(human "$need"), $(find "$BACKUP/Saved Games" -mindepth 1 -maxdepth 1 | wc -l) entries)"
+        else
+            warn "not enough free space to copy the saves ($(human "$need") needed); skipped"
+        fi
+    fi
+    if [ "$NEED_RT" = 1 ]; then
+        mkdir -p "$BACKUP/prefix-runtime"
+        find "$SYS32" -maxdepth 1 -type f \( -iname 'msvcp140*.dll' -o -iname 'vcruntime140*.dll' -o -iname concrt140.dll -o -iname vccorlib140.dll \) \
+            -exec cp -a {} "$BACKUP/prefix-runtime/" \;
+    fi
+    [ -f "$USERREG" ] && cp -a "$USERREG" "$BACKUP/user.reg"
+
+    bold "Installing NightCoop and RED4ext"
+    local added replaced removed
+    IFS=$'\x1f' read -r added replaced removed < <(py tree-apply "$TMP/stage" "$GAME_DIR" "$BACKUP/game" \
+        "$BACKUP/manifest.tsv" "${PREV_BACKUP:+$PREV_BACKUP/manifest.tsv}" "${RED4EXT_CORE[@]}") \
+        || fail "copying into the game folder failed; undo with: $0 restore \"$BACKUP\""
+    ok "$added added, $replaced replaced, $removed stale removed; backup: $BACKUP"
+    local r4; r4="$(red4ext_core_version "$GAME_DIR")"
+    if [ -n "$r4" ] && ver_ge "$r4" "$R4_FINAL"; then ok "RED4ext $r4 in place"; else fail "RED4ext reports '${r4:-nothing}' after the install"; fi
+
+    if [ "$REG_STATE" = missing ]; then
+        bold "Adding the winmm override to the prefix registry"
+        wait_prefix_idle 30 || fail "Wine is still running in the game's prefix (wineserver $(py wsrv "$PFX" | tr '\n' ' ')); close it and run again"
+        local prev had=0
+        if prev="$(py reg-get "$USERREG" "$REG_KEY" winmm)"; then had=1; fi
+        printf '%s\t%s\t%s\t%s\n' "$had" "$REG_KEY" winmm "$prev" > "$BACKUP/registry.tsv"
+        py reg-set "$USERREG" "$REG_KEY" winmm native,builtin
+        ok "HKCU\\$REG_KEY: winmm = native,builtin"
+    fi
+    apply_runtime
+    apply_launch_options
+    REG_STATE="$(reg_state)"
+
+    mkdir -p "$DATA_DIR"
+    printf 'version\t%s\nprotocol\t%s\ngame\t%s\nred4ext\t%s\ninstalled\t%s\nbackup\t%s\n' \
+        "${NC_VER:-unknown}" "${NC_PROTO:-}" "${NC_GAMES:-}" "$R4_FINAL" "$(date -Is)" "$BACKUP" > "$DATA_DIR/installed.tsv"
+    NC_INSTALLED="${NC_VER:-}"
+    [ "$RESTART_STEAM" = 1 ] && { info "reopening Steam"; start_steam; }
+
+    echo
+    bold "Done"
+    do_check
+    echo
+    if [ "$REG_STATE" != ok ] && [ "$LO_STATE" != ok ]; then
+        bold "One manual step left"
+        info "In Steam: right-click Cyberpunk 2077 > Properties > General > Launch Options, and enter:"
+        echo; info "    $(py lo-merge "$LO_VALUE" | cut -d$'\x1f' -f2)"; echo
+        info "Without it Proton ignores RED4ext's loader and the mod never starts."
+    elif [ "$LO_STATE" != ok ] && [ "$LO_STATE" != nofile ]; then
+        info "Optional: the prefix override is enough, but you can also add this to the game's"
+        info "launch options (survives a prefix reset): $(py lo-merge "$LO_VALUE" | cut -d$'\x1f' -f2)"
+    fi
+    echo
+    if [ "$OS_FAMILY" = steamos ]; then
+        info "Return to Game Mode (or stay in Desktop Mode) and launch Cyberpunk 2077 from Steam."
+    else
+        info "Launch Cyberpunk 2077 from Steam."
+    fi
+    cat <<EOF
+  The main menu should show a Co-op entry ("Совместная игра" in Russian builds).
+  If it does not, run:  $0 check
+
+  Backups of everything replaced are in: $BACKUP
+  To undo this install:  $0 restore
+EOF
+}
+
+# ------------------------------------------------------------------- main ----
+cleanup() { if [ -n "${TMP:-}" ]; then rm -rf "$TMP"; fi; }
+main() {
+    [ "$(id -u)" != 0 ] || [ "${NIGHTCOOP_ALLOW_ROOT:-0}" = 1 ] || fail "run this as your normal user, not root (no sudo needed)"
+    [ -n "${HOME:-}" ] && [ -d "$HOME" ] || fail "HOME is not set"
+    detect_os
+    need_tools
+    TMP="$(mktemp -d "${TMPDIR:-/tmp}/nightcoop.XXXXXX")"; trap cleanup EXIT
+
+    bold "System"
+    ok "$OS_NAME${DEVICE:+ on a $DEVICE}"
+    [ "$OS_FAMILY" = other ] && info "not SteamOS, CachyOS or Arch; using the generic Linux path"
+    if [ -r "$DATA_DIR/installed.tsv" ]; then NC_INSTALLED="$(sed -n 's/^version\t//p' "$DATA_DIR/installed.tsv")"; fi
+    locate_game
+    if ! locate_prefix && [ "$MODE" = check ]; then warn "no Proton prefix yet (launch the game once)"; fi
+    [ -n "$COMPAT" ] && locate_proton
+
+    case "$MODE" in
+        check)     do_check ;;
+        restore)   do_restore ;;
+        uninstall) do_uninstall ;;
+        install)   do_install ;;
+    esac
+}
+NC_INSTALLED=""
+main
