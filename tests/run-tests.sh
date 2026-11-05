@@ -134,8 +134,12 @@ expect "nothing left to restore"      '[ $RC != 0 ] && [[ "$OUT" == *"no backup 
 # --------------------------------------------------------- Steam running ----
 section "Steam open (the usual case on SteamOS)"
 newworld open native; OSR="$T/os-steamos"
-mkdir -p "$T/bin"; cp "$(command -v sleep)" "$T/bin/steam"; "$T/bin/steam" 120 & STEAM_PID=$!
-sleep 0.3
+# A stand-in Steam process. A shebang script's process name is its file name, so this
+# works whether or not sleep is a multi-call (coreutils/uutils/busybox) binary.
+mkdir -p "$T/bin"; printf '#!/bin/sh\nwhile :; do sleep 1; done\n' > "$T/bin/steam"; chmod +x "$T/bin/steam"
+"$T/bin/steam" & STEAM_PID=$!
+for _ in 1 2 3 4 5 6 7 8 9 10; do pgrep -x steam >/dev/null && break; sleep 0.2; done
+expect "stand-in Steam process is visible" 'pgrep -u "$(id -u)" -x steam >/dev/null'
 run install --yes
 kill "$STEAM_PID" 2>/dev/null; wait "$STEAM_PID" 2>/dev/null
 expect "install succeeds with Steam open" '[ $RC = 0 ]' "$OUT"
