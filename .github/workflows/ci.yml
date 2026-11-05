@@ -1,0 +1,29 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  shellcheck:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: shellcheck nightcoop-install.sh tests/run-tests.sh
+
+  test-arch:
+    name: tests (Arch Linux)
+    runs-on: ubuntu-latest
+    container: archlinux:latest
+    steps:
+      - name: Install the tools the installer relies on
+        run: pacman -Syu --noconfirm --needed git python curl coreutils findutils procps-ng util-linux
+      - uses: actions/checkout@v4
+      - run: tests/run-tests.sh
+
+  test-ubuntu:
+    name: tests (generic Linux)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: tests/run-tests.sh
