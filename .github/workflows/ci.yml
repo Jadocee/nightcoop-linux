@@ -12,7 +12,7 @@ jobs:
         with:
           persist-credentials: false
       - run: shellcheck nightcoop-install.sh tests/run-tests.sh
-      - run: shellcheck -x -P sandbox/e2e sandbox/e2e/*.sh sandbox/e2e/stub/build.sh
+      - run: shellcheck -x -P sandbox/e2e sandbox/e2e/*.sh sandbox/e2e/stub/build.sh sandbox/images/retry
       - name: shellcheck PKGBUILD (its variables are read by makepkg)
         run: shellcheck -s bash -e SC2034,SC2154,SC2164 packaging/arch/PKGBUILD
 

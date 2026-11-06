@@ -1,0 +1,19 @@
+#!/bin/sh
+# SPDX-License-Identifier: MIT
+#
+# retry <command> [<argument>...]: run a command up to four times, waiting 15, 30 and then
+# 45 seconds after each failure, and exit with its last status. The images run their
+# package downloads through it: pacman gives up on a server that does not connect within
+# 10 seconds, and the next attempt reuses the packages it has already downloaded.
+n=1
+while :; do
+    "$@" && exit 0
+    status=$?
+    if [ "$n" -ge 4 ]; then
+        echo "retry: giving up after $n attempts (exit $status): $*" >&2
+        exit "$status"
+    fi
+    echo "retry: attempt $n failed (exit $status), trying again in $((n * 15)) seconds: $*" >&2
+    sleep $((n * 15))
+    n=$((n + 1))
+done

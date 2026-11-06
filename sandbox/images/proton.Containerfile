@@ -8,7 +8,8 @@ RUN --mount=type=secret,id=extra_ca \
     if [ -s /run/secrets/extra_ca ]; then \
         cp /run/secrets/extra_ca /etc/ca-certificates/trust-source/anchors/extra-ca.crt && update-ca-trust; \
     fi
-RUN pacman -Syu --noconfirm --needed bash coreutils curl diffutils findutils git libarchive procps-ng python util-linux \
+COPY --chmod=755 retry /usr/local/bin/retry
+RUN retry pacman -Syu --noconfirm --needed bash coreutils curl diffutils findutils git libarchive procps-ng python util-linux \
         mingw-w64-gcc proton-cachyos-native vulkan-icd-loader xorg-server-xvfb xorg-xwininfo \
  && yes | pacman -Scc >/dev/null \
  && useradd -m -u 1000 gamer \
