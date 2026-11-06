@@ -96,8 +96,9 @@ Before it changes anything, the script does the following:
 - It checks the archive's SHA-256 against nightcoop.net's release list, and the pinned
   RED4ext's against the script.
 - It prints a plan and asks for confirmation.
-- It copies your saves and every file it will replace into
+- It copies every file it will replace into
   `~/.local/share/nightcoop-linux/backups/<date>/`, with a manifest of every file it adds.
+  On the first install it copies your saves there too.
 
 ## Choosing the Proton build
 
@@ -126,8 +127,9 @@ prefix to another Proton version, it replaces only Wine's own files.
 
 | Command | Effect |
 | --- | --- |
-| `nightcoop-install` (or `./nightcoop-install.sh`) | Install, or update to the latest build for your game patch. |
-| `… check` | Report the installed versions, the Proton choice, the runtime, the overrides and the latest RED4ext and NightCoop logs. Changes nothing. |
+| `nightcoop-install` (or `./nightcoop-install.sh`) | Install, or update in place to the latest build for your game patch. |
+| `… update` | The same as `install`. |
+| `… check` | Report the installed versions and whether a newer NightCoop build exists, the Proton choice, the runtime, the overrides and the latest RED4ext and NightCoop logs. Changes nothing. |
 | `… restore [DIR]` | Undo the most recent install (or the given backup). |
 | `… uninstall` | Undo every install, newest first, leaving the game folder as it was. |
 
@@ -138,7 +140,9 @@ prefix to another Proton version, it replaces only Wine's own files.
 | `--proton TOOL` | Choose the Proton build for the game (see above). |
 | `--no-launcher-skip` | Do not add `--launcher-skip` to the launch options. |
 | `--close-steam` | Close Steam to write its settings (launch options, Proton choice), then reopen it. Desktop Mode only. |
-| `--no-save-backup` | Skip the copy of the saves. The copy is skipped anyway when disk space is short. |
+| `--force` | Reinstall every mod file, even those that already match the latest build. |
+| `--backup-saves` | Copy the saves before an update too. By default only the first install copies them. |
+| `--no-save-backup` | Skip the copy of the saves on the first install. The copy is skipped anyway when disk space is short. |
 | `--nightcoop-zip FILE` | Use a NightCoop archive you downloaded yourself. |
 | `--red4ext-zip FILE` | Use a RED4ext release archive, for example a newer one than the script pins. |
 | `--vcredist FILE` | Use a `VC_redist.x64.exe` you downloaded yourself. |
@@ -150,10 +154,23 @@ to set under Properties. Alternatively, rerun it with Steam closed or with `--cl
 
 ## Updating and undoing
 
-- **New NightCoop build:** run the script again. As NightCoop's own guide asks, it
-  replaces the `red4ext/plugins/NightCoop` folder as a whole, keeping your
-  `servers.txt`, `hub.txt` and `logs`. Everyone in a session needs a build with the same
-  protocol number.
+- **New NightCoop build:** run the script again (`update` is another name for
+  `install`). It asks nightcoop.net for the latest build for your game patch and
+  compares it with the game folder, file by file:
+  - When everything matches, it says so and changes nothing.
+  - Otherwise it backs up and replaces only the files that differ. As NightCoop's own
+    guide asks, files of the old build that the new one no longer has are removed from
+    `red4ext/plugins/NightCoop`, while your `servers.txt`, `hub.txt` and `logs` stay.
+  - The saves are not copied on an update; add `--backup-saves` for a fresh copy.
+    `--force` reinstalls every file.
+  - A NightCoop you installed by hand is recognised when its files match the latest
+    build, and recorded instead of replaced.
+  - The archive is kept in `~/.cache/nightcoop-linux`, so a rerun does not download it
+    again.
+
+  `check` shows the installed build and whether the site has a newer one. Everyone in a
+  session needs a build with the same protocol number, so when one player updates, the
+  others run the script again too.
 - **Undo the last update:** run `restore`.
 - **Remove NightCoop completely:** run `uninstall`. This restores the game folder
   exactly, keeping other RED4ext plugins you installed yourself, and puts back the
@@ -237,6 +254,8 @@ installation. It covers:
 - game patches 2.5 and 2.31;
 - Cyber Engine Tweaks;
 - a hand-copied old NightCoop build;
+- updates in place: nothing changed when current, only differing files replaced, saves
+  copied once, `--force` and `--backup-saves`;
 - install, update, restore and uninstall back to a byte-identical game folder.
 
 `tests/mkfixtures.py` generates the PE files, archives (shaped like nightcoop.net's) and

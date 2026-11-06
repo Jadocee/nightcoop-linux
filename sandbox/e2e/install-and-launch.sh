@@ -6,7 +6,8 @@
 # holding Steam's VS 2019 runtime, no overrides, no Proton build chosen. Then it:
 #   1. runs the repository's nightcoop-install.sh (live nightcoop.net, GitHub, Microsoft);
 #   2. checks what `nightcoop-install.sh check` reports;
-#   3. starts the stand-in game through Proton with the registry override alone (Steam open)
+#   3. runs it again as `update`, which must find everything current and change nothing;
+#   4. starts the stand-in game through Proton with the registry override alone (Steam open)
 #      and with the launch options as Steam applies them (Steam closed).
 # Exits 1 if any step fails.
 #
@@ -67,6 +68,13 @@ for patch in $PATCHES; do
     check_line "$WORK/check-$patch.log" "winmm override in the prefix registry" "^  DLL override: +winmm.* = native,builtin in the prefix registry"
     check_line "$WORK/check-$patch.log" "a Proton build chosen for the game" "^  Proton for the game: .*\(chosen in Steam\)"
     check_line "$WORK/check-$patch.log" "launch options written" "^  launch options: +WINEDLLOVERRIDES=.*%command% --launcher-skip"
+    check_line "$WORK/check-$patch.log" "no newer NightCoop build" "^  NightCoop update: +none; "
+    if HOME="$home" bash "$NI" update --yes > "$WORK/update-$patch.log" 2>&1; then
+        check_line "$WORK/update-$patch.log" "a second run changes nothing" "everything is up to date; nothing to do"
+    else
+        say "    FAIL: the second run exited with an error:"; tail -n 15 "$WORK/update-$patch.log" | sed 's/^/        /'
+        fails=$((fails + 1))
+    fi
     for how in "registry only (Steam open)" "with the launch options (Steam closed)"; do
         EXTRA_ENV=()
         [[ "$how" == with* ]] && EXTRA_ENV=("WINEDLLOVERRIDES=winmm=n,b")

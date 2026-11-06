@@ -138,11 +138,14 @@ expect "Proton Experimental chosen for the game" '[ "$(tool)" = proton_experimen
 expect "saves backed up"              '[ -f "$(newest_backup)Saved Games/ManualSave-0/sav.dat" ]'
 expect "check reports NightCoop"      '[[ "$OUT" == *"NightCoop:"*"0.2.0.0"*"release 0.2.0-beta"* ]]' "$OUT"
 NRUNS="$(wc -l < "$PFX/../fake-proton.log")"
+B1="$(newest_backup)"; G1="$(snapshot "$G")"; touch "$T/mark-deck"
 
 run install --yes
 expect "second install succeeds"      '[ $RC = 0 ]' "$OUT"
 expect "runtime not reinstalled"      '[ "$(wc -l < "$PFX/../fake-proton.log")" = "$NRUNS" ] && [[ "$OUT" == *"runtime 14.51.36247.0 is new enough"* ]]' "$OUT"
 expect "settings recognised"          '[[ "$OUT" == *"registry already has winmm"* ]] && [[ "$OUT" == *"launch options already set"* ]] && [[ "$OUT" == *"already chosen for this game"* ]]' "$OUT"
+expect "with everything current, nothing is changed or backed up" '[[ "$OUT" == *"everything is up to date; nothing to do"* ]] && [ "$(newest_backup)" = "$B1" ] && [ "$G1" = "$(snapshot "$G")" ] && [ -z "$(find "$G" -type f -cnewer "$T/mark-deck")" ]' "$OUT"
+expect "the archive is not downloaded again" '[[ "$OUT" == *"NightCoop-0.2.0-beta-2.5.zip was downloaded before"* ]] && [[ "$OUT" != *"downloading NightCoop"* ]]' "$OUT"
 
 V1_GAME="$(snapshot "$G")"
 run install --yes --nightcoop-zip "$FIX/NightCoop-0.2.1-test.zip"
@@ -175,13 +178,17 @@ mkdir -p "$T/bin"; printf '#!/bin/sh\nwhile :; do sleep 1; done\n' > "$T/bin/ste
 for _ in 1 2 3 4 5 6 7 8 9 10; do pgrep -x steam >/dev/null && break; sleep 0.2; done
 expect "stand-in Steam process is visible" 'pgrep -u "$(id -u)" -x steam >/dev/null'
 run install --yes
-kill "$STEAM_PID" 2>/dev/null; wait "$STEAM_PID" 2>/dev/null
 expect "install succeeds with Steam open" '[ $RC = 0 ]' "$OUT"
 expect "Steam's files not touched"    '[ "$(launch_opts)" = "game-performance %command% --launcher-skip" ] && [ -z "$(tool)" ]'
 expect "registry override still set"  '[ "$(hp reg-get "$PFX/user.reg" "$REG_KEY" winmm)" = native,builtin ]'
 expect "launch options recommended"   '[[ "$OUT" == *"Recommended (the prefix override already lets the mod load)"*"WINEDLLOVERRIDES=\"winmm=n,b\" game-performance %command% --launcher-skip"* ]]' "$OUT"
 expect "Proton choice explained"      '[[ "$OUT" == *"Properties > Compatibility"*"choose Proton Experimental"* ]]' "$OUT"
 expect "no 'manual step' demanded"    '[[ "$OUT" != *"One manual step left"* ]]' "$OUT"
+run install --yes
+kill "$STEAM_PID" 2>/dev/null; wait "$STEAM_PID" 2>/dev/null
+expect "rerun with Steam still open only repeats the recommendations" '[ $RC = 0 ] && [[ "$OUT" == *"nothing to replace"* ]] && [[ "$OUT" == *"Recommended (the prefix override already lets the mod load)"* ]] && [[ "$OUT" != *"Backing up"* ]]' "$OUT"
+run install --yes
+expect "rerun with Steam closed writes only Steam's settings" '[ $RC = 0 ] && [ "$(launch_opts)" = "WINEDLLOVERRIDES=\\\"winmm=n,b\\\" game-performance %command% --launcher-skip" ] && [ "$(tool)" = proton_experimental ] && [[ "$OUT" != *"Backing up"* ]]' "$OUT"
 
 # ---------------------------------------------------------- Flatpak Steam ----
 section "Flatpak Steam (sandbox paths in Steam's files)"
@@ -231,6 +238,43 @@ run install --yes --nightcoop-zip "$FIX/site/dl/0.1.1-beta.2/NightCoop-0.1.1-bet
 expect "archive identified by checksum" '[ $RC = 0 ] && [[ "$OUT" == *"archive verified: NightCoop 0.1.1-beta.2"* ]]' "$OUT"
 expect "RED4ext 1.31 replaces the bundled 1.30" '[ "$(hp pever "$G/red4ext/RED4ext.dll" product)" = 1.31.0 ] && [ "$(hp pever "$G/bin/x64/winmm.dll" product)" = 1.31.0 ] && [[ "$OUT" == *"RED4ext 1.31.0 archive verified"* ]]' "$OUT"
 expect "README in the archive's top folder not copied" '[ ! -e "$G/README.txt" ] && [ -f "$G/red4ext/Plugins/NightCoop/NightCoop.dll" ]'
+run check
+expect "check offers the newer build" '[[ "$OUT" == *"NightCoop update:"*"0.1.1-beta.2 -> 0.2.0-beta available"* ]]' "$OUT"
+run update --yes
+expect "update installs the site's newer build" '[ $RC = 0 ] && [ "$(hp pever "$G/red4ext/Plugins/NightCoop/NightCoop.dll")" = 0.2.0.0 ] && [[ "$OUT" == *"update          NightCoop 0.1.1-beta.2 -> 0.2.0-beta"* ]]' "$OUT"
+expect "an update leaves the saves to the first copy" '[[ "$OUT" == *"not copied on an update"* ]] && [ ! -e "$(newest_backup)Saved Games" ]' "$OUT"
+expect "check after the update: nothing newer" '[[ "$OUT" == *"NightCoop update:"*"none; 0.2.0-beta is the latest for game 2.5"* ]]' "$OUT"
+run restore --yes
+run check
+expect "restore puts the record back to the earlier build" '[ "$(hp pever "$G/red4ext/Plugins/NightCoop/NightCoop.dll")" = 0.1.1.0 ] && [[ "$OUT" == *"release 0.1.1-beta.2"* ]] && [[ "$OUT" == *"0.1.1-beta.2 -> 0.2.0-beta available"* ]]' "$OUT"
+
+# ------------------------------------------------------- updating in place ----
+section "Updating in place"
+newworld upd native; OSR="$T/os-arch"
+REC="$H/.local/share/nightcoop-linux/installed.tsv"
+run install --yes
+expect "first install copies the saves" '[ $RC = 0 ] && [ -f "$(newest_backup)Saved Games/ManualSave-0/sav.dat" ]' "$OUT"
+B1="$(newest_backup)"; G1="$(snapshot "$G")"
+rm "$REC"
+run check
+expect "check without a record suggests an update run" '[[ "$OUT" == *"NightCoop update:"*"is 0.2.0-beta; run"*" update"*"to make sure it is the one installed"* ]]' "$OUT"
+run install --yes
+expect "files that already match are recorded, not replaced" '[ $RC = 0 ] && [[ "$OUT" == *"recorded as the installed build"* ]] && [ "$(newest_backup)" = "$B1" ] && grep -qx "version"$'"'"'\t'"'"'"0.2.0-beta" "$REC"' "$OUT"
+cp "$FIX/pe/nc2/NightCoop.dll" "$G/red4ext/Plugins/NightCoop/NightCoop.dll"
+run check
+expect "check notices a NightCoop.dll copied in by hand" '[[ "$OUT" == *"NightCoop:"*"0.2.1.0"*"changed since this script installed 0.2.0-beta"* ]]' "$OUT"
+run update --yes
+expect "the update replaces only the file that differs" '[ $RC = 0 ] && [[ "$OUT" == *"0 added, 1 replaced, 0 stale removed"* ]] && [ "$G1" = "$(snapshot "$G")" ]' "$OUT"
+expect "the plan says the recorded build was changed" '[[ "$OUT" == *"update          NightCoop 0.2.0-beta, changed since it was installed -> 0.2.0-beta"* ]]' "$OUT"
+expect "the saves are not copied again" '[[ "$OUT" == *"not copied on an update"* ]] && [ ! -e "$(newest_backup)Saved Games" ]' "$OUT"
+run update --yes --force --backup-saves
+expect "--force replaces every file, --backup-saves copies the saves" '[ $RC = 0 ] && [[ "$OUT" == *", 0 unchanged; backup"* ]] && [ -f "$(newest_backup)Saved Games/ManualSave-0/sav.dat" ]' "$OUT"
+mkdir -p "$H/.local/share/nightcoop-linux/backups/2099-01-01-000000/game"   # an install stopped while copying the saves
+run restore --yes
+expect "an interrupted backup is passed over" '[ $RC = 0 ] && [[ "$OUT" != *"2099-01-01-000000"* ]] && [ -f "$G/red4ext/Plugins/OtherMod/other.dll" ] && [ -f "$G/red4ext/RED4ext.dll" ]' "$OUT"
+run restore --yes
+run check
+expect "after undoing the repair, the hand-copied DLL is told apart again" '[[ "$OUT" == *"NightCoop:"*"0.2.1.0"*"changed since this script installed 0.2.0-beta"* ]]' "$OUT"
 
 # ------------------------------------------------- Cyber Engine Tweaks ----
 section "Cyber Engine Tweaks installed alongside"
