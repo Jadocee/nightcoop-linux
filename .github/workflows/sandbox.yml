@@ -15,23 +15,27 @@ on:
 jobs:
   userland:
     name: ${{ matrix.service }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     strategy:
       fail-fast: false
       matrix:
         service: [arch, cachyos, steamos, package]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
       - run: docker compose -f sandbox/compose.yaml run --rm --build ${{ matrix.service }}
 
   real-proton:
     name: real Proton (experiments, install and launch)
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     timeout-minutes: 60
     steps:
       - name: Make room for the Proton image
         run: sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache/CodeQL
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
       - name: Verification matrix
         run: docker compose -f sandbox/compose.yaml run --rm --build experiments
       - name: Install and launch, game patches 2.5 and 2.31

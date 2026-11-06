@@ -17,7 +17,9 @@ sed -i "s|^source=.*|source=(\"\$_name::git+file://$work/repo#branch=sandbox-bui
 cd "$work/pkg"
 makepkg -f --noconfirm
 echo "== namcap"
-namcap PKGBUILD ./*.pkg.tar.zst
+# With Arch's own PATH: Docker's default lists /usr/sbin (a symlink to bin) before /usr/bin,
+# and namcap then looks for a package owning usr/sbin/bash and finds none.
+PATH=/usr/local/sbin:/usr/local/bin:/usr/bin namcap PKGBUILD ./*.pkg.tar.zst
 echo "== package contents"
 bsdtar -tf ./*.pkg.tar.zst | grep -v '^\.'
 echo "== .SRCINFO"
