@@ -2,11 +2,11 @@
 """Fixtures for run-tests.sh: synthetic PE files, archives, a fake Steam tree and Proton.
 
     mkfixtures.py archives DIR            NightCoop/RED4ext archives, installers, releases.json
-    mkfixtures.py world DIR FIX LAYOUT    a home folder with Steam, the game and a Proton prefix
+    mkfixtures.py world DIR FIX LAYOUT [OPTS]  a home folder with Steam, the game and a Proton prefix
 
 LAYOUT is one of: native (game on a second library, as on a Steam Deck SD card),
-flatpak (Flatpak Steam, sandbox paths in Steam's files) or cachyos (proton-cachyos
-chosen in Steam's settings, no config_info yet).
+flatpak (Flatpak Steam, sandbox paths in Steam's files) or cachyos (both proton-cachyos
+packages installed, Steam's default set to Proton 10, no config_info yet). OPTS: see world().
 """
 import hashlib
 import json
@@ -45,11 +45,12 @@ def version_info(file_ver, product_ver, strings):
     return _block('VS_VERSION_INFO', fixed, 0, _pad4(sfi) + vfi)
 
 
-def make_pe(path, file_ver='1.0.0.0', product_ver=None, linker=(14, 0), imports=(), strings=None, pad=0):
+def make_pe(path, file_ver='1.0.0.0', product_ver=None, linker=(14, 0), imports=(), strings=None, pad=0,
+            fixed_product=None):
     product_ver = product_ver or file_ver
     s = {'FileVersion': file_ver, 'ProductVersion': product_ver}
     s.update(strings or {})
-    vi = version_info(file_ver, product_ver.split(' ')[0] if product_ver[0].isdigit() else file_ver, s)
+    vi = version_info(file_ver, fixed_product or (product_ver.split(' ')[0] if product_ver[0].isdigit() else file_ver), s)
 
     idata = bytearray()
     names = b''
@@ -119,41 +120,60 @@ def zipdir(zpath, files):
 
 
 # ------------------------------------------------------------------ archives
+GAME = {   # patch: (Cyberpunk2077.exe file version, fixed product version), as the real builds have them
+    '2.5': ('3.0.88.46235', '2.5.0.0'),
+    '2.31': ('3.0.80.51928', '2.3.1.0'),
+}
+
+
 def archives(fix):
     pe = os.path.join(fix, 'pe')
-    make_pe(f'{pe}/nc1/NightCoop.dll', '0.1.2.0', linker=(14, 51), imports=CRT)
-    make_pe(f'{pe}/nc1/legacy.dll', '0.1.2.0', linker=(14, 44), imports=CRT)
-    make_pe(f'{pe}/nc2/NightCoop.dll', '0.1.3.0', linker=(14, 51), imports=CRT)
-    make_pe(f'{pe}/r4old/RED4ext.dll', '1.30.0.0', '1.30.0', linker=(14, 44), imports=CRT)
-    make_pe(f'{pe}/r4old/winmm.dll', '1.30.0.0', '1.30.0', linker=(14, 44), imports=CRT)
-    make_pe(f'{pe}/r4new/RED4ext.dll', '1.31.0.0', '1.31.0', linker=(14, 51), imports=CRT)
-    make_pe(f'{pe}/r4new/winmm.dll', '1.31.0.0', '1.31.0', linker=(14, 51), imports=CRT)
-    make_pe(f'{pe}/r4next/RED4ext.dll', '1.32.0.0', '1.32.0', linker=(14, 51), imports=CRT)
-    make_pe(f'{pe}/r4next/winmm.dll', '1.32.0.0', '1.32.0', linker=(14, 51), imports=CRT)
+    make_pe(f'{pe}/nc1/NightCoop.dll', '0.2.0.0', linker=(14, 51), imports=CRT)
+    make_pe(f'{pe}/nc1/legacy.dll', '0.2.0.0', linker=(14, 44), imports=CRT)
+    make_pe(f'{pe}/nc2/NightCoop.dll', '0.2.1.0', linker=(14, 51), imports=CRT)
+    make_pe(f'{pe}/nc0/NightCoop.dll', '0.1.1.0', linker=(14, 44), imports=CRT)
+    for name, ver, lk in (('r4old', '1.30.0', (14, 44)), ('r4new', '1.31.0', (14, 51)), ('r4next', '1.32.0', (14, 51))):
+        make_pe(f'{pe}/{name}/RED4ext.dll', ver + '.0', ver, linker=lk, imports=CRT)
+        make_pe(f'{pe}/{name}/winmm.dll', ver + '.0', ver, linker=lk, imports=CRT)
     desc = {'FileDescription': 'Microsoft Visual C++ v14 Redistributable (x64) - 14.51.36247',
             'ProductName': 'Microsoft Visual C++ v14 Redistributable (x64) - 14.51.36247'}
     make_pe(f'{fix}/site/vc_redist.x64.exe', '14.51.36247.0', strings=desc, pad=4096)
     make_pe(f'{fix}/pe/new-msvcp140.dll', '14.51.36247.0', strings={'FileDescription': 'Microsoft C Runtime Library'})
-    make_pe(f'{fix}/pe/old-msvcp140.dll', '14.28.29913.0', strings={'FileDescription': 'Microsoft C Runtime Library'})
+    make_pe(f'{fix}/pe/old-msvcp140.dll', '14.29.30157.0', strings={'FileDescription': 'Microsoft C Runtime Library'})
     make_pe(f'{fix}/pe/steamworks-vc_redist.x64.exe', '14.44.35211.0', pad=4096, strings={
         'FileDescription': 'Microsoft Visual C++ 2015-2022 Redistributable (x64) - 14.44.35211'})
     make_pe(f'{fix}/pe/other.dll', '2.0.0.0', linker=(14, 30), imports=CRT)
-    make_pe(f'{fix}/pe/Cyberpunk2077.exe', '3.0.80.52123', '2.5')
+    make_pe(f'{fix}/pe/cet-version.dll', '1.36.0.0', linker=(14, 44), imports=CRT)
+    for patch, (fv, fp) in GAME.items():
+        make_pe(f'{fix}/pe/Cyberpunk2077-{patch}.exe', fv, patch, fixed_product=fp,
+                strings={'ProductName': 'Cyberpunk 2077'})
 
-    top = 'NightCoop-0.1.2-beta-2.5/'
-    zipdir(f'{fix}/site/files/NightCoop-0.1.2-beta-2.5.zip', {
-        top + 'README.txt': b'Read me\r\n',
-        top + 'red4ext/plugins/NightCoop/NightCoop.dll': f'{pe}/nc1/NightCoop.dll',
-        top + 'red4ext/plugins/NightCoop/legacy.dll': f'{pe}/nc1/legacy.dll',
-        top + 'red4ext/plugins/NightCoop/config.json': b'{"name": "V"}\n',
-        top + 'red4ext/RED4ext.dll': f'{pe}/r4old/RED4ext.dll',
-        top + 'bin/x64/winmm.dll': f'{pe}/r4old/winmm.dll',
-        top + 'archive/pc/mod/NightCoop.archive': b'RDAR' + b'\0' * 60,
-    })
-    # a later build that is not on the site: legacy.dll is gone, RED4ext 1.32 is bundled
-    zipdir(f'{fix}/NightCoop-0.1.3-test.zip', {
+    def nightcoop(r4, nc=f'{pe}/nc1', extra=True, prefix=''):
+        files = {
+            prefix + 'bin/x64/winmm.dll': f'{pe}/{r4}/winmm.dll',
+            prefix + 'red4ext/RED4ext.dll': f'{pe}/{r4}/RED4ext.dll',
+            prefix + 'red4ext/LICENSE.txt': b'MIT\r\n',
+            prefix + 'red4ext/plugins/NightCoop/NightCoop.dll': f'{nc}/NightCoop.dll',
+            prefix + 'red4ext/plugins/NightCoop/redscript/NightCoopSdk.reds': b'// sdk\n',
+            prefix + 'r6/scripts/NightCoopFlight/NightCoopFlight.reds': b'// flight\n',
+        }
+        if extra:
+            files[prefix + 'red4ext/plugins/NightCoop/legacy.dll'] = f'{nc}/legacy.dll'
+            files[prefix + 'archive/pc/mod/NightCoop.archive'] = b'RDAR' + b'\0' * 60
+        return files
+
+    # the live layout since 0.1.2: one archive per game patch, files at the archive root
+    zipdir(f'{fix}/site/dl/0.2.0-beta/NightCoop-0.2.0-beta-2.5.zip', nightcoop('r4new'))
+    zipdir(f'{fix}/site/dl/0.2.0-beta/NightCoop-0.2.0-beta-2.31.zip', nightcoop('r4old'))
+    # the old single archive (0.1.1 and earlier) bundled RED4ext 1.30 for every patch
+    zipdir(f'{fix}/site/dl/0.1.1-beta.2/NightCoop-0.1.1-beta.2.zip',
+           dict(nightcoop('r4old', f'{pe}/nc0', extra=False, prefix='NightCoop-0.1.1-beta.2/'),
+                **{'NightCoop-0.1.1-beta.2/README.txt': b'Read me\r\n'}))
+    # a later build that is not on the site: legacy.dll and the .archive are gone, RED4ext 1.32 is bundled
+    zipdir(f'{fix}/NightCoop-0.2.1-test.zip', {
         'red4ext\\plugins\\NightCoop\\NightCoop.dll': f'{pe}/nc2/NightCoop.dll',   # Windows-style separators
-        'red4ext/plugins/NightCoop/config.json': b'{"name": "V"}\n',
+        'red4ext/plugins/NightCoop/redscript/NightCoopSdk.reds': b'// sdk\n',
+        'r6/scripts/NightCoopFlight/NightCoopFlight.reds': b'// flight\n',
         'red4ext/RED4ext.dll': f'{pe}/r4next/RED4ext.dll',
         'bin/x64/winmm.dll': f'{pe}/r4next/winmm.dll',
     })
@@ -164,18 +184,24 @@ def archives(fix):
         'red4ext/THIRD_PARTY_LICENSES.txt': b'...\r\n',
     })
     zipdir(f'{fix}/evil.zip', {'../../escape.txt': b'x'})
-    nc = f'{fix}/site/files/NightCoop-0.1.2-beta-2.5.zip'
-    rel = {'releases': [
-        {'version': '0.1.3-beta', 'game': ['2.6'], 'protocol': 4,
-         'files': [{'kind': 'mod', 'url': 'files/NightCoop-0.1.3-beta-2.6.zip', 'sha256': '0' * 64,
-                    'game': ['2.6'], 'red4ext': '1.32.0'}]},
-        {'version': '0.1.2-beta', 'game': ['2.5', '2.6'], 'protocol': 3,
-         'files': [{'kind': 'mod', 'url': 'files/NightCoop-0.1.2-beta-2.6.zip', 'sha256': '1' * 64, 'game': ['2.6']},
-                   {'kind': 'mod', 'url': 'files/NightCoop-0.1.2-beta-2.5.zip', 'sha256': sha(nc),
-                    'game': ['2.50'], 'red4ext': '1.30.0'},
-                   {'kind': 'source', 'url': 'files/src.zip'}]},
-        {'version': '0.1.1-beta', 'yanked': True, 'game': ['2.5'], 'protocol': 2,
-         'files': [{'kind': 'mod', 'url': 'files/NightCoop-0.1.1-beta.zip', 'sha256': '2' * 64}]},
+
+    def entry(rel, games=None, red4ext=None, kind='mod'):
+        e = {'kind': kind, 'name': os.path.basename(rel), 'url': rel, 'sha256': sha(f'{fix}/site/{rel}')}
+        if games:
+            e['game'] = games
+        if red4ext:
+            e['red4ext'] = red4ext
+        return e
+
+    rel = {'schema': 1, 'latest': '0.2.0-beta', 'releases': [   # the shape of nightcoop.net/releases.json
+        {'version': '0.2.0-beta', 'channel': 'beta', 'game': ['2.5', '2.31'], 'protocol': 164, 'yanked': None,
+         'files': [entry('dl/0.2.0-beta/NightCoop-0.2.0-beta-2.5.zip', ['2.5'], '1.31.0'),
+                   entry('dl/0.2.0-beta/NightCoop-0.2.0-beta-2.31.zip', ['2.31'], '1.30.0'),
+                   {'kind': 'source', 'url': 'dl/src.zip'}]},
+        {'version': '0.1.1-beta.2', 'channel': 'beta', 'game': ['2.5', '2.31'], 'protocol': 128, 'yanked': None,
+         'files': [entry('dl/0.1.1-beta.2/NightCoop-0.1.1-beta.2.zip')]},
+        {'version': '0.1.0-beta.1', 'channel': 'beta', 'game': ['2.5'], 'protocol': 120, 'yanked': True,
+         'files': [{'kind': 'mod', 'url': 'dl/0.1.0-beta.1/NightCoop-0.1.0-beta.1.zip', 'sha256': '2' * 64}]},
     ]}
     write(f'{fix}/site/releases.json', json.dumps(rel, indent=1))
     write(f'{fix}/red4ext.sha256', sha(f'{fix}/red4ext-1.31.0.zip'))
@@ -216,25 +242,26 @@ USER_REG = '''WINE REGISTRY Version 2
 '''
 
 FAKE_PROTON = '''#!/usr/bin/env bash
-# fake proton: "run VC_redist.x64.exe ..." drops a newer msvcp140.dll into the prefix
+# fake proton: "runinprefix VC_redist.x64.exe ..." drops a newer msvcp140.dll into the prefix
 here="$(cd "$(dirname "$0")" && pwd)"
 echo "$*" >> "$STEAM_COMPAT_DATA_PATH/fake-proton.log"
-[ "$1" = run ] || exit 1
+case "$1" in "run"|"runinprefix") ;; *) exit 1 ;; esac
 case "$(basename "$2")" in
     [Vv][Cc]_redist*) cp "$here/new-msvcp140.dll" "$STEAM_COMPAT_DATA_PATH/pfx/drive_c/windows/system32/msvcp140.dll"; exit 194 ;;
 esac
 '''
 
 
-def make_proton(d, fix, name=None):
+def make_proton(d, fix, name=None, label=None):
     write(f'{d}/proton', FAKE_PROTON, 0o755)
     write(f'{d}/version', '1730000000 proton-10.0-100\n')
     os.makedirs(f'{d}/files/share/fonts', exist_ok=True)
     with open(f'{fix}/pe/new-msvcp140.dll', 'rb') as src, open(f'{d}/new-msvcp140.dll', 'wb') as dst:
         dst.write(src.read())
-    if name:
+    if name:   # as proton-cachyos ships it
         write(f'{d}/compatibilitytool.vdf', '"compatibilitytools"\n{\n  "compat_tools"\n  {\n    "%s"\n    {\n'
-              '      "install_path" "."\n      "display_name" "%s"\n    }\n  }\n}\n' % (name, name))
+              '      "install_path" "."\n      "display_name" "%s"\n      "from_oslist"  "windows"\n'
+              '      "to_oslist"    "linux"\n    }\n  }\n}\n' % (name, label or name))
 
 
 def copy(src, dst):
@@ -243,8 +270,11 @@ def copy(src, dst):
         b.write(a.read())
 
 
-def world(home, fix, layout):
+def world(home, fix, layout, *opts):
+    """opts: 2.31 (game patch 2.31), cet (Cyber Engine Tweaks present), manual (NightCoop
+    copied in by hand earlier, with a file newer builds no longer ship and the user's servers.txt)."""
     home = os.path.abspath(home)
+    patch = '2.31' if '2.31' in opts else '2.5'
     if layout == 'flatpak':
         steam = f'{home}/.var/app/com.valvesoftware.Steam/.local/share/Steam'
         seen_root = f'{home}/.local/share/Steam'          # how the sandbox sees it
@@ -263,7 +293,15 @@ def world(home, fix, layout):
     write(f'{game_lib}/steamapps/appmanifest_1091500.acf',
           '"AppState"\n{\n\t"appid"\t\t"1091500"\n\t"installdir"\t\t"Cyberpunk 2077"\n}\n')
     game = f'{game_lib}/steamapps/common/Cyberpunk 2077'
-    copy(f'{fix}/pe/Cyberpunk2077.exe', f'{game}/bin/x64/Cyberpunk2077.exe')
+    copy(f'{fix}/pe/Cyberpunk2077-{patch}.exe', f'{game}/bin/x64/Cyberpunk2077.exe')
+    if 'cet' in opts:
+        copy(f'{fix}/pe/cet-version.dll', f'{game}/bin/x64/version.dll')
+    if 'manual' in opts:
+        nc = f'{game}/red4ext/Plugins/NightCoop'
+        copy(f'{fix}/pe/nc0/NightCoop.dll', f'{nc}/NightCoop.dll')
+        copy(f'{fix}/pe/other.dll', f'{nc}/old-helper.dll')
+        write(f'{nc}/servers.txt', 'hub.example.org#K3QF-9X2M\n')
+        write(f'{nc}/logs/nightcoop-last-crash.log', 'crash\n')
     copy(f'{fix}/pe/other.dll', f'{game}/red4ext/Plugins/OtherMod/other.dll')   # another user's plugin, odd case
     write(f'{game}/archive/pc/content/basegame_1_engine.archive', 'RDAR')
     copy(f'{fix}/pe/steamworks-vc_redist.x64.exe',
@@ -277,15 +315,20 @@ def world(home, fix, layout):
     write(f'{pfx}/drive_c/users/steamuser/Saved Games/CD Projekt Red/Cyberpunk 2077/ManualSave-0/sav.dat', 'save')
     write(f'{compat}/version', '1730000000 proton-10.0-100\n')
 
-    if layout == 'cachyos':
-        make_proton(f'{steam}/compatibilitytools.d/proton-cachyos', fix, 'proton-cachyos')
+    if layout == 'cachyos':   # both proton-cachyos packages, Steam's default set to Proton 10, nothing per game
+        make_proton(f'{steam}/compatibilitytools.d/proton-cachyos-native', fix, 'proton-cachyos-native',
+                    'proton-cachyos-11.0-20261015 (native)')
+        make_proton(f'{steam}/compatibilitytools.d/proton-cachyos-slr', fix, 'proton-cachyos-slr',
+                    'proton-cachyos-11.0-20261015 (steam linux runtime)')
         make_proton(f'{steam}/steamapps/common/Proton - Experimental', fix)
         write(f'{steam}/config/config.vdf', '"InstallConfigStore"\n{\n\t"Software"\n\t{\n\t\t"Valve"\n\t\t{\n\t\t\t"Steam"\n'
-              '\t\t\t{\n\t\t\t\t"CompatToolMapping"\n\t\t\t\t{\n\t\t\t\t\t"1091500"\n\t\t\t\t\t{\n'
-              '\t\t\t\t\t\t"name"\t\t"proton-cachyos"\n\t\t\t\t\t\t"config"\t\t""\n\t\t\t\t\t}\n'
-              '\t\t\t\t}\n\t\t\t}\n\t\t}\n\t}\n}\n')
-    else:
+              '\t\t\t{\n\t\t\t\t"CompatToolMapping"\n\t\t\t\t{\n\t\t\t\t\t"0"\n\t\t\t\t\t{\n'
+              '\t\t\t\t\t\t"name"\t\t"proton_10"\n\t\t\t\t\t\t"config"\t\t""\n\t\t\t\t\t\t"priority"\t\t"75"\n'
+              '\t\t\t\t\t}\n\t\t\t\t}\n\t\t\t}\n\t\t}\n\t}\n}\n')
+    else:   # Steam's config.vdf without any compatibility tool mapping, as on a fresh SteamOS install
         make_proton(f'{steam}/steamapps/common/Proton - Experimental', fix)
+        write(f'{steam}/config/config.vdf', '"InstallConfigStore"\n{\n\t"Software"\n\t{\n\t\t"Valve"\n\t\t{\n'
+              '\t\t\t"Steam"\n\t\t\t{\n\t\t\t\t"AutoUpdateWindowEnabled"\t\t"0"\n\t\t\t}\n\t\t}\n\t}\n}\n')
         write(f'{compat}/config_info', '10.0-100\n%s/steamapps/common/Proton - Experimental/files/share/fonts/\n'
               '%s/steamapps/common/Proton - Experimental/files/share/default_pfx/\n' % (seen_root, seen_root))
 
@@ -298,7 +341,7 @@ if __name__ == '__main__':
     if sys.argv[1] == 'archives':
         archives(sys.argv[2])
     elif sys.argv[1] == 'world':
-        world(sys.argv[2], sys.argv[3], sys.argv[4])
+        world(sys.argv[2], sys.argv[3], sys.argv[4], *sys.argv[5:])
     elif sys.argv[1] == 'pe':      # pe PATH FILEVER [PRODUCTVER]
         make_pe(sys.argv[2], sys.argv[3], sys.argv[4] if len(sys.argv) > 4 else None)
     else:
