@@ -20,6 +20,8 @@ docker compose -f sandbox/compose.yaml run --rm --build <service>
 
 The repository is mounted read-only at `/src`. The `package` service builds the last
 commit, not uncommitted changes. Each service exits 0 on success and 1 when a check fails.
+The image builds run each `pacman` step up to four times, so a package server that times
+out once does not fail the build.
 
 ## The real-Proton services
 
