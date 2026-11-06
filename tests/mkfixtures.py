@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: MIT
 """Fixtures for run-tests.sh: synthetic PE files, archives, a fake Steam tree and Proton.
 
     mkfixtures.py archives DIR            NightCoop/RED4ext archives, installers, releases.json

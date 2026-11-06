@@ -44,6 +44,7 @@
 # Needs bash, python3, curl, coreutils, findutils and procps-ng. SteamOS and CachyOS
 # ship all of them; on a minimal Arch install: sudo pacman -S --needed python curl
 
+# SPDX-License-Identifier: MIT
 set -euo pipefail
 
 SCRIPT_VERSION="2.1.0"

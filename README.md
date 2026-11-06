@@ -223,8 +223,8 @@ it, a report of `check` output with the result is welcome.
 
 `packaging/arch/PKGBUILD` builds `nightcoop-linux-git`, which installs the
 `nightcoop-install` command and runs the test suite in `check()`. `.SRCINFO` is kept next
-to it for the AUR. The repository has no licence yet, so the PKGBUILD says
-`LicenseRef-unknown`; choose a licence before publishing the package.
+to it for the AUR; regenerate it with `makepkg --printsrcinfo > .SRCINFO` after changing
+the PKGBUILD.
 
 ## Development
 
@@ -247,3 +247,9 @@ also builds the PKGBUILD with `makepkg`, checks it with `namcap`, and runs shell
 
 `nightcoop-install __py <command> …` calls the embedded helper directly, which is useful
 when debugging (for example, `__py gamever …/Cyberpunk2077.exe`).
+
+## Licence
+
+This repository is released under the [MIT Licence](LICENSE). NightCoop, RED4ext and
+Microsoft's Visual C++ runtime are not part of it: the script downloads them from their
+publishers when it runs, and their own licences apply.

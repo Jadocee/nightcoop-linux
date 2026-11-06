@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# SPDX-License-Identifier: MIT
 # End-to-end tests for nightcoop-install.sh against a synthetic Steam installation.
 # Needs only bash, python3 and coreutils; no Steam, Wine or network access.
 #
