@@ -1,0 +1,46 @@
+# Maintainer: Jadocee <https://github.com/Jadocee>
+#
+# Packages the nightcoop-install command for Arch Linux and CachyOS. The mod itself is
+# installed per user, into the Steam library and the game's Proton prefix, by running
+# `nightcoop-install` as your normal user after installing this package.
+#
+# Not for SteamOS: its system partition is read-only and replaced by every update, so run
+# nightcoop-install.sh from your home folder there instead.
+
+pkgname=nightcoop-linux-git
+_name=nightcoop-linux
+pkgver=2.1.0.r6.g1ced5a5
+pkgrel=1
+pkgdesc='Installer for the NightCoop co-op mod for Cyberpunk 2077 under Proton (Steam)'
+arch=('any')
+url='https://github.com/Jadocee/nightcoop-linux'
+license=('MIT')
+depends=('bash' 'coreutils' 'curl' 'findutils' 'gawk' 'grep' 'procps-ng' 'python' 'sed' 'util-linux')
+makedepends=('git')
+checkdepends=('diffutils')
+optdepends=('steam: the native Steam client, from [multilib]'
+            'proton-cachyos-slr: CachyOS Proton build, chosen for the game on CachyOS'
+            'protontricks: fallback for installing the Visual C++ runtime'
+            'flatpak: for the Flatpak build of Steam')
+provides=("$_name")
+conflicts=("$_name")
+source=("$_name::git+$url.git")
+sha256sums=('SKIP')
+
+pkgver() {
+    cd "$_name"
+    printf '%s.r%s.g%s' "$(sed -n 's/^SCRIPT_VERSION="\(.*\)"/\1/p' nightcoop-install.sh)" \
+        "$(git rev-list --count HEAD)" "$(git rev-parse --short=7 HEAD)"
+}
+
+check() {
+    cd "$_name"
+    tests/run-tests.sh
+}
+
+package() {
+    cd "$_name"
+    install -Dm755 nightcoop-install.sh "$pkgdir/usr/bin/nightcoop-install"
+    install -Dm644 README.md "$pkgdir/usr/share/doc/$_name/README.md"
+    install -Dm644 LICENSE "$pkgdir/usr/share/licenses/$pkgname/LICENSE"
+}

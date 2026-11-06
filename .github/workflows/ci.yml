@@ -10,14 +10,30 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: shellcheck nightcoop-install.sh tests/run-tests.sh
+      - name: shellcheck PKGBUILD (its variables are read by makepkg)
+        run: shellcheck -s bash -e SC2034,SC2154,SC2164 packaging/arch/PKGBUILD
 
-  test-arch:
-    name: tests (Arch Linux)
+  test:
+    name: tests (${{ matrix.name }})
     runs-on: ubuntu-latest
-    container: archlinux:latest
+    container: ${{ matrix.image }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: Arch Linux
+            image: archlinux:latest
+          - name: CachyOS
+            image: cachyos/cachyos:latest
+          - name: SteamOS (holo-base)
+            image: ghcr.io/steamdeckhomebrew/holo-base:latest
     steps:
       - name: Install the tools the installer relies on
-        run: pacman -Syu --noconfirm --needed git python curl coreutils findutils procps-ng util-linux
+        run: |
+          pacman-key --init
+          pacman-key --populate
+          pacman -Syu --noconfirm --needed git python curl coreutils findutils procps-ng util-linux diffutils
+          . /etc/os-release && echo "$PRETTY_NAME, $(python3 --version), bash $BASH_VERSION"
       - uses: actions/checkout@v4
       - run: tests/run-tests.sh
 
@@ -27,3 +43,35 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: tests/run-tests.sh
+
+  package:
+    name: PKGBUILD (makepkg, namcap, pacman -U)
+    runs-on: ubuntu-latest
+    container: archlinux:latest
+    steps:
+      - name: Install build tools
+        run: pacman -Syu --noconfirm --needed base-devel git namcap python diffutils
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Build the package from this commit
+        run: |
+          git config --global --add safe.directory '*'
+          git branch -f ci-build HEAD
+          useradd -m builder
+          su builder -c "git config --global --add safe.directory '*'"
+          mkdir /tmp/pkg && cp packaging/arch/PKGBUILD /tmp/pkg/
+          sed -i "s|^source=.*|source=(\"\$_name::git+file://$GITHUB_WORKSPACE#branch=ci-build\")|" /tmp/pkg/PKGBUILD
+          chown -R builder /tmp/pkg
+          su builder -c "cd /tmp/pkg && makepkg -f --noconfirm"
+      - name: namcap
+        run: namcap packaging/arch/PKGBUILD /tmp/pkg/*.pkg.tar.zst
+      - name: Install and run it
+        run: |
+          pacman -U --noconfirm /tmp/pkg/*.pkg.tar.zst
+          nightcoop-install --version
+          nightcoop-install --help | head -n 3
+      - name: .SRCINFO matches the PKGBUILD
+        run: |
+          chown -R builder packaging/arch
+          su builder -c "cd packaging/arch && makepkg --printsrcinfo" | diff -u packaging/arch/.SRCINFO -

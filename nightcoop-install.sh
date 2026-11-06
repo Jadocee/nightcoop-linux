@@ -12,12 +12,14 @@
 #   1. Wine prefers its built-in winmm.dll to RED4ext's loader. The script adds a
 #      per-game DLL override to the Proton prefix (this works while Steam is open)
 #      and, when Steam is closed, merges it into the game's launch options as well.
-#   2. Proton's prefix carries an old Microsoft C++ runtime. RED4ext and NightCoop
-#      are built with a newer MSVC toolset and crash in it with
+#   2. Steam's first launch installs the 2019 Microsoft C++ runtime into the prefix.
+#      RED4ext is built with a newer MSVC toolset and fails in it with
 #      "RED4ext (error 998) No access to memory location". The script installs the
 #      current Visual C++ runtime into the prefix.
-#   3. Some NightCoop archives bundle a RED4ext that is too old for the game patch.
-#      The script keeps the newest of the bundled, the pinned and the installed one.
+#   3. Each RED4ext release supports one game patch (1.31 needs 2.5, 1.30 is for 2.31).
+#      The script installs the newest RED4ext that the installed game supports.
+# It also picks the Proton build for the game (proton-cachyos on CachyOS, otherwise
+# Proton Experimental), unless one is already chosen in Steam.
 #
 # Usage:
 #   nightcoop-install.sh [install] [options]   install or update NightCoop (default)
@@ -26,11 +28,14 @@
 #   nightcoop-install.sh uninstall             undo every install, newest first
 #
 # Options:
+#   --proton TOOL         Proton build for the game: auto (default), keep, experimental,
+#                         cachyos, ge, or a tool name such as GE-Proton10-25
+#   --no-launcher-skip    keep CDPR's launcher: do not add --launcher-skip to the launch options
+#   --close-steam         close Steam to write its settings, then reopen it
 #   --nightcoop-zip FILE  use a downloaded NightCoop archive instead of the latest
 #   --red4ext-zip FILE    use a downloaded RED4ext release archive
 #   --vcredist FILE       use a downloaded VC_redist.x64.exe
 #   --steam-root DIR      use this Steam installation instead of detecting one
-#   --close-steam         close Steam to write the launch options, then reopen it
 #   --no-save-backup      do not copy the save games before installing
 #   --dry-run             detect, download and verify everything; change nothing
 #   -y, --yes             do not ask for confirmation
@@ -39,9 +44,10 @@
 # Needs bash, python3, curl, coreutils, findutils and procps-ng. SteamOS and CachyOS
 # ship all of them; on a minimal Arch install: sudo pacman -S --needed python curl
 
+# SPDX-License-Identifier: MIT
 set -euo pipefail
 
-SCRIPT_VERSION="2.0.0"
+SCRIPT_VERSION="2.1.0"
 APPID=1091500
 GAME_EXE_REL="bin/x64/Cyberpunk2077.exe"
 RED4EXT_VER="1.31.0"
@@ -54,6 +60,9 @@ VCREDIST_URLS=("https://aka.ms/vc14/vc_redist.x64.exe" "https://aka.ms/vs/17/rel
 # on an older msvcp140.dll. Newer builds should get a runtime at least as new as
 # their toolset, which is read from the DLLs themselves.
 RUNTIME_FLOOR="14.40"
+# Each RED4ext release and the game build (Cyberpunk2077.exe file version) it requires;
+# from RED4ext's own start-up check (RED4EXT_V1_RUNTIME_VERSION_* in RED4ext.SDK).
+RED4EXT_COMPAT="1.31.0:3.0.88.46235 1.30.0:3.0.80.51928"
 REG_KEY='Software\Wine\AppDefaults\Cyberpunk2077.exe\DllOverrides'
 RED4EXT_CORE=("red4ext/RED4ext.dll" "bin/x64/winmm.dll" "red4ext/LICENSE.txt" "red4ext/THIRD_PARTY_LICENSES.txt")
 
@@ -67,6 +76,8 @@ RED4EXT_ZIP=""
 VCREDIST=""
 OPT_STEAM_ROOT=""
 CLOSE_STEAM=0
+PROTON_WANT="auto"
+GAME_ARGS="--launcher-skip"
 SAVE_BACKUP=1
 DRY_RUN=0
 ASSUME_YES=0
@@ -260,8 +271,9 @@ def pe_info(path):
 def pe_version(path, kind):
     fixed, strings = pe_info(path)
     s = strings.get('ProductVersion' if kind == 'product' else 'FileVersion', '')
-    if vtuple(s):
-        return re.sub(r'\s*,\s*', '.', s)
+    m = re.match(r'\s*(\d+(?:\s*[.,]\s*\d+)*)', s)   # "14.29.30157.0 built by: cloudtest" -> 14.29.30157.0
+    if m:
+        return re.sub(r'\s*[.,]\s*', '.', m.group(1))
     if fixed:
         return fixed_version(fixed, kind)
     try:
@@ -274,9 +286,35 @@ def cmd_pever(path, kind='file'):
     out(pe_version(path, kind))
 
 
+def game_label(fixed):
+    """CDPR's patch name from the fixed product version, as RED4ext reads it:
+    2.3.1 is patch 2.31, 2.5.0 is 2.5, 2.1.2 is 2.12."""
+    ms, ls = struct.unpack_from('<II', fixed, 16)
+    major, minor, patch = (ms >> 16) & 0xff, ms & 0xffff, ls >> 16
+    return '%d.%d%s' % (major, minor, patch or '') if major else ''
+
+
 def cmd_gamever(path):
+    """patch name (2.31), product version string, file version (3.0.80.51928)."""
     fixed, _ = pe_info(path)
-    out(pe_version(path, 'product'), fixed_version(fixed, 'product') if fixed else '')
+    label = game_label(fixed) if fixed else ''
+    out(label or norm_game(pe_version(path, 'product')), pe_version(path, 'product'),
+        fixed_version(fixed, 'file') if fixed else '')
+
+
+def cmd_r4ok(r4ver, gamefile, table):
+    """Exit 0 if RED4ext r4ver runs on the game with file version gamefile.
+    table: 'R4VER:GAMEFILEVER ...', each RED4ext release and the game build it requires.
+    Every release refuses older games and targets one patch, so a game needs the newest
+    release whose game build it has reached, or a later one."""
+    rows = sorted(((r, g) for r, _, g in (x.partition(':') for x in table.split())), key=lambda x: vtuple(x[0]))
+    if not gamefile:
+        sys.exit(0)
+    needs = [g for r, g in rows if vcmp(r, r4ver) <= 0]            # builds r4ver's line requires
+    if needs and vcmp(gamefile, needs[-1]) < 0:
+        sys.exit(1)                                                 # game too old for this RED4ext
+    floor = [r for r, g in rows if vcmp(gamefile, g) >= 0]          # releases this game has reached
+    sys.exit(1 if floor and vcmp(r4ver, floor[-1]) < 0 else 0)      # too old for this game
 
 
 def cmd_pestr(path, key):
@@ -285,6 +323,17 @@ def cmd_pestr(path, key):
 
 def cmd_vge(a, b):
     sys.exit(0 if vcmp(a, b) >= 0 else 1)
+
+
+def cmd_builtin(path):
+    """Exit 0 if a prefix DLL is one of Wine's own (a link into Proton or the builtin marker)."""
+    if os.path.islink(path) and '/lib/wine/' in os.readlink(path):
+        sys.exit(0)
+    try:
+        with open(path, 'rb') as fh:
+            sys.exit(0 if b'Wine builtin DLL' in fh.read(4096) else 1)
+    except OSError:
+        sys.exit(1)
 
 
 def cmd_pecrt(top, *extra):
@@ -403,29 +452,178 @@ def proton_ok(d):
     return bool(d) and os.path.isfile(os.path.join(d, 'proton'))
 
 
+MAPPING_PATH = ('installconfigstore', 'software', 'valve', 'steam', 'compattoolmapping')
+VALVE_LABELS = {'proton_experimental': 'Proton Experimental', 'proton_hotfix': 'Proton Hotfix'}
+
+
+def compat_names(root, appid):
+    """(tool chosen for this game, Steam's default tool) from config.vdf; '' when unset."""
+    m = vget(vdf_load(os.path.join(root, 'config', 'config.vdf')), *MAPPING_PATH)
+    names = [vget(m, key, 'name') for key in (appid, '0')]
+    return [n if isinstance(n, str) else '' for n in names]
+
+
 def compat_setting(root, appid):
-    m = vget(vdf_load(os.path.join(root, 'config', 'config.vdf')),
-             'InstallConfigStore', 'Software', 'Valve', 'Steam', 'CompatToolMapping')
-    for key in (appid, '0'):
-        n = vget(m, key, 'name')
-        if isinstance(n, str) and n:
-            return n
-    return ''
+    app, default = compat_names(root, appid)
+    return app or default
 
 
-def resolve_tool(name, tools, official):
-    n = name.lower()
-    if n in tools:
-        return tools[n]
-    cands = {'proton_experimental': ['Proton - Experimental'], 'proton_hotfix': ['Proton Hotfix']}.get(n, [])
-    m = re.fullmatch(r'proton_(\d+)', n)
-    if m:
-        d = m.group(1)
-        if len(d) <= 2 and int(d) >= 7:
-            cands.append('Proton %s.0' % d)
-        if len(d) >= 2:
-            cands.append('Proton %s.%s' % (d[0], d[1:]))
-    return next((official[c] for c in cands if c in official), '')
+def official_name(dirname):
+    """Steam's internal name for one of Valve's Proton folders: 'Proton 10.0' is proton_10."""
+    if dirname == 'Proton - Experimental':
+        return 'proton_experimental'
+    if dirname == 'Proton Hotfix':
+        return 'proton_hotfix'
+    m = re.fullmatch(r'Proton (\d+)\.(\d+)', dirname)
+    if not m:
+        return ''
+    major, minor = m.groups()
+    return 'proton_%s' % major if minor == '0' and int(major) >= 7 else 'proton_%s%s' % (major, minor)
+
+
+def discover_tools(root, libs):
+    """Every installed Proton build: {internal name (lower case): (internal name, folder, label)}."""
+    home, found = os.path.expanduser('~'), {}
+    for td in (os.path.join(root, 'compatibilitytools.d'), os.path.join(home, '.steam', 'root', 'compatibilitytools.d'),
+               '/usr/share/steam/compatibilitytools.d', '/usr/local/share/steam/compatibilitytools.d'):
+        for d in sorted(glob.glob(os.path.join(td, '*'))):
+            ct = vget(vdf_load(os.path.join(d, 'compatibilitytool.vdf')), 'compatibilitytools', 'compat_tools')
+            for name, spec in ct if isinstance(ct, list) else []:
+                ip, label = vget(spec, 'install_path'), vget(spec, 'display_name')
+                p = os.path.normpath(os.path.join(d, ip if isinstance(ip, str) and ip else '.'))
+                if proton_ok(p):
+                    found.setdefault(name.lower(), (name, p, label if isinstance(label, str) and label else name))
+            if proton_ok(d):
+                found.setdefault(os.path.basename(d).lower(), (os.path.basename(d), d, os.path.basename(d)))
+    for lib in libs:
+        for d in sorted(glob.glob(os.path.join(lib, 'steamapps', 'common', '*'))):
+            name = official_name(os.path.basename(d))
+            if name and proton_ok(d):
+                found.setdefault(name, (name, d, os.path.basename(d).replace(' - ', ' ')))
+    return found
+
+
+def cmd_ct_get(root, appid):
+    out(*compat_names(root, appid))
+
+
+def cmd_ct_list(root, *libs):
+    for _, (name, d, label) in sorted(discover_tools(root, libs).items()):
+        out(name, d, label)
+
+
+def cmd_ct_pick(root, want, os_family, *libs):
+    """The compatibility tool to set: want is auto, keep, experimental, cachyos, ge or a tool name.
+    Prints: name, folder (empty when Steam still has to download it), reason."""
+    tools = discover_tools(root, libs)
+    current = compat_names(root, '1091500')[0]
+
+    def newest(pattern):
+        hits = [v for k, v in tools.items() if re.match(pattern, k)]
+        return max(hits, key=lambda v: (vtuple(v[0]) or [0], v[0])) if hits else None
+
+    def cachyos():   # the Steam Linux Runtime build mirrors Valve's environment most closely
+        return newest(r'proton-cachyos.*slr') or newest(r'proton-cachyos')
+
+    if want == 'keep':
+        return
+    def emit(hit, name, reason):
+        out(hit[0] if hit else name, hit[1] if hit else '', reason, hit[2] if hit else VALVE_LABELS.get(name, name))
+
+    if want == 'auto':
+        if current and (current.lower() in tools or re.fullmatch(r'proton_(experimental|hotfix|\d+)', current)):
+            emit(tools.get(current.lower()), current, 'already chosen for this game in Steam')
+            return
+        hit = cachyos() if os_family == 'cachyos' else None
+        if hit:
+            emit(hit, '', 'CachyOS\'s own Proton build')
+            return
+        want = 'experimental'
+    if want == 'experimental':
+        emit(tools.get('proton_experimental'), 'proton_experimental', 'Valve\'s Proton with the newest fixes')
+    elif want == 'cachyos':
+        hit = cachyos()
+        if not hit:
+            die('no proton-cachyos build is installed (sudo pacman -S proton-cachyos-slr)', 3)
+        emit(hit, '', 'requested')
+    elif want == 'ge':
+        hit = newest(r'ge-proton')
+        if not hit:
+            die('no GE-Proton build is installed (it goes in ~/.local/share/Steam/compatibilitytools.d)', 3)
+        emit(hit, '', 'requested')
+    else:
+        hit = tools.get(want.lower())
+        if not hit and not re.fullmatch(r'proton_(experimental|hotfix|\d+)', want):
+            die('no compatibility tool named %r is installed; installed: %s' %
+                (want, ', '.join(sorted(v[0] for v in tools.values())) or 'none'), 3)
+        emit(hit, want, 'requested')
+
+
+def vdf_index(text):
+    """Positions in a KeyValues text: {block path: [after '{', at '}']}, {value path: (start, end, value)}."""
+    blocks, values, stack, key = {}, {}, [], None
+    for m in TOK.finditer(text):
+        q, br, com, bare = m.groups()
+        if com is not None:
+            continue
+        if br == '{':
+            stack.append((key or '').lower())
+            key = None
+            blocks.setdefault(tuple(stack), [m.end(), None])
+        elif br == '}':
+            if stack:
+                b = blocks.get(tuple(stack))
+                if b and b[1] is None:
+                    b[1] = m.start()
+                stack.pop()
+            key = None
+        else:
+            s = q if q is not None else bare
+            if key is None:
+                key = s
+            else:
+                values.setdefault(tuple(stack) + (key.lower(),), (m.start(), m.end(), unesc(s)))
+                key = None
+    return blocks, values
+
+
+def vdf_insert(text, at, depth, lines):
+    """Insert KeyValues lines on the line after position at, indented with tabs like Steam."""
+    nl = text.find('\n', at)
+    nl = len(text) if nl < 0 else nl
+    body = ''.join('\t' * (depth + d) + s + '\n' for d, s in lines)
+    return text[:nl + 1] + body + text[nl + 1:]
+
+
+def cmd_ct_set(root, appid, name):
+    """Choose the compatibility tool for one game, as Steam's Properties > Compatibility does."""
+    path = os.path.join(root, 'config', 'config.vdf')
+    text = read_text(path)
+    blocks, values = vdf_index(text)
+    entry = MAPPING_PATH + (appid,)
+    q = '"%s"' % esc(name)
+    if entry in blocks:
+        old = values.get(entry + ('name',))
+        if old and old[2] == name:
+            out('unchanged')
+            return
+        if old:
+            text = text[:old[0]] + q + text[old[1]:]
+        else:
+            text = vdf_insert(text, blocks[entry][0], len(entry), [(0, '"name"\t\t' + q)])
+    else:
+        rows = [(0, '"%s"' % appid), (0, '{'), (1, '"name"\t\t' + q), (1, '"config"\t\t""'),
+                (1, '"priority"\t\t"250"'), (0, '}')]
+        if MAPPING_PATH in blocks:
+            text = vdf_insert(text, blocks[MAPPING_PATH][0], len(MAPPING_PATH), rows)
+        elif MAPPING_PATH[:-1] in blocks:
+            rows = [(0, '"CompatToolMapping"'), (0, '{')] + [(d + 1, s) for d, s in rows] + [(0, '}')]
+            text = vdf_insert(text, blocks[MAPPING_PATH[:-1]][0], len(MAPPING_PATH) - 1, rows)
+        else:
+            die('Steam\'s config.vdf has no InstallConfigStore > Software > Valve > Steam section', 3)
+    shutil.copy2(path, path + '.nightcoop-backup-' + time.strftime('%Y%m%d-%H%M%S'))
+    write_text(path, text)
+    out('written')
 
 
 def cmd_proton(root, kind, compat, appid, *libs):
@@ -440,34 +638,17 @@ def cmd_proton(root, kind, compat, appid, *libs):
                         out(c, 'the prefix\'s last launch')
                         return
     # 2. the compatibility tool chosen in Steam
-    home, tools, official = os.path.expanduser('~'), {}, {}
-    for td in (os.path.join(root, 'compatibilitytools.d'), os.path.join(home, '.steam', 'root', 'compatibilitytools.d'),
-               '/usr/share/steam/compatibilitytools.d', '/usr/local/share/steam/compatibilitytools.d'):
-        for d in sorted(glob.glob(os.path.join(td, '*'))):
-            ct = vget(vdf_load(os.path.join(d, 'compatibilitytool.vdf')), 'compatibilitytools', 'compat_tools')
-            for name, spec in ct if isinstance(ct, list) else []:
-                ip = vget(spec, 'install_path')
-                p = os.path.normpath(os.path.join(d, ip if isinstance(ip, str) and ip else '.'))
-                if proton_ok(p):
-                    tools.setdefault(name.lower(), p)
-            if proton_ok(d):
-                tools.setdefault(os.path.basename(d).lower(), d)
-    for lib in libs:
-        for d in sorted(glob.glob(os.path.join(lib, 'steamapps', 'common', '*'))):
-            if proton_ok(d):
-                official.setdefault(os.path.basename(d), d)
+    tools = discover_tools(root, libs)
     name = compat_setting(root, appid)
-    d = resolve_tool(name, tools, official) if name else ''
-    if d:
-        out(d, 'Steam setting "%s"' % name)
+    if name and name.lower() in tools:
+        out(tools[name.lower()][1], 'Steam setting "%s"' % name)
         return
-    # 3. best guess
-    order = [official.get('Proton - Experimental')]
-    order += [official[k] for k in sorted(official, key=lambda k: vtuple(k) or [0], reverse=True)]
-    order += list(tools.values())
-    d = next((x for x in order if proton_ok(x)), '')
-    if d:
-        out(d, 'best guess')
+    # 3. best guess: Proton Experimental, then the newest of Valve's releases, then anything else
+    valve = sorted((v for k, v in tools.items() if k.startswith('proton_')),
+                   key=lambda v: (v[0] == 'proton_experimental', vtuple(v[0]) or [0]), reverse=True)
+    order = valve + [v for k, v in sorted(tools.items()) if not k.startswith('proton_')]
+    if order:
+        out(order[0][1], 'best guess')
 
 
 def cmd_slr(proton_dir, *libs):
@@ -494,40 +675,53 @@ def dll_names(spec):
     return [n.strip().lower()[:-4] if n.strip().lower().endswith('.dll') else n.strip().lower() for n in spec.split(',')]
 
 
-def lo_state(s):
-    s = s or ''
-    m = WDO.search(s)
-    if not m:
-        return 'missing'
-    mode = None
-    for e in m.group(1).strip('"\'').split(';'):
+def wdo_modes(s):
+    """The WINEDLLOVERRIDES match in a launch option line and {dll: load order} from it."""
+    m, modes = WDO.search(s or ''), {}
+    for e in m.group(1).strip('"\'').split(';') if m else []:
         names, _, md = e.partition('=')
-        if 'winmm' in dll_names(names):
-            mode = md.strip().lower()
-            break
-    if not mode or not mode.startswith('n'):
+        for n in dll_names(names):
+            if n:
+                modes.setdefault(n, md.strip().lower())
+    return m, modes
+
+
+def lo_state(s, dlls='winmm', args=''):
+    """ok: every DLL in dlls is native-first before %command% and every argument is present;
+    broken: the override sits after %command% (Steam passes it to the game as an argument);
+    missing: anything else."""
+    s, dlls = s or '', [d for d in dlls.split(',') if d]
+    m, modes = wdo_modes(s)
+    if not m or any(not modes.get(d, '').startswith('n') for d in dlls):
         return 'missing'
-    return 'ok' if '%command%' in s and m.start() < s.index('%command%') else 'broken'
+    if '%command%' not in s or m.start() > s.index('%command%'):
+        return 'broken'
+    return 'ok' if all(a in s.split() for a in args.split()) else 'missing'
 
 
-def lo_merge(s):
-    """Add winmm=n,b, keeping every other override, wrapper and argument."""
-    s = (s or '').strip()
-    m = WDO.search(s)
+def lo_merge(s, dlls='winmm', args=''):
+    """Make the DLLs native-first and add the game arguments, keeping every other override,
+    wrapper (game-performance, gamemoderun, mangohud) and argument."""
+    s, dlls = (s or '').strip(), [d for d in dlls.split(',') if d]
+    m, _ = wdo_modes(s)
     keep = []
     for e in m.group(1).strip('"\'').split(';') if m else []:
         names, eq, md = e.partition('=')
-        rest = [n for n in names.split(',') if n.strip() and dll_names(n)[0] != 'winmm']
+        rest = [n for n in names.split(',') if n.strip() and dll_names(n)[0] not in dlls]
         if rest:
             keep.append(','.join(rest) + eq + md)
-    tok = 'WINEDLLOVERRIDES="' + ';'.join(keep + ['winmm=n,b']) + '"'
+    tok = 'WINEDLLOVERRIDES="' + ';'.join(keep + [','.join(dlls) + '=n,b']) + '"'
     if m and '%command%' in s and m.start() < s.index('%command%'):
-        return s[:m.start()] + tok + s[m.end():]
-    if m:
-        s = re.sub(r'\s+', ' ', (s[:m.start()] + ' ' + s[m.end():]).strip())
-    if '%command%' in s:
-        return tok + ' ' + s
-    return (tok + ' %command% ' + s).strip()
+        s = s[:m.start()] + tok + s[m.end():]
+    else:
+        if m:
+            s = re.sub(r'\s+', ' ', (s[:m.start()] + ' ' + s[m.end():]).strip())
+        s = tok + ' ' + s if '%command%' in s else (tok + ' %command% ' + s).strip()
+    for a in args.split():
+        if a not in s.split():
+            i = s.index('%command%') + len('%command%')
+            s = s[:i] + ' ' + a + s[i:]
+    return s.strip()
 
 
 def lo_files(root):
@@ -583,29 +777,30 @@ def write_text(path, text):
     os.replace(tmp, path)
 
 
-def cmd_lo_status(root, appid):
+def cmd_lo_status(root, appid, dlls='winmm', args=''):
+    """state of the full wish (dlls and args), current line, state of the winmm override alone."""
     files = lo_files(root)
     if not files:
-        out('nofile', '')
+        out('nofile', '', 'nofile')
         return
     lo = lo_scan(read_text(files[0]), appid)[2]
     cur = lo[2] if lo else ''
-    out(lo_state(cur), cur)
+    out(lo_state(cur, dlls, args), cur, lo_state(cur))
 
 
-def cmd_lo_merge(s):
-    out(lo_state(s), lo_merge(s))
+def cmd_lo_merge(s, dlls='winmm', args=''):
+    out(lo_state(s, dlls, args), lo_merge(s, dlls, args))
 
 
-def cmd_lo_set(root, appid):
+def cmd_lo_set(root, appid, dlls='winmm', args=''):
     for f in lo_files(root):
         text = read_text(f)
         apps_open, app_open, lo = lo_scan(text, appid)
         cur = lo[2] if lo else ''
-        if lo_state(cur) == 'ok':
+        if lo_state(cur, dlls, args) == 'ok':
             out(f, 'already set')
             continue
-        new = lo_merge(cur)
+        new = lo_merge(cur, dlls, args)
         if lo:
             text = text[:lo[0]] + '"' + esc(new) + '"' + text[lo[1]:]
         else:
@@ -896,22 +1091,41 @@ def read_manifest(path):
     return ents
 
 
-def tree_stale(mapping, game, prev, protect):
-    """Files the previous install put in place that the new archive no longer has."""
+# What NightCoop's own update guide says to keep when replacing its plugin folder.
+PLUGIN_KEEP_FILES = ('servers.txt', 'hub.txt')
+PLUGIN_KEEP_DIRS = ('logs',)
+
+
+def tree_stale(mapping, game, prev, protect, refresh=''):
+    """Files to remove: those the previous install put in place that the new archive no
+    longer has, and everything else in the plugin folder (refresh) apart from the user's
+    servers.txt, hub.txt and logs, so that no file of an older build stays behind."""
     current = {rel.lower() for _, rel in mapping} | {p.lower() for p in protect}
     stale = []
+
+    def add(p):
+        r = os.path.relpath(p, game).replace(os.sep, '/')
+        if (os.path.isfile(p) or os.path.islink(p)) and r.lower() not in current and r not in stale:
+            stale.append(r)
+
     for st, rel in read_manifest(prev):
-        if st in ('added', 'replaced') and rel.lower() not in current:
+        if st in ('added', 'replaced'):
             p = ci_resolve(game, rel)
-            r = os.path.relpath(p, game).replace(os.sep, '/') if p else ''
-            if p and os.path.isfile(p) and r not in stale:
-                stale.append(r)
+            if p:
+                add(p)
+    top = ci_resolve(game, refresh) if refresh else None
+    if top and os.path.isdir(top) and not os.path.islink(top):
+        for dp, dns, fns in os.walk(top):
+            dns[:] = sorted(d for d in dns if d.lower() not in PLUGIN_KEEP_DIRS)
+            for fn in sorted(fns):
+                if fn.lower() not in PLUGIN_KEEP_FILES:
+                    add(os.path.join(dp, fn))
     return stale
 
 
-def plan(stage, game, prev, protect):
+def plan(stage, game, prev, protect, refresh=''):
     mapping = tree_map(stage, game)
-    stale = tree_stale(mapping, game, prev, protect)
+    stale = tree_stale(mapping, game, prev, protect, refresh)
     mk, ents = [], []
     for _, rel in mapping:
         parts = rel.split('/')
@@ -931,16 +1145,16 @@ def plan(stage, game, prev, protect):
     return mapping, mk, ents
 
 
-def cmd_tree_plan(stage, game, prev, *protect):
-    _, _, ents = plan(stage, game, prev, protect)
+def cmd_tree_plan(stage, game, prev, refresh, *protect):
+    _, _, ents = plan(stage, game, prev, protect, refresh)
     out(*[sum(1 for e in ents if e[0] == s) for s in ('added', 'replaced', 'removed')])
     for st, rel in ents:
         if st == 'removed':
             out('stale', rel)
 
 
-def cmd_tree_apply(stage, game, bgame, manifest, prev, *protect):
-    mapping, mk, ents = plan(stage, game, prev, protect)
+def cmd_tree_apply(stage, game, bgame, manifest, prev, refresh, *protect):
+    mapping, mk, ents = plan(stage, game, prev, protect, refresh)
     for st, rel in ents:                      # 1. back up everything that will change
         if st in ('replaced', 'removed'):
             b = os.path.join(bgame, rel)
@@ -991,8 +1205,9 @@ def cmd_tree_restore(manifest, bgame, game):
 
 
 CMDS = {
-    'pever': cmd_pever, 'gamever': cmd_gamever, 'pestr': cmd_pestr, 'vge': cmd_vge, 'pecrt': cmd_pecrt,
+    'pever': cmd_pever, 'gamever': cmd_gamever, 'r4ok': cmd_r4ok, 'pestr': cmd_pestr, 'vge': cmd_vge, 'builtin': cmd_builtin, 'pecrt': cmd_pecrt,
     'libs': cmd_libs, 'proton': cmd_proton, 'slr': cmd_slr,
+    'ct-get': cmd_ct_get, 'ct-list': cmd_ct_list, 'ct-pick': cmd_ct_pick, 'ct-set': cmd_ct_set,
     'lo-status': cmd_lo_status, 'lo-set': cmd_lo_set, 'lo-merge': cmd_lo_merge,
     'pick': cmd_pick, 'reg-get': cmd_reg_get, 'reg-set': cmd_reg_set, 'reg-del': cmd_reg_del, 'wsrv': cmd_wsrv,
     'unzip': cmd_unzip, 'ncroot': cmd_ncroot, 'findci': cmd_findci, 'rmci': cmd_rmci, 'merge': cmd_merge,
@@ -1033,7 +1248,9 @@ confirm() {
     [[ "$a" =~ ^[Yy]([Ee][Ss])?$ ]]
 }
 
-usage() { awk 'NR > 1 && /^#/ { sub(/^# ?/, ""); print; next } NR > 1 { exit }' "$0"; }
+usage() {   # the header comment, with the name this was started as (nightcoop-install when packaged)
+    awk 'NR > 1 && /^#/ { sub(/^# ?/, ""); print; next } NR > 1 { exit }' "$0" | sed "s/nightcoop-install\.sh/$(basename "$0")/g"
+}
 
 # ---------------------------------------------------------- argument parse ----
 need_arg() { [ "$2" -ge 2 ] || fail "$1 needs a value"; }
@@ -1052,6 +1269,8 @@ while [ $# -gt 0 ]; do
         --vcredist)       need_arg "$1" $#; VCREDIST="$(readlink -m "$2")"; shift 2 ;;
         --steam-root)     need_arg "$1" $#; OPT_STEAM_ROOT="$(readlink -m "$2")"; shift 2 ;;
         --close-steam)    CLOSE_STEAM=1; shift ;;
+        --proton)         need_arg "$1" $#; PROTON_WANT="$2"; shift 2 ;;
+        --no-launcher-skip) GAME_ARGS=""; shift ;;
         --no-save-backup) SAVE_BACKUP=0; shift ;;
         --dry-run)        DRY_RUN=1; shift ;;
         -y|--yes)         ASSUME_YES=1; shift ;;
@@ -1115,7 +1334,7 @@ download() {    # download <url> <dest> [quiet]
 }
 
 # ----------------------------------------------------- locate Steam & game ----
-STEAM_ROOT="" STEAM_KIND="" GAME_LIB="" GAME_DIR="" GAME_VER="" GAME_VER_ALT=""
+STEAM_ROOT="" STEAM_KIND="" GAME_LIB="" GAME_DIR="" GAME_VER="" GAME_VER_ALT="" GAME_FILEVER=""
 COMPAT="" PFX="" SYS32="" USERREG="" SAVES="" PROTON_DIR="" PROTON_SRC="" SLR_ENTRY=""
 LIBS=()
 
@@ -1150,9 +1369,10 @@ locate_game() {
     ok "Steam ($STEAM_KIND client): $STEAM_ROOT"
     [ "$STEAM_KIND" = flatpak ] && info "Flatpak Steam: the files are reachable from outside the sandbox, so the install works the same way"
     ok "game folder: $GAME_DIR"
-    IFS=$'\x1f' read -r GAME_VER GAME_VER_ALT < <(py gamever "$GAME_DIR/$GAME_EXE_REL") || true
+    IFS=$'\x1f' read -r GAME_VER GAME_VER_ALT GAME_FILEVER < <(py gamever "$GAME_DIR/$GAME_EXE_REL") || true
     GAME_VER="${GAME_VER:-$GAME_VER_ALT}"
-    if [ -n "$GAME_VER" ]; then ok "game version: $GAME_VER"; else warn "could not read the game version from Cyberpunk2077.exe"; fi
+    if [ -n "$GAME_VER" ]; then ok "game version: $GAME_VER${GAME_FILEVER:+ (Cyberpunk2077.exe $GAME_FILEVER)}"
+    else warn "could not read the game version from Cyberpunk2077.exe"; fi
 }
 
 no_prefix_help() {
@@ -1165,7 +1385,7 @@ no_prefix_help() {
 EOF
     else
         local tool="Proton Experimental"
-        [ "$OS_FAMILY" = cachyos ] && tool="Proton Experimental (or proton-cachyos)"
+        [ "$OS_FAMILY" = cachyos ] && tool="proton-cachyos (sudo pacman -S proton-cachyos-slr) or Proton Experimental"
         cat <<EOF
 
   The game has never been started with Proton here. Do this first:
@@ -1225,10 +1445,32 @@ red4ext_core_version() {   # red4ext_core_version <dir> : version if RED4ext.dll
         echo ""
     fi
 }
-reg_state() {   # prints: ok | missing | noreg
-    local v
+runtime_kind() {   # prints: microsoft | builtin | missing
+    local f
+    f="$(findci "$SYS32" msvcp140.dll 2>/dev/null)" || { echo missing; return 0; }
+    if py builtin "$f"; then echo builtin; else echo microsoft; fi
+}
+dll_overrides() {   # DLLs that must load native-first: RED4ext's loader, plus Cyber Engine Tweaks' if present
+    if findci "$GAME_DIR" bin/x64/version.dll >/dev/null 2>&1; then echo winmm,version; else echo winmm; fi
+}
+reg_state() {   # reg_state [dlls] : ok | missing | noreg
+    local v d
     [ -f "$USERREG" ] || { echo noreg; return 0; }
-    if v="$(py reg-get "$USERREG" "$REG_KEY" winmm)" && [[ "${v,,}" == n* ]]; then echo ok; else echo missing; fi
+    for d in $(tr ',' ' ' <<<"${1:-winmm}"); do
+        if ! v="$(py reg-get "$USERREG" "$REG_KEY" "$d")" || [[ "${v,,}" != n* ]]; then echo missing; return 0; fi
+    done
+    echo ok
+}
+r4_supported() { py r4ok "$1" "$GAME_FILEVER" "$RED4EXT_COMPAT"; }   # r4_supported <RED4ext version>
+r4_needed() {   # the RED4ext line this game needs, for messages
+    local row best="" top=""
+    for row in $RED4EXT_COMPAT; do
+        if [ -z "$top" ] || ver_ge "${row%%:*}" "$top"; then top="${row%%:*}"; fi
+        if ver_ge "$GAME_FILEVER" "${row#*:}" && { [ -z "$best" ] || ver_ge "${row%%:*}" "$best"; }; then best="${row%%:*}"; fi
+    done
+    if [ -z "$best" ]; then echo "an older release"
+    elif [ "$best" = "$top" ]; then echo "$best or newer"
+    else echo "$best (newer releases need a newer game patch)"; fi
 }
 latest_backup() {   # newest backup that has not been restored yet (new or legacy layout)
     local d
@@ -1248,12 +1490,13 @@ wait_prefix_idle() {   # wait up to $1 s for the prefix's wineserver to exit
     return 0
 }
 
-newest() {   # newest <dir> <depth> : most recently modified *.log below dir
-    find "$1" -maxdepth "$2" -type f -name '*.log' -printf '%T@ %p\n' 2>/dev/null | sort -rn | head -n1 | cut -d' ' -f2- || true
+newest() {   # newest <dir> <depth> [name pattern] : most recently modified log below dir
+    find "$1" -maxdepth "$2" -type f -iname "${3:-*.log}" -printf '%T@ %p\n' 2>/dev/null | sort -rn | head -n1 | cut -d' ' -f2- || true
 }
 
-runtime_verdict() {   # runtime_verdict <version> <wanted>
-    if [ -z "$1" ]; then echo "msvcp140.dll missing"
+runtime_verdict() {   # runtime_verdict <version> <wanted> [kind]
+    if [ "${3:-}" = builtin ]; then echo "Wine's built-in runtime (works with RED4ext; Steam's first launch normally replaces it)"
+    elif [ -z "$1" ]; then echo "msvcp140.dll missing"
     elif ver_ge "$1" "$2"; then echo "$1 (ok)"
     elif ver_ge "$1" "$RUNTIME_FLOOR"; then echo "$1 (works; $2 or newer recommended)"
     else echo "$1 (too old: RED4ext fails with error 998; needs $RUNTIME_FLOOR or newer)"; fi
@@ -1262,40 +1505,46 @@ runtime_verdict() {   # runtime_verdict <version> <wanted>
 # ------------------------------------------------------------------ check ----
 do_check() {
     bold "Current state"
-    local f v crt who lo lo_val mm log nlog
+    local f v crt who lo lo_val lo_winmm mm log plugins rv kind want dlls app def
     v="$(red4ext_core_version "$GAME_DIR")"
-    if [ -n "$v" ]; then row "RED4ext" "$v $(ver_ge "$v" "$RED4EXT_VER" && echo '(ok)' || echo "(older than $RED4EXT_VER)")"
-    elif f="$(findci "$GAME_DIR" red4ext/RED4ext.dll 2>/dev/null)"; then row "RED4ext" "RED4ext.dll present but bin/x64/winmm.dll (its loader) is missing"
+    if [ -n "$v" ]; then
+        if r4_supported "$v"; then row "RED4ext" "$v (supports game ${GAME_VER:-?})"
+        else row "RED4ext" "$v (DOES NOT support game ${GAME_VER:-?}; needs $(r4_needed); run install again)"; fi
+    elif findci "$GAME_DIR" red4ext/RED4ext.dll >/dev/null 2>&1; then row "RED4ext" "RED4ext.dll present but bin/x64/winmm.dll (its loader) is missing"
     else row "RED4ext" "not installed"; fi
-    local plugins; plugins="$(findci "$GAME_DIR" red4ext/plugins 2>/dev/null || true)"
+    plugins="$(findci "$GAME_DIR" red4ext/plugins 2>/dev/null || true)"
     f=""; [ -n "$plugins" ] && f="$(find "$plugins" -maxdepth 2 -type f -iname nightcoop.dll 2>/dev/null | head -n1 || true)"
     if [ -n "$f" ]; then
         v="$(pever "$f" product)"
         row "NightCoop" "${v:+$v, }$(date -r "$f" +%F)${NC_INSTALLED:+, release $NC_INSTALLED}"
     else row "NightCoop" "not installed"; fi
+    IFS=$'\x1f' read -r app def < <(py ct-get "$STEAM_ROOT" "$APPID") || true
+    if [ -n "$app" ]; then row "Proton for the game" "$app (chosen in Steam)"
+    else row "Proton for the game" "not chosen; Steam uses ${def:-its default}"; fi
     if [ -z "$COMPAT" ]; then row "Proton prefix" "missing (launch the game once)"; return 0; fi
     IFS=$'\x1f' read -r crt who < <(py pecrt "$GAME_DIR/red4ext" "$GAME_DIR/bin/x64/winmm.dll") || true
-    local want="$RUNTIME_FLOOR"; [ -n "$crt" ] && ver_ge "$crt" "$want" && want="$crt"
-    local rv; rv="$(runtime_version)"
-    row "C++ runtime (prefix)" "$(runtime_verdict "$rv" "$want")"
-    if [ -z "$rv" ] || ! ver_ge "$rv" "$RUNTIME_FLOOR"; then
+    want="$RUNTIME_FLOOR"; [ -n "$crt" ] && ver_ge "$crt" "$want" && want="$crt"
+    rv="$(runtime_version)"; kind="$(runtime_kind)"
+    row "C++ runtime (prefix)" "$(runtime_verdict "$rv" "$want" "$kind")"
+    if [ "$kind" != builtin ] && { [ -z "$rv" ] || ! ver_ge "$rv" "$RUNTIME_FLOOR"; }; then
         info "fix: run '$0' again (it installs the runtime); if that does not help:"
         protontricks_hint
     fi
     [ -n "$crt" ] && row "DLLs built with" "MSVC $crt (newest: $who)"
-    case "$(reg_state)" in
-        ok) row "winmm override" "set in the prefix registry" ;;
-        noreg) row "winmm override" "prefix has no user.reg" ;;
-        *) row "winmm override" "not in the prefix registry" ;;
+    dlls="$(dll_overrides)"
+    case "$(reg_state "$dlls")" in
+        ok) row "DLL override" "$dlls = native,builtin in the prefix registry" ;;
+        noreg) row "DLL override" "prefix has no user.reg" ;;
+        *) row "DLL override" "$dlls not set in the prefix registry" ;;
     esac
-    IFS=$'\x1f' read -r lo lo_val < <(py lo-status "$STEAM_ROOT" "$APPID") || true
+    IFS=$'\x1f' read -r lo lo_val lo_winmm < <(py lo-status "$STEAM_ROOT" "$APPID" "$dlls" "$GAME_ARGS") || true
     case "$lo" in
-        ok) row "launch options" "set ($lo_val)" ;;
+        ok) row "launch options" "$lo_val" ;;
         broken) row "launch options" "WINEDLLOVERRIDES present but placed after %command% or without it: $lo_val" ;;
-        missing) row "launch options" "no winmm override${lo_val:+ (current: $lo_val)}" ;;
+        missing) row "launch options" "${lo_val:-empty}; recommended: $(py lo-merge "$lo_val" "$dlls" "$GAME_ARGS" | cut -d$'\x1f' -f2)" ;;
         *) row "launch options" "Steam user config not found" ;;
     esac
-    if [ "$(reg_state)" != ok ] && [ "$lo" != ok ]; then
+    if [ "$(reg_state winmm)" != ok ] && [ "${lo_winmm:-}" != ok ]; then
         warn "neither override is set: Proton will ignore RED4ext's loader and the mod will not start"
     fi
     mm="$(cat /proc/sys/vm/max_map_count 2>/dev/null || echo 0)"
@@ -1304,16 +1553,18 @@ do_check() {
         warn "vm.max_map_count is $mm; Cyberpunk 2077 wants 1048576 or more"
         is_arch_family && info "fix: echo 'vm.max_map_count = 1048576' | sudo tee /etc/sysctl.d/80-cyberpunk.conf && sudo sysctl --system"
     fi
-    log="$(newest "$(findci "$GAME_DIR" red4ext/logs 2>/dev/null || echo /nonexistent)" 1)"
+    local logs; logs="$(findci "$GAME_DIR" red4ext/logs 2>/dev/null || echo /nonexistent)"
+    log="$(newest "$logs" 1 'red4ext*.log')"
     if [ -n "$log" ]; then
         row "latest RED4ext log" "$(basename "$log")"
-        grep -E 'is initializing|Product version|plugin\(s\) loaded|has been loaded|\[error|\[critical' "$log" 2>/dev/null | head -n8 | sed 's/^/      /' || true
-        [ -s "$log" ] || warn "the log is empty: RED4ext crashed before it could write (the error 998 symptom; run install again)"
+        grep -E 'is initializing|Product version|successfully initialized|did not initialize|plugin\(s\) loaded|has been loaded|\[error|\[critical' "$log" 2>/dev/null | head -n8 | sed 's/^/      /' || true
+        [ -s "$log" ] || warn "the log is empty: RED4ext stopped before it could write (the error 998 symptom; run install again)"
     else
         row "latest RED4ext log" "none yet (game not started since install)"
     fi
-    nlog=""; [ -n "$plugins" ] && nlog="$(newest "$plugins" 3)"
-    [ -n "$nlog" ] && row "latest plugin log" "${nlog#"$GAME_DIR"/}"
+    log="$(newest "$logs" 1 'nightcoop*.log')"; [ -n "$log" ] && row "latest NightCoop log" "$(basename "$log")"
+    log=""; [ -n "$plugins" ] && log="$(newest "$plugins" 3 '*.log')"
+    [ -n "$log" ] && row "crash/hang logs" "${log#"$GAME_DIR"/}"
     f="$(latest_backup)"; [ -n "$f" ] && row "latest backup" "$f"
     return 0
 }
@@ -1360,7 +1611,7 @@ do_restore() {
     [ -n "$RESTORE_DIR" ] || info "most recent backup: $b"
     confirm "Restore the game folder and prefix from this backup?" || { info "aborted"; exit 1; }
     restore_one "$b"
-    info "Steam launch options were not changed; clear them under Properties > General if you wish."
+    info "Steam's launch options and Proton choice were not changed; adjust them under Properties if you wish."
 }
 
 do_uninstall() {
@@ -1372,13 +1623,14 @@ do_uninstall() {
     rm -f "$DATA_DIR/installed.tsv"
     echo
     ok "$n install(s) undone; backups (and any save copies) remain in $BACKUP_ROOT"
-    info "Steam launch options were not changed; remove WINEDLLOVERRIDES under Properties > General if you wish."
+    info "Steam's launch options and Proton choice were not changed; adjust them under Properties if you wish."
 }
 
 # ---------------------------------------------------------------- install ----
 NC_STATUS="" NC_VER="" NC_URL="" NC_SHA="" NC_GAMES="" NC_PROTO="" NC_R4="" NC_MATCHED="" NC_YANKED=""
-NC_ROOT="" NC_DLL_REL="" R4_CHOICE="" R4_FINAL="" RT_WANT="" RT_TARGET="" RV="" NEED_RT=0 VCREDIST_VER=""
-REG_STATE="" LO_STATE="" LO_VALUE="" RESTART_STEAM=0
+NC_ROOT="" NC_DLL_REL="" NC_PLUGIN_DIR="" R4_CHOICE="" R4_FINAL="" RT_WANT="" RT_TARGET="" RV="" RK="" NEED_RT=0
+VCREDIST_VER="" REG_STATE="" LO_STATE="" LO_VALUE="" LO_WINMM="" RESTART_STEAM=0 DLLS="winmm"
+TOOL_NAME="" TOOL_DIR="" TOOL_REASON="" TOOL_LABEL="" TOOL_STATE="none"
 
 step_nightcoop() {
     bold "NightCoop build"
@@ -1433,47 +1685,63 @@ step_stage() {
         || fail "the archive has no red4ext/plugins/<name>/NightCoop.dll; is it a NightCoop release?"
     find "$NC_ROOT" -mindepth 1 -maxdepth 1 -type d ! -name __MACOSX -exec cp -a {} "$TMP/stage/" \;
     local skipped; skipped="$(find "$NC_ROOT" -mindepth 1 -maxdepth 1 -type f -printf '%f ' || true)"
+    NC_PLUGIN_DIR="$(dirname "$NC_DLL_REL")"
     ok "archive holds $(find "$TMP/stage" -type f | wc -l) files for the game folder, plugin $NC_DLL_REL"
     [ -z "$skipped" ] || info "top-level documents left out of the game folder: $skipped"
 }
 
 step_red4ext() {
     bold "RED4ext"
-    local inst bundled pin_ver="$RED4EXT_VER" src r4dir="$TMP/r4"
+    local inst bundled rel_ver="$RED4EXT_VER" src r4dir="$TMP/r4" c v
     inst="$(red4ext_core_version "$GAME_DIR")"
     bundled="$(red4ext_core_version "$TMP/stage")"
-    if [ -n "$RED4EXT_ZIP" ]; then   # a local archive may be a newer release than the pinned one
+    if [ -n "$RED4EXT_ZIP" ]; then   # a local archive may hold a different release than the pinned one
         [ -f "$RED4EXT_ZIP" ] || fail "no such file: $RED4EXT_ZIP"
         mkdir -p "$r4dir"; py unzip "$RED4EXT_ZIP" "$r4dir" || fail "could not unpack $RED4EXT_ZIP"
-        pin_ver="$(red4ext_core_version "$r4dir")"
-        [ -n "$pin_ver" ] || fail "$RED4EXT_ZIP is not a RED4ext release (needs red4ext/RED4ext.dll and bin/x64/winmm.dll)"
+        rel_ver="$(red4ext_core_version "$r4dir")"
+        [ -n "$rel_ver" ] || fail "$RED4EXT_ZIP is not a RED4ext release (needs red4ext/RED4ext.dll and bin/x64/winmm.dll)"
     fi
-    info "installed: ${inst:-none}; bundled with NightCoop: ${bundled:-none}; ${RED4EXT_ZIP:+local }release: $pin_ver"
-    if [ -n "$bundled" ] && ver_ge "$bundled" "$pin_ver" && { [ -z "$inst" ] || ver_ge "$bundled" "$inst"; }; then
-        R4_CHOICE=bundled; R4_FINAL="$bundled"
-        ok "using RED4ext $bundled from the NightCoop archive"
-    elif [ -n "$inst" ] && ! ver_ge "$pin_ver" "$inst" && { [ -z "$bundled" ] || ! ver_ge "$bundled" "$inst"; }; then
-        R4_CHOICE=installed; R4_FINAL="$inst"
-        py rmci "$TMP/stage" "${RED4EXT_CORE[@]}"
-        ok "keeping the installed RED4ext $inst, which is newer"
-    else
-        R4_CHOICE=release; R4_FINAL="$pin_ver"
-        if [ -n "$RED4EXT_ZIP" ]; then
-            src="$RED4EXT_ZIP"
-        else
-            src="$TMP/red4ext-$RED4EXT_VER.zip"
-            download "$RED4EXT_URL" "$src" || fail "download failed: $RED4EXT_URL"
-            mkdir -p "$r4dir"; py unzip "$src" "$r4dir" || fail "could not unpack $src"
-            [ -n "$(red4ext_core_version "$r4dir")" ] || fail "unexpected RED4ext archive layout"
+    info "installed: ${inst:-none}; bundled with NightCoop: ${bundled:-none}; ${RED4EXT_ZIP:+local }release: $rel_ver"
+    [ -z "$GAME_FILEVER" ] || info "game ${GAME_VER:-?} needs RED4ext $(r4_needed)"
+    # The newest candidate that supports the installed game. On a tie the bundled copy wins
+    # (NightCoop pairs it with its build), then the release, then what is installed.
+    R4_CHOICE=""
+    for c in bundled release installed; do
+        case "$c" in bundled) v="$bundled" ;; release) v="$rel_ver" ;; installed) v="$inst" ;; esac
+        if [ -n "$v" ] && r4_supported "$v" && { [ -z "$R4_CHOICE" ] || ! ver_ge "$R4_FINAL" "$v"; }; then
+            R4_CHOICE="$c"; R4_FINAL="$v"
         fi
-        if sha_check "$src" "$RED4EXT_SHA"; then ok "RED4ext $pin_ver archive verified (SHA-256)"
-        elif [ -n "$RED4EXT_ZIP" ] && [ "$(py vge "$pin_ver" "$RED4EXT_VER" && py vge "$RED4EXT_VER" "$pin_ver" && echo same)" != same ]; then
-            warn "RED4ext $pin_ver from $RED4EXT_ZIP cannot be verified (only $RED4EXT_VER is pinned)"
-        else fail "SHA-256 mismatch for $src (expected $RED4EXT_SHA)"; fi
-        py rmci "$TMP/stage" "${RED4EXT_CORE[@]}"
-        py merge "$r4dir" "$TMP/stage"
-        if [ -n "$bundled" ]; then ok "RED4ext $pin_ver will replace the bundled $bundled"; else ok "RED4ext $pin_ver will be installed"; fi
+    done
+    if [ -z "$R4_CHOICE" ]; then   # e.g. a game patch newer than this script knows
+        if [ -n "$bundled" ]; then R4_CHOICE=bundled; R4_FINAL="$bundled"; else R4_CHOICE=release; R4_FINAL="$rel_ver"; fi
+        warn "no RED4ext at hand is known to support game ${GAME_VER:-?}; using $R4_FINAL"
     fi
+    if [ -n "$inst" ] && ! r4_supported "$inst"; then
+        warn "the installed RED4ext $inst does not support game ${GAME_VER:-?} (NightCoop would not load); it will be replaced"
+    fi
+    case "$R4_CHOICE" in
+        bundled)
+            ok "using RED4ext $bundled from the NightCoop archive" ;;
+        installed)
+            py rmci "$TMP/stage" "${RED4EXT_CORE[@]}"
+            ok "keeping the installed RED4ext $inst, which is newer and supports this game" ;;
+        release)
+            if [ -n "$RED4EXT_ZIP" ]; then
+                src="$RED4EXT_ZIP"
+            else
+                src="$TMP/red4ext-$RED4EXT_VER.zip"
+                download "$RED4EXT_URL" "$src" || fail "download failed: $RED4EXT_URL"
+                mkdir -p "$r4dir"; py unzip "$src" "$r4dir" || fail "could not unpack $src"
+                [ -n "$(red4ext_core_version "$r4dir")" ] || fail "unexpected RED4ext archive layout"
+            fi
+            if sha_check "$src" "$RED4EXT_SHA"; then ok "RED4ext $rel_ver archive verified (SHA-256)"
+            elif [ -n "$RED4EXT_ZIP" ] && [ "$(py vge "$rel_ver" "$RED4EXT_VER" && py vge "$RED4EXT_VER" "$rel_ver" && echo same)" != same ]; then
+                warn "RED4ext $rel_ver from $RED4EXT_ZIP cannot be verified (only $RED4EXT_VER is pinned)"
+            else fail "SHA-256 mismatch for $src (expected $RED4EXT_SHA)"; fi
+            py rmci "$TMP/stage" "${RED4EXT_CORE[@]}"
+            py merge "$r4dir" "$TMP/stage"
+            if [ -n "$bundled" ]; then ok "RED4ext $rel_ver will replace the bundled $bundled"; else ok "RED4ext $rel_ver will be installed"; fi ;;
+    esac
 }
 
 pick_vcredist() {   # sets VCREDIST and VCREDIST_VER to the newest installer at hand
@@ -1514,9 +1782,15 @@ step_runtime() {
     fi
     IFS=$'\x1f' read -r crt who < <(py pecrt "$TMP/stage" "${extra[@]}") || true
     RT_WANT="$RUNTIME_FLOOR"; [ -n "$crt" ] && ver_ge "$crt" "$RT_WANT" && RT_WANT="$crt"
-    RV="$(runtime_version)"
-    info "the mod's DLLs are built with MSVC ${crt:-unknown}${who:+ ($who)}; the prefix has ${RV:-no msvcp140.dll}"
-    if [ -n "$RV" ] && ver_ge "$RV" "$RT_WANT"; then ok "runtime $RV is new enough"; return 0; fi
+    RV="$(runtime_version)"; RK="$(runtime_kind)"
+    if [ "$RK" = builtin ]; then
+        info "the mod's DLLs are built with MSVC ${crt:-unknown}${who:+ ($who)}; the prefix has Wine's built-in runtime"
+        info "that works, but Steam's redistributable step can put Microsoft's 2019 runtime in its place (error 998); the current one prevents that"
+        RV=""
+    else
+        info "the mod's DLLs are built with MSVC ${crt:-unknown}${who:+ ($who)}; the prefix has ${RV:-no msvcp140.dll}"
+        if [ -n "$RV" ] && ver_ge "$RV" "$RT_WANT"; then ok "runtime $RV is new enough"; return 0; fi
+    fi
     pick_vcredist
     if [ "$DRY_RUN" = 1 ] && [[ "$VCREDIST" == *://* ]]; then
         NEED_RT=1; RT_TARGET="$RT_WANT"; info "(dry run) would download the newest runtime from Microsoft"; return 0
@@ -1536,53 +1810,87 @@ step_runtime() {
     [ -n "$PROTON_DIR" ] || warn "no Proton build found to run it with; the runtime step will be skipped"
 }
 
+steam_settings_note() {   # how a Steam setting will be written, for the plan
+    if ! steam_running; then return 0; fi
+    if [ "$CLOSE_STEAM" = 1 ]; then
+        in_game_mode && fail "--close-steam would end the Game Mode session; run this from Desktop Mode"
+        steam_launcher_ok || fail "--close-steam: the steam command was not found in PATH"
+        info "Steam will be closed and reopened to write it"
+    else
+        info "Steam is running, so it will not be written (close Steam or use --close-steam; the steps are shown at the end)"
+    fi
+}
+
 step_override() {
-    bold "DLL override for RED4ext's loader"
-    REG_STATE="$(reg_state)"
+    bold "DLL overrides and launch options"
+    DLLS="$(dll_overrides)"
+    [ "$DLLS" = winmm ] || info "Cyber Engine Tweaks found (bin/x64/version.dll); its loader gets the same override"
+    REG_STATE="$(reg_state "$DLLS")"
     case "$REG_STATE" in
-        ok) ok "prefix registry already has winmm = native,builtin" ;;
-        missing) info "prefix registry: will add winmm = native,builtin for Cyberpunk2077.exe" ;;
+        ok) ok "prefix registry already has $DLLS = native,builtin" ;;
+        missing) info "prefix registry: will add $DLLS = native,builtin for Cyberpunk2077.exe (works while Steam is open)" ;;
         *) warn "the prefix has no user.reg; relying on the launch options" ;;
     esac
-    IFS=$'\x1f' read -r LO_STATE LO_VALUE < <(py lo-status "$STEAM_ROOT" "$APPID") || LO_STATE=nofile
+    IFS=$'\x1f' read -r LO_STATE LO_VALUE LO_WINMM < <(py lo-status "$STEAM_ROOT" "$APPID" "$DLLS" "$GAME_ARGS") || LO_STATE=nofile
     case "$LO_STATE" in
-        ok) ok "launch options already contain the override" ;;
+        ok) ok "launch options already set: $LO_VALUE" ;;
         nofile) warn "Steam's per-user config was not found; launch options cannot be checked" ;;
-        *)
-            if ! steam_running; then info "launch options: will be set to $(py lo-merge "$LO_VALUE" | cut -d$'\x1f' -f2)"
-            elif [ "$CLOSE_STEAM" = 1 ]; then
-                in_game_mode && fail "--close-steam would end the Game Mode session; run this from Desktop Mode"
-                steam_launcher_ok || fail "--close-steam: the steam command was not found in PATH"
-                info "launch options: Steam will be closed and reopened to write them"
-            else info "launch options: Steam is running, so they will not be written (the registry override is enough)"; fi ;;
+        *) info "launch options: will be set to $(py lo-merge "$LO_VALUE" "$DLLS" "$GAME_ARGS" | cut -d$'\x1f' -f2)"
+           [ -z "$GAME_ARGS" ] || info "(--launcher-skip starts the game without CDPR's launcher window; --no-launcher-skip keeps it)"
+           steam_settings_note ;;
     esac
+}
+
+step_proton_tool() {
+    bold "Proton build for the game"
+    local cur def now
+    IFS=$'\x1f' read -r cur def < <(py ct-get "$STEAM_ROOT" "$APPID") || true
+    now="$cur"; [ -n "$now" ] || now="Steam's default${def:+ ($def)}"
+    if [ "$PROTON_WANT" = keep ]; then
+        info "left as it is (--proton keep): $now"; return 0
+    fi
+    IFS=$'\x1f' read -r TOOL_NAME TOOL_DIR TOOL_REASON TOOL_LABEL < <(py ct-pick "$STEAM_ROOT" "$PROTON_WANT" "$OS_FAMILY" "${LIBS[@]}") \
+        || fail "--proton $PROTON_WANT cannot be used (see the message above)"
+    TOOL_LABEL="${TOOL_LABEL:-$TOOL_NAME}"
+    if [ "$TOOL_NAME" = "$cur" ]; then ok "$TOOL_LABEL ($TOOL_REASON)"; TOOL_STATE=ok; return 0; fi
+    TOOL_STATE=pending
+    info "will choose $TOOL_LABEL ($TOOL_REASON); now: $now"
+    if [ -z "$TOOL_DIR" ]; then info "Steam downloads it the next time the game starts"
+    else info "Steam updates the prefix to it on the next start; the runtime installed here is kept"; fi
+    steam_settings_note
 }
 
 print_plan() {
     echo
     bold "Plan"
-    local added replaced removed rel stale=()
+    local added replaced removed rel stale=() later=""
     { IFS=$'\x1f' read -r added replaced removed
       while IFS=$'\x1f' read -r _ rel; do stale+=("$rel"); done
-    } < <(py tree-plan "$TMP/stage" "$GAME_DIR" "${PREV_BACKUP:+$PREV_BACKUP/manifest.tsv}" "${RED4EXT_CORE[@]}")
+    } < <(py tree-plan "$TMP/stage" "$GAME_DIR" "${PREV_BACKUP:+$PREV_BACKUP/manifest.tsv}" "$NC_PLUGIN_DIR" "${RED4EXT_CORE[@]}")
+    steam_running && [ "$CLOSE_STEAM" != 1 ] && later=" (when Steam is closed)"
     if [ "$SAVE_BACKUP" = 1 ] && [ -d "$SAVES" ]; then info "back up saves   -> $BACKUP/Saved Games ($(du -sh "$SAVES" 2>/dev/null | cut -f1))"; fi
     info "back up files   -> $BACKUP"
     info "install         NightCoop ${NC_VER:-?}: $added new, $replaced replaced file(s) in the game folder"
-    [ "${removed:-0}" = 0 ] || info "remove          $removed file(s) the previous install left behind: ${stale[*]}"
+    [ "${removed:-0}" = 0 ] || info "remove          $removed file(s) of the previous build: ${stale[*]}"
     info "RED4ext         $R4_FINAL ($R4_CHOICE)"
     [ "$NEED_RT" = 1 ] && info "run             VC_redist.x64.exe ${VCREDIST_VER} quietly in the game's Proton prefix"
-    [ "$REG_STATE" = missing ] && info "registry        winmm = native,builtin for Cyberpunk2077.exe"
+    [ "$REG_STATE" = missing ] && info "registry        $DLLS = native,builtin for Cyberpunk2077.exe"
     if [ "$LO_STATE" = missing ] || [ "$LO_STATE" = broken ]; then
-        if ! steam_running || [ "$CLOSE_STEAM" = 1 ]; then info "launch options  $(py lo-merge "$LO_VALUE" | cut -d$'\x1f' -f2)"; fi
+        info "launch options  $(py lo-merge "$LO_VALUE" "$DLLS" "$GAME_ARGS" | cut -d$'\x1f' -f2)$later"
     fi
+    [ "$TOOL_STATE" = pending ] && info "Proton          $TOOL_LABEL for Cyberpunk 2077$later"
     return 0
 }
 
 run_in_prefix() {   # run_in_prefix direct|slr <windows exe> [args...]
     local how="$1"; shift
     local libpaths; libpaths="$(IFS=:; echo "${LIBS[*]}")"
-    local -a cmd=("$PROTON_DIR/proton" run "$@")
-    [ "$how" = slr ] && cmd=("$SLR_ENTRY" --verb=waitforexitandrun -- "$PROTON_DIR/proton" waitforexitandrun "$@")
+    # runinprefix runs the program with Proton's Wine directly. "run" goes through Proton's
+    # steam.exe, which needs Steam's client library and fails without it.
+    local verb=run
+    grep -q '"runinprefix"' "$PROTON_DIR/proton" 2>/dev/null && verb=runinprefix
+    local -a cmd=("$PROTON_DIR/proton" "$verb" "$@")
+    [ "$how" = slr ] && cmd=("$SLR_ENTRY" --verb=waitforexitandrun -- "$PROTON_DIR/proton" "$verb" "$@")
     env STEAM_COMPAT_CLIENT_INSTALL_PATH="$STEAM_ROOT" STEAM_COMPAT_DATA_PATH="$COMPAT" \
         STEAM_COMPAT_INSTALL_PATH="$GAME_DIR" STEAM_COMPAT_LIBRARY_PATHS="$libpaths" \
         STEAM_COMPAT_APP_ID="$APPID" SteamAppId="$APPID" SteamGameId="$APPID" \
@@ -1643,17 +1951,28 @@ start_steam() {
 }
 steam_launcher_ok() { if [ "$STEAM_KIND" = flatpak ]; then command -v flatpak >/dev/null 2>&1; else command -v steam >/dev/null 2>&1; fi; }
 
-apply_launch_options() {
-    case "$LO_STATE" in ok|nofile) return 0 ;; esac
+apply_steam_settings() {
+    local need=0 f res
+    case "$LO_STATE" in missing|broken) need=1 ;; esac
+    [ "$TOOL_STATE" = pending ] && need=1
+    [ "$need" = 1 ] || return 0
     if steam_running; then
         [ "$CLOSE_STEAM" = 1 ] || return 0
-        bold "Closing Steam to write the launch options"
-        if close_steam; then RESTART_STEAM=1; else warn "Steam did not close within a minute; launch options not written"; return 0; fi
+        bold "Closing Steam to write its settings"
+        if close_steam; then RESTART_STEAM=1; else warn "Steam did not close within a minute; its settings were not written"; return 0; fi
     fi
+    if [ "$TOOL_STATE" = pending ]; then
+        bold "Choosing the Proton build"
+        py ct-get "$STEAM_ROOT" "$APPID" | cut -d$'\x1f' -f1 > "$BACKUP/compat-tool.txt"
+        if py ct-set "$STEAM_ROOT" "$APPID" "$TOOL_NAME" >/dev/null && [ "$(py ct-get "$STEAM_ROOT" "$APPID" | cut -d$'\x1f' -f1)" = "$TOOL_NAME" ]; then
+            TOOL_STATE=ok; ok "Cyberpunk 2077 > Properties > Compatibility: $TOOL_LABEL"
+        else warn "could not write the compatibility tool to Steam's config.vdf"; fi
+    fi
+    case "$LO_STATE" in missing|broken) ;; *) return 0 ;; esac
     bold "Writing Steam launch options"
-    local f res
-    while IFS=$'\x1f' read -r f res; do info "user $(basename "$(dirname "$(dirname "$f")")"): $res"; done < <(py lo-set "$STEAM_ROOT" "$APPID")
-    IFS=$'\x1f' read -r LO_STATE LO_VALUE < <(py lo-status "$STEAM_ROOT" "$APPID") || true
+    while IFS=$'\x1f' read -r f res; do info "user $(basename "$(dirname "$(dirname "$f")")"): $res"; done \
+        < <(py lo-set "$STEAM_ROOT" "$APPID" "$DLLS" "$GAME_ARGS")
+    IFS=$'\x1f' read -r LO_STATE LO_VALUE LO_WINMM < <(py lo-status "$STEAM_ROOT" "$APPID" "$DLLS" "$GAME_ARGS") || true
     if [ "$LO_STATE" = ok ]; then ok "launch options set"; else warn "could not set the launch options automatically"; fi
 }
 
@@ -1669,6 +1988,7 @@ do_install() {
     step_red4ext
     step_runtime
     step_override
+    step_proton_tool
     print_plan
     if [ "$DRY_RUN" = 1 ]; then echo; ok "dry run finished; nothing was changed"; return 0; fi
     echo
@@ -1698,24 +2018,27 @@ do_install() {
     bold "Installing NightCoop and RED4ext"
     local added replaced removed
     IFS=$'\x1f' read -r added replaced removed < <(py tree-apply "$TMP/stage" "$GAME_DIR" "$BACKUP/game" \
-        "$BACKUP/manifest.tsv" "${PREV_BACKUP:+$PREV_BACKUP/manifest.tsv}" "${RED4EXT_CORE[@]}") \
+        "$BACKUP/manifest.tsv" "${PREV_BACKUP:+$PREV_BACKUP/manifest.tsv}" "$NC_PLUGIN_DIR" "${RED4EXT_CORE[@]}") \
         || fail "copying into the game folder failed; undo with: $0 restore \"$BACKUP\""
     ok "$added added, $replaced replaced, $removed stale removed; backup: $BACKUP"
     local r4; r4="$(red4ext_core_version "$GAME_DIR")"
     if [ -n "$r4" ] && ver_ge "$r4" "$R4_FINAL"; then ok "RED4ext $r4 in place"; else fail "RED4ext reports '${r4:-nothing}' after the install"; fi
 
     if [ "$REG_STATE" = missing ]; then
-        bold "Adding the winmm override to the prefix registry"
+        bold "Adding the DLL override to the prefix registry"
         wait_prefix_idle 30 || fail "Wine is still running in the game's prefix (wineserver $(py wsrv "$PFX" | tr '\n' ' ')); close it and run again"
-        local prev had=0
-        if prev="$(py reg-get "$USERREG" "$REG_KEY" winmm)"; then had=1; fi
-        printf '%s\t%s\t%s\t%s\n' "$had" "$REG_KEY" winmm "$prev" > "$BACKUP/registry.tsv"
-        py reg-set "$USERREG" "$REG_KEY" winmm native,builtin
-        ok "HKCU\\$REG_KEY: winmm = native,builtin"
+        local prev had d
+        : > "$BACKUP/registry.tsv"
+        for d in $(tr ',' ' ' <<<"$DLLS"); do
+            had=0; if prev="$(py reg-get "$USERREG" "$REG_KEY" "$d")"; then had=1; else prev=""; fi
+            printf '%s\t%s\t%s\t%s\n' "$had" "$REG_KEY" "$d" "$prev" >> "$BACKUP/registry.tsv"
+            py reg-set "$USERREG" "$REG_KEY" "$d" native,builtin
+        done
+        ok "HKCU\\$REG_KEY: $DLLS = native,builtin"
     fi
     apply_runtime
-    apply_launch_options
-    REG_STATE="$(reg_state)"
+    apply_steam_settings
+    REG_STATE="$(reg_state "$DLLS")"
 
     mkdir -p "$DATA_DIR"
     printf 'version\t%s\nprotocol\t%s\ngame\t%s\nred4ext\t%s\ninstalled\t%s\nbackup\t%s\n' \
@@ -1727,14 +2050,20 @@ do_install() {
     bold "Done"
     do_check
     echo
-    if [ "$REG_STATE" != ok ] && [ "$LO_STATE" != ok ]; then
+    local merged; merged="$(py lo-merge "$LO_VALUE" "$DLLS" "$GAME_ARGS" | cut -d$'\x1f' -f2)"
+    if [ "$REG_STATE" != ok ] && [ "${LO_WINMM:-}" != ok ]; then
         bold "One manual step left"
         info "In Steam: right-click Cyberpunk 2077 > Properties > General > Launch Options, and enter:"
-        echo; info "    $(py lo-merge "$LO_VALUE" | cut -d$'\x1f' -f2)"; echo
+        echo; info "    $merged"; echo
         info "Without it Proton ignores RED4ext's loader and the mod never starts."
     elif [ "$LO_STATE" != ok ] && [ "$LO_STATE" != nofile ]; then
-        info "Optional: the prefix override is enough, but you can also add this to the game's"
-        info "launch options (survives a prefix reset): $(py lo-merge "$LO_VALUE" | cut -d$'\x1f' -f2)"
+        info "Recommended (the prefix override already lets the mod load): in Steam, right-click"
+        info "Cyberpunk 2077 > Properties > General > Launch Options, and enter:"
+        info "    $merged"
+    fi
+    if [ "$TOOL_STATE" = pending ]; then
+        info "Recommended: in Steam, right-click Cyberpunk 2077 > Properties > Compatibility, tick"
+        info "\"Force the use of a specific Steam Play compatibility tool\" and choose $TOOL_LABEL."
     fi
     echo
     if [ "$OS_FAMILY" = steamos ]; then
