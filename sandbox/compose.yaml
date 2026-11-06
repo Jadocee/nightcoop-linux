@@ -1,0 +1,76 @@
+# SPDX-License-Identifier: MIT
+#
+# Test sandboxes for nightcoop-install.sh. From the repository root:
+#
+#   docker compose -f sandbox/compose.yaml run --rm --build <service>
+#
+#   arch, cachyos, steamos   the test suite in each distribution's own userland
+#   package                  makepkg and namcap for packaging/arch/PKGBUILD
+#   experiments              the README's verification matrix, with real Proton (online)
+#   install-and-launch       the whole user journey, with real Proton (online)
+#
+# The repository is mounted read-only at /src. Behind a proxy, add compose.proxy.yaml.
+# See sandbox/README.md.
+
+name: nightcoop-sandbox
+
+x-build: &build
+  context: images
+
+x-service: &service
+  working_dir: /src
+  volumes:
+    - ..:/src:ro
+
+x-proton: &proton
+  <<: *service
+  image: nightcoop-sandbox/proton
+  build:
+    <<: *build
+    dockerfile: proton.Containerfile
+  volumes:
+    - ..:/src:ro
+    - downloads:/home/gamer/.cache/nightcoop-sandbox
+  shm_size: 1gb
+
+services:
+  arch:
+    <<: *service
+    image: nightcoop-sandbox/arch
+    build: { <<: *build, dockerfile: arch.Containerfile }
+    command: [tests/run-tests.sh]
+
+  cachyos:
+    <<: *service
+    image: nightcoop-sandbox/cachyos
+    build: { <<: *build, dockerfile: cachyos.Containerfile }
+    command: [tests/run-tests.sh]
+
+  steamos:
+    <<: *service
+    image: nightcoop-sandbox/steamos:${STEAMOS_BRANCH:-3.8}
+    build:
+      <<: *build
+      dockerfile: steamos.Containerfile
+      args:
+        STEAMOS_BRANCH: ${STEAMOS_BRANCH:-3.8}
+    command: [tests/run-tests.sh]
+
+  package:
+    <<: *service
+    image: nightcoop-sandbox/package
+    build: { <<: *build, dockerfile: package.Containerfile }
+    command: [bash, sandbox/e2e/package.sh]
+
+  experiments:
+    <<: *proton
+    command: [bash, sandbox/e2e/experiments.sh]
+
+  install-and-launch:
+    <<: *proton
+    environment:
+      PATCHES: ${PATCHES:-2.5 2.31}
+    command: [bash, sandbox/e2e/install-and-launch.sh]
+
+volumes:
+  downloads:

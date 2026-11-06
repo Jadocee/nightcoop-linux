@@ -1,0 +1,38 @@
+name: Sandbox
+
+# The containers from sandbox/compose.yaml: the test suite on Arch, CachyOS and SteamOS,
+# the PKGBUILD, and the real-Proton checks. The weekly run notices when a new Proton,
+# RED4ext, NightCoop, SteamOS or Microsoft runtime release breaks an assumption.
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '17 4 * * 1'
+  push:
+    paths: ['sandbox/**', 'nightcoop-install.sh', 'tests/**', 'packaging/**', '.github/workflows/sandbox.yml']
+  pull_request:
+    paths: ['sandbox/**', 'nightcoop-install.sh', 'tests/**', 'packaging/**', '.github/workflows/sandbox.yml']
+
+jobs:
+  userland:
+    name: ${{ matrix.service }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        service: [arch, cachyos, steamos, package]
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker compose -f sandbox/compose.yaml run --rm --build ${{ matrix.service }}
+
+  real-proton:
+    name: real Proton (experiments, install and launch)
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - name: Make room for the Proton image
+        run: sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache/CodeQL
+      - uses: actions/checkout@v4
+      - name: Verification matrix
+        run: docker compose -f sandbox/compose.yaml run --rm --build experiments
+      - name: Install and launch, game patches 2.5 and 2.31
+        run: docker compose -f sandbox/compose.yaml run --rm install-and-launch

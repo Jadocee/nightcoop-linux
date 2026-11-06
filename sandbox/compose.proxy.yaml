@@ -1,0 +1,41 @@
+# SPDX-License-Identifier: MIT
+#
+# Optional override for networks that reach the internet only through a proxy, including a
+# proxy on the host's own localhost and one that inspects TLS:
+#
+#   export EXTRA_CA_PEM="$(cat /path/to/proxy-ca.pem)"     # only for a TLS-inspecting proxy
+#   docker compose -f sandbox/compose.yaml -f sandbox/compose.proxy.yaml build --print <service> \
+#       | docker buildx bake -f - --allow=network.host --load
+#   docker compose -f sandbox/compose.yaml -f sandbox/compose.proxy.yaml run --rm <service>
+#
+# It builds and runs on the host's network, passes HTTP(S)_PROXY and NO_PROXY in, and makes
+# the images trust EXTRA_CA_PEM. Building on the host's network needs bake's network.host
+# permission, hence the bake step.
+
+x-proxy-env: &proxy-env
+  HTTPS_PROXY: ${HTTPS_PROXY:-}
+  HTTP_PROXY: ${HTTP_PROXY:-}
+  NO_PROXY: ${NO_PROXY:-}
+  https_proxy: ${https_proxy:-}
+  http_proxy: ${http_proxy:-}
+  no_proxy: ${no_proxy:-}
+
+x-proxied: &proxied
+  network_mode: host
+  environment: *proxy-env
+  build:
+    network: host
+    args: *proxy-env
+    secrets: [extra_ca]
+
+services:
+  arch: *proxied
+  cachyos: *proxied
+  steamos: *proxied
+  package: *proxied
+  experiments: *proxied
+  install-and-launch: *proxied
+
+secrets:
+  extra_ca:
+    environment: EXTRA_CA_PEM
