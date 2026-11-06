@@ -161,7 +161,7 @@ to set under Properties. Alternatively, rerun it with Steam closed or with `--cl
   - Otherwise it backs up and replaces only the files that differ. As NightCoop's own
     guide asks, files of the old build that the new one no longer has are removed from
     `red4ext/plugins/NightCoop`, while your `servers.txt`, `hub.txt` and `logs` stay.
-  - The saves are not copied again on an update; add `--backup-saves` for a fresh copy.
+  - The saves are not copied on an update; add `--backup-saves` for a fresh copy.
     `--force` reinstalls every file.
   - A NightCoop you installed by hand is recognised when its files match the latest
     build, and recorded instead of replaced.

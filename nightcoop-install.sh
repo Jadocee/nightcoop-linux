@@ -1990,14 +1990,15 @@ print_plan() {
     if [ "$FILES_CHANGE" = 1 ] || [ "$PREFIX_CHANGE" = 1 ]; then
         if [ -d "$SAVES" ]; then
             if [ "$SAVE_BACKUP" = 1 ]; then info "back up saves   -> $BACKUP/Saved Games ($(du -sh "$SAVES" 2>/dev/null | cut -f1))"
-            elif [ -n "$SAVE_AUTO" ]; then info "saves           not copied again on an update (add --backup-saves to copy them)"
+            elif [ -n "$SAVE_AUTO" ]; then info "saves           not copied on an update (add --backup-saves to copy them)"
             else info "saves           not copied (--no-save-backup)"; fi
         fi
         info "back up files   -> $BACKUP"
     fi
     if [ "$FILES_CHANGE" = 1 ]; then
         if [ -n "$NC_PRESENT" ] && [ "${NC_INSTALLED:-}" != "${NC_VER:-}" ]; then
-            info "update          NightCoop ${NC_INSTALLED:-(a build this script did not install)} -> ${NC_VER:-?}"
+            local from="${NC_INSTALLED:-${NC_RECORDED:+$NC_RECORDED, changed since it was installed}}"
+            info "update          NightCoop ${from:-(a build this script did not install)} -> ${NC_VER:-?}"
         fi
         [ "$PLAN_SAME" = 0 ] || same=", $PLAN_SAME already up to date"
         info "install         NightCoop ${NC_VER:-?}: $PLAN_ADDED new, $PLAN_REPLACED replaced file(s) in the game folder$same"
@@ -2094,6 +2095,7 @@ apply_steam_settings() {
     fi
     if [ "$TOOL_STATE" = pending ]; then
         bold "Choosing the Proton build"
+        mkdir -p "$BACKUP"   # the earlier choice, for reference (restore leaves Steam's settings alone)
         py ct-get "$STEAM_ROOT" "$APPID" | cut -d$'\x1f' -f1 > "$BACKUP/compat-tool.txt"
         if py ct-set "$STEAM_ROOT" "$APPID" "$TOOL_NAME" >/dev/null && [ "$(py ct-get "$STEAM_ROOT" "$APPID" | cut -d$'\x1f' -f1)" = "$TOOL_NAME" ]; then
             TOOL_STATE=ok; ok "Cyberpunk 2077 > Properties > Compatibility: $TOOL_LABEL"
@@ -2206,8 +2208,6 @@ do_install() {
             ok "HKCU\\$REG_KEY: $DLLS = native,builtin"
         fi
         apply_runtime
-    else
-        mkdir -p "$BACKUP"   # only Steam's settings change; it keeps the earlier Proton choice
     fi
     apply_steam_settings
     REG_STATE="$(reg_state "$DLLS")"

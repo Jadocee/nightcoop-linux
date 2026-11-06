@@ -242,7 +242,7 @@ run check
 expect "check offers the newer build" '[[ "$OUT" == *"NightCoop update:"*"0.1.1-beta.2 -> 0.2.0-beta available"* ]]' "$OUT"
 run update --yes
 expect "update installs the site's newer build" '[ $RC = 0 ] && [ "$(hp pever "$G/red4ext/Plugins/NightCoop/NightCoop.dll")" = 0.2.0.0 ] && [[ "$OUT" == *"update          NightCoop 0.1.1-beta.2 -> 0.2.0-beta"* ]]' "$OUT"
-expect "an update leaves the saves to the first copy" '[[ "$OUT" == *"not copied again on an update"* ]] && [ ! -e "$(newest_backup)Saved Games" ]' "$OUT"
+expect "an update leaves the saves to the first copy" '[[ "$OUT" == *"not copied on an update"* ]] && [ ! -e "$(newest_backup)Saved Games" ]' "$OUT"
 expect "check after the update: nothing newer" '[[ "$OUT" == *"NightCoop update:"*"none; 0.2.0-beta is the latest for game 2.5"* ]]' "$OUT"
 run restore --yes
 run check
@@ -265,7 +265,8 @@ run check
 expect "check notices a NightCoop.dll copied in by hand" '[[ "$OUT" == *"NightCoop:"*"0.2.1.0"*"changed since this script installed 0.2.0-beta"* ]]' "$OUT"
 run update --yes
 expect "the update replaces only the file that differs" '[ $RC = 0 ] && [[ "$OUT" == *"0 added, 1 replaced, 0 stale removed"* ]] && [ "$G1" = "$(snapshot "$G")" ]' "$OUT"
-expect "the saves are not copied again" '[[ "$OUT" == *"not copied again on an update"* ]] && [ ! -e "$(newest_backup)Saved Games" ]' "$OUT"
+expect "the plan says the recorded build was changed" '[[ "$OUT" == *"update          NightCoop 0.2.0-beta, changed since it was installed -> 0.2.0-beta"* ]]' "$OUT"
+expect "the saves are not copied again" '[[ "$OUT" == *"not copied on an update"* ]] && [ ! -e "$(newest_backup)Saved Games" ]' "$OUT"
 run update --yes --force --backup-saves
 expect "--force replaces every file, --backup-saves copies the saves" '[ $RC = 0 ] && [[ "$OUT" == *", 0 unchanged; backup"* ]] && [ -f "$(newest_backup)Saved Games/ManualSave-0/sav.dat" ]' "$OUT"
 mkdir -p "$H/.local/share/nightcoop-linux/backups/2099-01-01-000000/game"   # an install stopped while copying the saves
