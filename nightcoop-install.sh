@@ -1610,7 +1610,7 @@ do_restore() {
     [ -n "$RESTORE_DIR" ] || info "most recent backup: $b"
     confirm "Restore the game folder and prefix from this backup?" || { info "aborted"; exit 1; }
     restore_one "$b"
-    info "Steam launch options were not changed; clear them under Properties > General if you wish."
+    info "Steam's launch options and Proton choice were not changed; adjust them under Properties if you wish."
 }
 
 do_uninstall() {
@@ -1622,7 +1622,7 @@ do_uninstall() {
     rm -f "$DATA_DIR/installed.tsv"
     echo
     ok "$n install(s) undone; backups (and any save copies) remain in $BACKUP_ROOT"
-    info "Steam launch options were not changed; remove WINEDLLOVERRIDES under Properties > General if you wish."
+    info "Steam's launch options and Proton choice were not changed; adjust them under Properties if you wish."
 }
 
 # ---------------------------------------------------------------- install ----
