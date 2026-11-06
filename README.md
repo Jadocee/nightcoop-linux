@@ -245,6 +245,17 @@ a stand-in Proton, so the suite needs neither Steam, Wine nor network access.
 CI runs the suite in Arch Linux, CachyOS and SteamOS (holo) containers and on Ubuntu. It
 also builds the PKGBUILD with `makepkg`, checks it with `namcap`, and runs shellcheck.
 
+[`sandbox/`](sandbox) recreates the verification environments as Docker Compose services:
+
+- the test suite on Arch, CachyOS and SteamOS 3.8 built from Valve's repositories;
+- the PKGBUILD;
+- the real-Proton checks. These are the verification matrix above, and a full online
+  install and launch for patches 2.5 and 2.31, with `proton-cachyos` and the stand-in game.
+
+Run one with `docker compose -f sandbox/compose.yaml run --rm --build experiments`. A
+weekly CI run repeats them all to catch new Proton, RED4ext, NightCoop or SteamOS releases
+that break an assumption.
+
 `nightcoop-install __py <command> …` calls the embedded helper directly, which is useful
 when debugging (for example, `__py gamever …/Cyberpunk2077.exe`).
 
