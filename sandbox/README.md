@@ -65,7 +65,8 @@ build chosen. It then:
 1. runs `nightcoop-install.sh install --yes` as an ordinary user, against the live
    nightcoop.net, GitHub and Microsoft;
 2. checks what `check` reports;
-3. starts the stand-in with the registry override alone, as when Steam is open, and with
+3. runs it again as `update`, which must find everything current and change nothing;
+4. starts the stand-in with the registry override alone, as when Steam is open, and with
    the launch options, as when Steam is closed.
 
 Use `PATCHES=2.31` to run a single patch.

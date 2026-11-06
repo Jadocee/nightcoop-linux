@@ -22,10 +22,14 @@
 # Proton Experimental), unless one is already chosen in Steam.
 #
 # Usage:
-#   nightcoop-install.sh [install] [options]   install or update NightCoop (default)
-#   nightcoop-install.sh check                 report the current state, change nothing
+#   nightcoop-install.sh [install] [options]   install NightCoop, or update it in place (default)
+#   nightcoop-install.sh update [options]      the same as install
+#   nightcoop-install.sh check                 report the current state and whether an update exists
 #   nightcoop-install.sh restore [BACKUP_DIR]  undo the latest install (or the given one)
 #   nightcoop-install.sh uninstall             undo every install, newest first
+#
+# Run again, it compares the game folder with the latest build for the game's patch and
+# replaces only the files that differ. When everything is current, it changes nothing.
 #
 # Options:
 #   --proton TOOL         Proton build for the game: auto (default), keep, experimental,
@@ -36,7 +40,9 @@
 #   --red4ext-zip FILE    use a downloaded RED4ext release archive
 #   --vcredist FILE       use a downloaded VC_redist.x64.exe
 #   --steam-root DIR      use this Steam installation instead of detecting one
-#   --no-save-backup      do not copy the save games before installing
+#   --force               reinstall every mod file, even those that already match
+#   --backup-saves        copy the save games first (the default on a first install)
+#   --no-save-backup      do not copy them (the default when updating an earlier install)
 #   --dry-run             detect, download and verify everything; change nothing
 #   -y, --yes             do not ask for confirmation
 #   -h, --help            show this help
@@ -47,7 +53,7 @@
 # SPDX-License-Identifier: MIT
 set -euo pipefail
 
-SCRIPT_VERSION="2.1.0"
+SCRIPT_VERSION="2.2.0"
 APPID=1091500
 GAME_EXE_REL="bin/x64/Cyberpunk2077.exe"
 RED4EXT_VER="1.31.0"
@@ -78,7 +84,8 @@ OPT_STEAM_ROOT=""
 CLOSE_STEAM=0
 PROTON_WANT="auto"
 GAME_ARGS="--launcher-skip"
-SAVE_BACKUP=1
+SAVE_BACKUP=""   # 1 or 0; empty: copy the saves on the first install only
+FORCE=0
 DRY_RUN=0
 ASSUME_YES=0
 RESTORE_DIR=""
@@ -87,7 +94,7 @@ RESTORE_DIR=""
 # Binary and structured-file work (PE version resources, Valve KeyValues files,
 # Wine registry, zip archives, file manifests) lives here; bash drives the flow.
 IFS= read -r -d '' PYHELPER <<'PY' || true
-import glob, json, os, re, shutil, struct, sys, time, zipfile
+import filecmp, glob, json, os, re, shutil, struct, sys, time, zipfile
 
 SEP = '\x1f'
 CRT_PREFIXES = ('msvcp140', 'vcruntime140', 'concrt140', 'vccorlib140')
@@ -1109,7 +1116,7 @@ def tree_stale(mapping, game, prev, protect, refresh=''):
             stale.append(r)
 
     for st, rel in read_manifest(prev):
-        if st in ('added', 'replaced'):
+        if st in ('added', 'replaced', 'same'):
             p = ci_resolve(game, rel)
             if p:
                 add(p)
@@ -1123,11 +1130,13 @@ def tree_stale(mapping, game, prev, protect, refresh=''):
     return stale
 
 
-def plan(stage, game, prev, protect, refresh=''):
+def plan(stage, game, prev, protect, refresh='', force=False):
+    """Entries: added, replaced, same (already identical: left alone unless force) and
+    removed (stale), plus the folders to create."""
     mapping = tree_map(stage, game)
     stale = tree_stale(mapping, game, prev, protect, refresh)
     mk, ents = [], []
-    for _, rel in mapping:
+    for src, rel in mapping:
         parts = rel.split('/')
         for i in range(1, len(parts)):
             d = '/'.join(parts[:i])
@@ -1140,31 +1149,44 @@ def plan(stage, game, prev, protect, refresh=''):
         dst = os.path.join(game, rel)
         if os.path.isdir(dst) and not os.path.islink(dst):
             die('a folder is in the way of ' + rel)
-        ents.append(('replaced' if os.path.lexists(dst) else 'added', rel))
+        if not os.path.lexists(dst):
+            st = 'added'
+        elif not force and os.path.isfile(dst) and not os.path.islink(dst) and filecmp.cmp(src, dst, shallow=False):
+            st = 'same'
+        else:
+            st = 'replaced'
+        ents.append((st, rel))
     ents += [('removed', rel) for rel in stale]
     return mapping, mk, ents
 
 
-def cmd_tree_plan(stage, game, prev, refresh, *protect):
-    _, _, ents = plan(stage, game, prev, protect, refresh)
-    out(*[sum(1 for e in ents if e[0] == s) for s in ('added', 'replaced', 'removed')])
+STATES = ('added', 'replaced', 'removed', 'same')
+
+
+def cmd_tree_plan(stage, game, prev, refresh, force, *protect):
+    _, _, ents = plan(stage, game, prev, protect, refresh, force == '1')
+    out(*[sum(1 for e in ents if e[0] == s) for s in STATES])
     for st, rel in ents:
         if st == 'removed':
             out('stale', rel)
 
 
-def cmd_tree_apply(stage, game, bgame, manifest, prev, refresh, *protect):
-    mapping, mk, ents = plan(stage, game, prev, protect, refresh)
+def cmd_tree_apply(stage, game, bgame, manifest, prev, refresh, force, *protect):
+    mapping, mk, ents = plan(stage, game, prev, protect, refresh, force == '1')
     for st, rel in ents:                      # 1. back up everything that will change
         if st in ('replaced', 'removed'):
             b = os.path.join(bgame, rel)
             os.makedirs(os.path.dirname(b), exist_ok=True)
             shutil.copy2(os.path.join(game, rel), b, follow_symlinks=False)
     with open(manifest, 'w', encoding='utf-8', errors='surrogateescape') as fh:   # 2. record it
-        fh.write('# nightcoop-install manifest v1; paths are relative to the game folder\n')
+        # v2 adds "same": a file that already matched, left alone and not backed up
+        fh.write('# nightcoop-install manifest v2; paths are relative to the game folder\n')
         fh.writelines('mkdir\t%s\n' % d for d in mk)
         fh.writelines('%s\t%s\n' % e for e in ents)
+    same = {rel for st, rel in ents if st == 'same'}
     for src, rel in mapping:                  # 3. change it
+        if rel in same:
+            continue
         dst = os.path.join(game, rel)
         os.makedirs(os.path.dirname(dst), exist_ok=True)
         shutil.copy2(src, dst + '.nightcoop-tmp')
@@ -1172,7 +1194,7 @@ def cmd_tree_apply(stage, game, bgame, manifest, prev, refresh, *protect):
     for st, rel in ents:
         if st == 'removed':
             os.remove(os.path.join(game, rel))
-    out(*[sum(1 for e in ents if e[0] == s) for s in ('added', 'replaced', 'removed')])
+    out(*[sum(1 for e in ents if e[0] == s) for s in STATES])
 
 
 def cmd_tree_restore(manifest, bgame, game):
@@ -1256,7 +1278,8 @@ usage() {   # the header comment, with the name this was started as (nightcoop-i
 need_arg() { [ "$2" -ge 2 ] || fail "$1 needs a value"; }
 if [ $# -gt 0 ]; then
     case "$1" in
-        install|check|restore|uninstall) MODE="$1"; shift ;;
+        install|update) MODE=install; shift ;;
+        check|restore|uninstall) MODE="$1"; shift ;;
         -h|--help) usage; exit 0 ;;
         --version) echo "nightcoop-install $SCRIPT_VERSION"; exit 0 ;;
     esac
@@ -1272,6 +1295,8 @@ while [ $# -gt 0 ]; do
         --proton)         need_arg "$1" $#; PROTON_WANT="$2"; shift 2 ;;
         --no-launcher-skip) GAME_ARGS=""; shift ;;
         --no-save-backup) SAVE_BACKUP=0; shift ;;
+        --backup-saves)   SAVE_BACKUP=1; shift ;;
+        --force)          FORCE=1; shift ;;
         --dry-run)        DRY_RUN=1; shift ;;
         -y|--yes)         ASSUME_YES=1; shift ;;
         -h|--help)        usage; exit 0 ;;
@@ -1477,7 +1502,12 @@ latest_backup() {   # newest backup that has not been restored yet (new or legac
     for d in "$BACKUP_ROOT"/*/ "$HOME"/nightcoop-backup-*/; do
         d="${d%/}"
         [ -d "$d" ] && [ ! -e "$d/RESTORED" ] || continue
-        [ -f "$d/manifest.tsv" ] || [ -d "$d/game" ] || continue
+        # this script's backups always have a manifest (one without it was interrupted);
+        # the earlier Bazzite script's have a game folder instead
+        case "$d" in
+            "$BACKUP_ROOT"/*) [ -f "$d/manifest.tsv" ] || continue ;;
+            *) [ -d "$d/game" ] || continue ;;
+        esac
         printf '%s\t%s\n' "$(basename "$d" | sed 's/^nightcoop-backup-//')" "$d"
     done | sort -r | head -n1 | cut -f2
 }
@@ -1502,10 +1532,61 @@ runtime_verdict() {   # runtime_verdict <version> <wanted> [kind]
     else echo "$1 (too old: RED4ext fails with error 998; needs $RUNTIME_FLOOR or newer)"; fi
 }
 
+# --------------------------------------------------------- install record ----
+# What the last install put in place, in $DATA_DIR/installed.tsv. The SHA-256 of
+# NightCoop.dll tells whether the plugin is still that build, not one copied in since.
+nc_dll() {   # the NightCoop.dll in the game folder, if any
+    local plugins; plugins="$(findci "$GAME_DIR" red4ext/plugins 2>/dev/null || true)"
+    [ -n "$plugins" ] || return 0
+    find "$plugins" -maxdepth 2 -type f -iname nightcoop.dll 2>/dev/null | head -n1 || true
+}
+read_installed() {   # NC_RECORDED: the release on record; NC_INSTALLED: the same, while NightCoop.dll still matches
+    local f="$DATA_DIR/installed.tsv" gd sha dll
+    NC_RECORDED="" NC_INSTALLED=""
+    [ -r "$f" ] || return 0
+    NC_RECORDED="$(sed -n 's/^version\t//p' "$f")"
+    gd="$(sed -n 's/^game_dir\t//p' "$f")"; sha="$(sed -n 's/^dll_sha256\t//p' "$f")"
+    [ -z "$gd" ] || [ "$gd" = "$GAME_DIR" ] || return 0
+    if [ -n "$sha" ]; then   # records from 2.1.0 have no hash and are taken as they are
+        dll="$(nc_dll)"
+        [ -n "$dll" ] && [ "$(sha256sum "$dll" | cut -d' ' -f1)" = "$sha" ] || return 0
+    fi
+    NC_INSTALLED="$NC_RECORDED"
+}
+write_record() {   # write_record <version> <protocol> <games> <red4ext> <backup> <dll sha256>
+    mkdir -p "$DATA_DIR"
+    printf 'version\t%s\nprotocol\t%s\ngame\t%s\nred4ext\t%s\ninstalled\t%s\nbackup\t%s\ngame_dir\t%s\ndll_sha256\t%s\n' \
+        "${1:-unknown}" "$2" "$3" "$4" "$(date -Is)" "$5" "$GAME_DIR" "$6" > "$DATA_DIR/installed.tsv"
+}
+record_install() {   # record_install <version> <protocol> <games> <red4ext> <backup or "">: what is in place now
+    local dll sha=""
+    dll="$(nc_dll)"; [ -z "$dll" ] || sha="$(sha256sum "$dll" | cut -d' ' -f1)"
+    write_record "$1" "$2" "$3" "$4" "$5" "$sha"
+    # the backup keeps it too, for the record to go back to when a later install is undone
+    if [ -n "$5" ] && [ -f "$5/info.tsv" ]; then printf 'dll_sha256\t%s\n' "$sha" >> "$5/info.tsv"; fi
+    NC_RECORDED="${1:-unknown}" NC_INSTALLED="${1:-unknown}"
+}
+rerecord() {   # after a restore: the record describes the newest install still in place, if any
+    local b; b="$(latest_backup)"
+    if [ -n "$b" ] && [ -f "$b/info.tsv" ]; then
+        write_record "$(sed -n 's/^nightcoop\t//p' "$b/info.tsv")" "" "" "$(sed -n 's/^red4ext\t//p' "$b/info.tsv")" "$b" \
+            "$(sed -n 's/^dll_sha256\t//p' "$b/info.tsv" | tail -n1)"
+    else
+        rm -f "$DATA_DIR/installed.tsv"
+    fi
+    read_installed
+}
+latest_release() {   # LATEST_STATUS (ok, none, error, offline) and LATEST_VER: the site's build for this game patch
+    LATEST_STATUS=offline LATEST_VER=""
+    [ -s "$TMP/releases.json" ] || download "$NIGHTCOOP_SITE/releases.json" "$TMP/releases.json" quiet 2>/dev/null || return 0
+    IFS=$'\x1f' read -r LATEST_STATUS LATEST_VER _ < <(py pick "$TMP/releases.json" "$GAME_VER,$GAME_VER_ALT" "$NIGHTCOOP_SITE") \
+        || LATEST_STATUS=error
+}
+
 # ------------------------------------------------------------------ check ----
 do_check() {
     bold "Current state"
-    local f v crt who lo lo_val lo_winmm mm log plugins rv kind want dlls app def
+    local f v crt who lo lo_val lo_winmm mm log plugins rv kind want dlls app def rel
     v="$(red4ext_core_version "$GAME_DIR")"
     if [ -n "$v" ]; then
         if r4_supported "$v"; then row "RED4ext" "$v (supports game ${GAME_VER:-?})"
@@ -1513,11 +1594,24 @@ do_check() {
     elif findci "$GAME_DIR" red4ext/RED4ext.dll >/dev/null 2>&1; then row "RED4ext" "RED4ext.dll present but bin/x64/winmm.dll (its loader) is missing"
     else row "RED4ext" "not installed"; fi
     plugins="$(findci "$GAME_DIR" red4ext/plugins 2>/dev/null || true)"
-    f=""; [ -n "$plugins" ] && f="$(find "$plugins" -maxdepth 2 -type f -iname nightcoop.dll 2>/dev/null | head -n1 || true)"
+    f="$(nc_dll)"
     if [ -n "$f" ]; then
         v="$(pever "$f" product)"
-        row "NightCoop" "${v:+$v, }$(date -r "$f" +%F)${NC_INSTALLED:+, release $NC_INSTALLED}"
+        if [ -n "$NC_INSTALLED" ]; then rel=", release $NC_INSTALLED"
+        elif [ -n "$NC_RECORDED" ]; then rel=", changed since this script installed $NC_RECORDED"
+        else rel=""; fi
+        row "NightCoop" "${v:+$v, }$(date -r "$f" +%F)$rel"
     else row "NightCoop" "not installed"; fi
+    latest_release
+    case "$LATEST_STATUS" in
+        ok) if [ -z "$f" ]; then row "NightCoop update" "$LATEST_VER is the build for game ${GAME_VER:-?}; run '$0' to install it"
+            elif [ "$NC_INSTALLED" = "$LATEST_VER" ]; then row "NightCoop update" "none; $LATEST_VER is the latest for game ${GAME_VER:-?}"
+            elif [[ "$NC_INSTALLED" == local:* ]]; then row "NightCoop update" "installed from a local archive; the site's build for game ${GAME_VER:-?} is $LATEST_VER"
+            elif [ -n "$NC_INSTALLED" ]; then row "NightCoop update" "$NC_INSTALLED -> $LATEST_VER available; run '$0 update'"
+            else row "NightCoop update" "the site's build for game ${GAME_VER:-?} is $LATEST_VER; run '$0 update' to make sure it is the one installed"; fi ;;
+        none) row "NightCoop update" "the site lists no builds" ;;
+        *) row "NightCoop update" "unknown (could not reach $NIGHTCOOP_SITE)" ;;
+    esac
     IFS=$'\x1f' read -r app def < <(py ct-get "$STEAM_ROOT" "$APPID") || true
     if [ -n "$app" ]; then row "Proton for the game" "$app (chosen in Steam)"
     else row "Proton for the game" "not chosen; Steam uses ${def:-its default}"; fi
@@ -1583,7 +1677,7 @@ restore_one() {   # restore_one <backup dir>
         ok "game folder restored"
         [ "${missing:-0}" = 0 ] || warn "$missing backed-up file(s) were missing from the backup"
         [ -z "$left" ] || info "left in place because they now hold other files (logs, other mods): $left"
-    elif [ -d "$b/game" ]; then   # backup made by the 1.x (Bazzite) script
+    elif [ -d "$b/game" ] && [[ "$(basename "$b")" == nightcoop-backup-* ]]; then   # backup made by the 1.x (Bazzite) script
         if [ -f "$b/game/bin/x64/winmm.dll" ]; then cp -a "$b/game/bin/x64/winmm.dll" "$GAME_DIR/bin/x64/winmm.dll"; else rm -f "$GAME_DIR/bin/x64/winmm.dll"; fi
         rm -rf "$GAME_DIR/red4ext"
         if [ -d "$b/game/red4ext" ]; then cp -a "$b/game/red4ext" "$GAME_DIR/red4ext"; fi
@@ -1605,12 +1699,15 @@ restore_one() {   # restore_one <backup dir>
 
 do_restore() {
     game_running && fail "Cyberpunk 2077 is running; quit it first"
-    local b="${RESTORE_DIR:-$(latest_backup)}"
+    local latest b; latest="$(latest_backup)"; b="${RESTORE_DIR:-$latest}"
     [ -n "$b" ] || fail "no backup to restore (looked in $BACKUP_ROOT)"
     [ -d "$b" ] || fail "no such backup folder: $b"
     [ -n "$RESTORE_DIR" ] || info "most recent backup: $b"
     confirm "Restore the game folder and prefix from this backup?" || { info "aborted"; exit 1; }
     restore_one "$b"
+    # the game folder is back to the install before this one; an older backup restored
+    # out of turn leaves it in no recorded state
+    if [ "$b" = "$latest" ]; then rerecord; else rm -f "$DATA_DIR/installed.tsv"; fi
     info "Steam's launch options and Proton choice were not changed; adjust them under Properties if you wish."
 }
 
@@ -1627,7 +1724,8 @@ do_uninstall() {
 }
 
 # ---------------------------------------------------------------- install ----
-NC_STATUS="" NC_VER="" NC_URL="" NC_SHA="" NC_GAMES="" NC_PROTO="" NC_R4="" NC_MATCHED="" NC_YANKED=""
+NC_STATUS="" NC_VER="" NC_URL="" NC_SHA="" NC_GAMES="" NC_PROTO="" NC_R4="" NC_MATCHED="" NC_YANKED="" NC_PRESENT=""
+PLAN_ADDED=0 PLAN_REPLACED=0 PLAN_REMOVED=0 PLAN_SAME=0 PLAN_STALE=() FILES_CHANGE=0 PREFIX_CHANGE=0 STEAM_CHANGE=0 SAVE_AUTO=""
 NC_ROOT="" NC_DLL_REL="" NC_PLUGIN_DIR="" R4_CHOICE="" R4_FINAL="" RT_WANT="" RT_TARGET="" RV="" RK="" NEED_RT=0
 VCREDIST_VER="" REG_STATE="" LO_STATE="" LO_VALUE="" LO_WINMM="" RESTART_STEAM=0 DLLS="winmm"
 TOOL_NAME="" TOOL_DIR="" TOOL_REASON="" TOOL_LABEL="" TOOL_STATE="none"
@@ -1662,11 +1760,22 @@ step_nightcoop() {
                 ok "build for game ${GAME_VER:-?}: NightCoop $NC_VER (for game $NC_GAMES, protocol $NC_PROTO${NC_R4:+, bundles RED4ext $NC_R4})"
                 [ "$NC_MATCHED" = 1 ] || warn "NightCoop $NC_VER does not list game version '${GAME_VER:-unknown}'; it may refuse to load"
                 [ -n "$NC_URL" ] || fail "the site lists no download for $NC_VER; download it from $NIGHTCOOP_SITE and pass --nightcoop-zip FILE"
-                NIGHTCOOP_ZIP="$TMP/$(basename "${NC_URL%%\?*}")"
-                download "$NC_URL" "$NIGHTCOOP_ZIP" || fail "download failed: $NC_URL"
-                if [ -z "$NC_SHA" ]; then warn "the site publishes no checksum for this archive"
-                elif sha_check "$NIGHTCOOP_ZIP" "$NC_SHA"; then ok "SHA-256 matches the site's release list"
-                else fail "SHA-256 mismatch for the downloaded $NIGHTCOOP_ZIP"; fi
+                local name cache="$CACHE_DIR/nightcoop"; name="$(basename "${NC_URL%%\?*}")"
+                if [ -n "$NC_SHA" ] && [ -f "$cache/$name" ] && sha_check "$cache/$name" "$NC_SHA"; then
+                    NIGHTCOOP_ZIP="$cache/$name"
+                    ok "$name was downloaded before; SHA-256 matches the site's release list"
+                else
+                    NIGHTCOOP_ZIP="$TMP/$name"
+                    download "$NC_URL" "$NIGHTCOOP_ZIP" || fail "download failed: $NC_URL"
+                    if [ -z "$NC_SHA" ]; then warn "the site publishes no checksum for this archive"
+                    elif sha_check "$NIGHTCOOP_ZIP" "$NC_SHA"; then
+                        ok "SHA-256 matches the site's release list"
+                        if [ "$DRY_RUN" != 1 ] && mkdir -p "$cache"; then   # kept for the next run, in place of older builds
+                            find "$cache" -mindepth 1 -maxdepth 1 -type f ! -name "$name" -delete 2>/dev/null || true
+                            cp "$NIGHTCOOP_ZIP" "$cache/$name.part" && mv -f "$cache/$name.part" "$cache/$name" || true
+                        fi
+                    else fail "SHA-256 mismatch for the downloaded $NIGHTCOOP_ZIP"; fi
+                fi
             fi ;;
         none|error|offline)
             [ "$NC_STATUS" = none ] && warn "the site lists no builds"
@@ -1860,19 +1969,41 @@ step_proton_tool() {
     steam_settings_note
 }
 
+plan_files() {   # PLAN_*: what copying the staged files would change in the game folder
+    local plan line
+    plan="$(py tree-plan "$TMP/stage" "$GAME_DIR" "${PREV_BACKUP:+$PREV_BACKUP/manifest.tsv}" "$NC_PLUGIN_DIR" "$FORCE" "${RED4EXT_CORE[@]}")" \
+        || fail "the game folder cannot take the new files (see above)"
+    IFS=$'\x1f' read -r PLAN_ADDED PLAN_REPLACED PLAN_REMOVED PLAN_SAME <<<"${plan%%$'\n'*}"
+    PLAN_STALE=()
+    while IFS=$'\x1f' read -r _ line; do [ -z "$line" ] || PLAN_STALE+=("$line"); done < <(tail -n +2 <<<"$plan")
+    FILES_CHANGE=0; [ $((PLAN_ADDED + PLAN_REPLACED + PLAN_REMOVED)) = 0 ] || FILES_CHANGE=1
+    PREFIX_CHANGE=0; { [ "$NEED_RT" = 1 ] || [ "$REG_STATE" = missing ]; } && PREFIX_CHANGE=1
+    STEAM_CHANGE=0; { [ "$LO_STATE" = missing ] || [ "$LO_STATE" = broken ] || [ "$TOOL_STATE" = pending ]; } && STEAM_CHANGE=1
+    return 0
+}
+
 print_plan() {
     echo
     bold "Plan"
-    local added replaced removed rel stale=() later=""
-    { IFS=$'\x1f' read -r added replaced removed
-      while IFS=$'\x1f' read -r _ rel; do stale+=("$rel"); done
-    } < <(py tree-plan "$TMP/stage" "$GAME_DIR" "${PREV_BACKUP:+$PREV_BACKUP/manifest.tsv}" "$NC_PLUGIN_DIR" "${RED4EXT_CORE[@]}")
+    local later="" same=""
     steam_running && [ "$CLOSE_STEAM" != 1 ] && later=" (when Steam is closed)"
-    if [ "$SAVE_BACKUP" = 1 ] && [ -d "$SAVES" ]; then info "back up saves   -> $BACKUP/Saved Games ($(du -sh "$SAVES" 2>/dev/null | cut -f1))"; fi
-    info "back up files   -> $BACKUP"
-    info "install         NightCoop ${NC_VER:-?}: $added new, $replaced replaced file(s) in the game folder"
-    [ "${removed:-0}" = 0 ] || info "remove          $removed file(s) of the previous build: ${stale[*]}"
-    info "RED4ext         $R4_FINAL ($R4_CHOICE)"
+    if [ "$FILES_CHANGE" = 1 ] || [ "$PREFIX_CHANGE" = 1 ]; then
+        if [ -d "$SAVES" ]; then
+            if [ "$SAVE_BACKUP" = 1 ]; then info "back up saves   -> $BACKUP/Saved Games ($(du -sh "$SAVES" 2>/dev/null | cut -f1))"
+            elif [ -n "$SAVE_AUTO" ]; then info "saves           not copied again on an update (add --backup-saves to copy them)"
+            else info "saves           not copied (--no-save-backup)"; fi
+        fi
+        info "back up files   -> $BACKUP"
+    fi
+    if [ "$FILES_CHANGE" = 1 ]; then
+        if [ -n "$NC_PRESENT" ] && [ "${NC_INSTALLED:-}" != "${NC_VER:-}" ]; then
+            info "update          NightCoop ${NC_INSTALLED:-(a build this script did not install)} -> ${NC_VER:-?}"
+        fi
+        [ "$PLAN_SAME" = 0 ] || same=", $PLAN_SAME already up to date"
+        info "install         NightCoop ${NC_VER:-?}: $PLAN_ADDED new, $PLAN_REPLACED replaced file(s) in the game folder$same"
+        [ "$PLAN_REMOVED" = 0 ] || info "remove          $PLAN_REMOVED file(s) of the previous build: ${PLAN_STALE[*]}"
+        info "RED4ext         $R4_FINAL ($R4_CHOICE)"
+    fi
     [ "$NEED_RT" = 1 ] && info "run             VC_redist.x64.exe ${VCREDIST_VER} quietly in the game's Proton prefix"
     [ "$REG_STATE" = missing ] && info "registry        $DLLS = native,builtin for Cyberpunk2077.exe"
     if [ "$LO_STATE" = missing ] || [ "$LO_STATE" = broken ]; then
@@ -1976,80 +2107,7 @@ apply_steam_settings() {
     if [ "$LO_STATE" = ok ]; then ok "launch options set"; else warn "could not set the launch options automatically"; fi
 }
 
-do_install() {
-    game_running && fail "Cyberpunk 2077 is running. Quit it and run this again."
-    [ -n "$COMPAT" ] || { no_prefix_help; exit 1; }
-    STAMP="$(date +%Y-%m-%d-%H%M%S)"; BACKUP="$BACKUP_ROOT/$STAMP"
-    PREV_BACKUP="$(latest_backup)"
-    [ -n "$PREV_BACKUP" ] && [ ! -f "$PREV_BACKUP/manifest.tsv" ] && PREV_BACKUP=""
-
-    step_nightcoop
-    step_stage
-    step_red4ext
-    step_runtime
-    step_override
-    step_proton_tool
-    print_plan
-    if [ "$DRY_RUN" = 1 ]; then echo; ok "dry run finished; nothing was changed"; return 0; fi
-    echo
-    confirm "Go ahead?" || { info "aborted"; exit 1; }
-
-    bold "Backing up"
-    mkdir -p "$BACKUP/game"
-    printf 'created\t%s\nscript\t%s\ngame_dir\t%s\nprefix\t%s\nnightcoop\t%s\nred4ext\t%s\n' \
-        "$(date -Is)" "$SCRIPT_VERSION" "$GAME_DIR" "$COMPAT" "${NC_VER:-unknown}" "$R4_FINAL" > "$BACKUP/info.tsv"
-    if [ "$SAVE_BACKUP" = 1 ] && [ -d "$SAVES" ]; then
-        local need avail
-        need="$(du -sb "$SAVES" | cut -f1)"; avail="$(df -B1 --output=avail "$BACKUP" | tail -n1 | tr -d ' ')"
-        if [ "$need" -lt $((avail - 1073741824)) ]; then
-            cp -a --reflink=auto "$SAVES" "$BACKUP/Saved Games"
-            ok "saves copied ($(human "$need"), $(find "$BACKUP/Saved Games" -mindepth 1 -maxdepth 1 | wc -l) entries)"
-        else
-            warn "not enough free space to copy the saves ($(human "$need") needed); skipped"
-        fi
-    fi
-    if [ "$NEED_RT" = 1 ]; then
-        mkdir -p "$BACKUP/prefix-runtime"
-        find "$SYS32" -maxdepth 1 -type f \( -iname 'msvcp140*.dll' -o -iname 'vcruntime140*.dll' -o -iname concrt140.dll -o -iname vccorlib140.dll \) \
-            -exec cp -a {} "$BACKUP/prefix-runtime/" \;
-    fi
-    [ -f "$USERREG" ] && cp -a "$USERREG" "$BACKUP/user.reg"
-
-    bold "Installing NightCoop and RED4ext"
-    local added replaced removed
-    IFS=$'\x1f' read -r added replaced removed < <(py tree-apply "$TMP/stage" "$GAME_DIR" "$BACKUP/game" \
-        "$BACKUP/manifest.tsv" "${PREV_BACKUP:+$PREV_BACKUP/manifest.tsv}" "$NC_PLUGIN_DIR" "${RED4EXT_CORE[@]}") \
-        || fail "copying into the game folder failed; undo with: $0 restore \"$BACKUP\""
-    ok "$added added, $replaced replaced, $removed stale removed; backup: $BACKUP"
-    local r4; r4="$(red4ext_core_version "$GAME_DIR")"
-    if [ -n "$r4" ] && ver_ge "$r4" "$R4_FINAL"; then ok "RED4ext $r4 in place"; else fail "RED4ext reports '${r4:-nothing}' after the install"; fi
-
-    if [ "$REG_STATE" = missing ]; then
-        bold "Adding the DLL override to the prefix registry"
-        wait_prefix_idle 30 || fail "Wine is still running in the game's prefix (wineserver $(py wsrv "$PFX" | tr '\n' ' ')); close it and run again"
-        local prev had d
-        : > "$BACKUP/registry.tsv"
-        for d in $(tr ',' ' ' <<<"$DLLS"); do
-            had=0; if prev="$(py reg-get "$USERREG" "$REG_KEY" "$d")"; then had=1; else prev=""; fi
-            printf '%s\t%s\t%s\t%s\n' "$had" "$REG_KEY" "$d" "$prev" >> "$BACKUP/registry.tsv"
-            py reg-set "$USERREG" "$REG_KEY" "$d" native,builtin
-        done
-        ok "HKCU\\$REG_KEY: $DLLS = native,builtin"
-    fi
-    apply_runtime
-    apply_steam_settings
-    REG_STATE="$(reg_state "$DLLS")"
-
-    mkdir -p "$DATA_DIR"
-    printf 'version\t%s\nprotocol\t%s\ngame\t%s\nred4ext\t%s\ninstalled\t%s\nbackup\t%s\n' \
-        "${NC_VER:-unknown}" "${NC_PROTO:-}" "${NC_GAMES:-}" "$R4_FINAL" "$(date -Is)" "$BACKUP" > "$DATA_DIR/installed.tsv"
-    NC_INSTALLED="${NC_VER:-}"
-    [ "$RESTART_STEAM" = 1 ] && { info "reopening Steam"; start_steam; }
-
-    echo
-    bold "Done"
-    do_check
-    echo
+print_followups() {   # what is left to set in Steam by hand
     local merged; merged="$(py lo-merge "$LO_VALUE" "$DLLS" "$GAME_ARGS" | cut -d$'\x1f' -f2)"
     if [ "$REG_STATE" != ok ] && [ "${LO_WINMM:-}" != ok ]; then
         bold "One manual step left"
@@ -2065,6 +2123,103 @@ do_install() {
         info "Recommended: in Steam, right-click Cyberpunk 2077 > Properties > Compatibility, tick"
         info "\"Force the use of a specific Steam Play compatibility tool\" and choose $TOOL_LABEL."
     fi
+    return 0
+}
+
+do_install() {
+    game_running && fail "Cyberpunk 2077 is running. Quit it and run this again."
+    [ -n "$COMPAT" ] || { no_prefix_help; exit 1; }
+    STAMP="$(date +%Y-%m-%d-%H%M%S)"; BACKUP="$BACKUP_ROOT/$STAMP"
+    PREV_BACKUP="$(latest_backup)"
+    # The saves are copied on the first install. Later runs leave them to that copy unless
+    # --backup-saves asks for another: an update does not touch them, and they can be GBs.
+    if [ -z "$SAVE_BACKUP" ]; then
+        SAVE_AUTO=1; if [ -n "$PREV_BACKUP" ]; then SAVE_BACKUP=0; else SAVE_BACKUP=1; fi
+    fi
+    [ -n "$PREV_BACKUP" ] && [ ! -f "$PREV_BACKUP/manifest.tsv" ] && PREV_BACKUP=""
+    NC_PRESENT="$(nc_dll)"
+
+    step_nightcoop
+    step_stage
+    step_red4ext
+    step_runtime
+    step_override
+    step_proton_tool
+    plan_files
+    if [ "$FILES_CHANGE" = 0 ] && [ "$PREFIX_CHANGE" = 0 ]; then   # an update with nothing new
+        echo
+        ok "all $PLAN_SAME files of NightCoop ${NC_VER:-?} (with RED4ext $R4_FINAL) are already in place; nothing to replace (--force reinstalls them)"
+        if [ "$DRY_RUN" != 1 ] && { [ "${NC_INSTALLED:-}" != "${NC_VER:-}" ] || ! grep -q '^dll_sha256' "$DATA_DIR/installed.tsv" 2>/dev/null; }; then
+            record_install "${NC_VER:-}" "${NC_PROTO:-}" "${NC_GAMES:-}" "$R4_FINAL" ""
+            info "recorded as the installed build, for later update checks"
+        fi
+        if [ "$STEAM_CHANGE" = 0 ]; then ok "everything is up to date; nothing to do"; return 0; fi
+        if steam_running && [ "$CLOSE_STEAM" != 1 ]; then echo; print_followups; return 0; fi
+    fi
+    print_plan
+    if [ "$DRY_RUN" = 1 ]; then echo; ok "dry run finished; nothing was changed"; return 0; fi
+    echo
+    confirm "Go ahead?" || { info "aborted"; exit 1; }
+
+    if [ "$FILES_CHANGE" = 1 ] || [ "$PREFIX_CHANGE" = 1 ]; then
+        bold "Backing up"
+        mkdir -p "$BACKUP/game"
+        printf 'created\t%s\nscript\t%s\ngame_dir\t%s\nprefix\t%s\nnightcoop\t%s\nred4ext\t%s\n' \
+            "$(date -Is)" "$SCRIPT_VERSION" "$GAME_DIR" "$COMPAT" "${NC_VER:-unknown}" "$R4_FINAL" > "$BACKUP/info.tsv"
+        if [ "$SAVE_BACKUP" = 1 ] && [ -d "$SAVES" ]; then
+            local need avail
+            need="$(du -sb "$SAVES" | cut -f1)"; avail="$(df -B1 --output=avail "$BACKUP" | tail -n1 | tr -d ' ')"
+            if [ "$need" -lt $((avail - 1073741824)) ]; then
+                cp -a --reflink=auto "$SAVES" "$BACKUP/Saved Games"
+                ok "saves copied ($(human "$need"), $(find "$BACKUP/Saved Games" -mindepth 1 -maxdepth 1 | wc -l) entries)"
+            else
+                warn "not enough free space to copy the saves ($(human "$need") needed); skipped"
+            fi
+        fi
+        if [ "$NEED_RT" = 1 ]; then
+            mkdir -p "$BACKUP/prefix-runtime"
+            find "$SYS32" -maxdepth 1 -type f \( -iname 'msvcp140*.dll' -o -iname 'vcruntime140*.dll' -o -iname concrt140.dll -o -iname vccorlib140.dll \) \
+                -exec cp -a {} "$BACKUP/prefix-runtime/" \;
+        fi
+        [ -f "$USERREG" ] && cp -a "$USERREG" "$BACKUP/user.reg"
+
+        # Runs even when no file changes: its manifest is what restore and later updates read.
+        if [ "$FILES_CHANGE" = 1 ]; then bold "Installing NightCoop and RED4ext"; else bold "Game folder (no file changes)"; fi
+        local added replaced removed same
+        IFS=$'\x1f' read -r added replaced removed same < <(py tree-apply "$TMP/stage" "$GAME_DIR" "$BACKUP/game" \
+            "$BACKUP/manifest.tsv" "${PREV_BACKUP:+$PREV_BACKUP/manifest.tsv}" "$NC_PLUGIN_DIR" "$FORCE" "${RED4EXT_CORE[@]}") \
+            || fail "copying into the game folder failed; undo with: $0 restore \"$BACKUP\""
+        ok "$added added, $replaced replaced, $removed stale removed, $same unchanged; backup: $BACKUP"
+        local r4; r4="$(red4ext_core_version "$GAME_DIR")"
+        if [ -n "$r4" ] && ver_ge "$r4" "$R4_FINAL"; then ok "RED4ext $r4 in place"; else fail "RED4ext reports '${r4:-nothing}' after the install"; fi
+
+        if [ "$REG_STATE" = missing ]; then
+            bold "Adding the DLL override to the prefix registry"
+            wait_prefix_idle 30 || fail "Wine is still running in the game's prefix (wineserver $(py wsrv "$PFX" | tr '\n' ' ')); close it and run again"
+            local prev had d
+            : > "$BACKUP/registry.tsv"
+            for d in $(tr ',' ' ' <<<"$DLLS"); do
+                had=0; if prev="$(py reg-get "$USERREG" "$REG_KEY" "$d")"; then had=1; else prev=""; fi
+                printf '%s\t%s\t%s\t%s\n' "$had" "$REG_KEY" "$d" "$prev" >> "$BACKUP/registry.tsv"
+                py reg-set "$USERREG" "$REG_KEY" "$d" native,builtin
+            done
+            ok "HKCU\\$REG_KEY: $DLLS = native,builtin"
+        fi
+        apply_runtime
+    else
+        mkdir -p "$BACKUP"   # only Steam's settings change; it keeps the earlier Proton choice
+    fi
+    apply_steam_settings
+    REG_STATE="$(reg_state "$DLLS")"
+
+    record_install "${NC_VER:-}" "${NC_PROTO:-}" "${NC_GAMES:-}" "$R4_FINAL" "$BACKUP"
+    [ "$RESTART_STEAM" = 1 ] && { info "reopening Steam"; start_steam; }
+
+    echo
+    bold "Done"
+    do_check
+    echo
+    print_followups
     echo
     if [ "$OS_FAMILY" = steamos ]; then
         info "Return to Game Mode (or stay in Desktop Mode) and launch Cyberpunk 2077 from Steam."
@@ -2074,10 +2229,10 @@ do_install() {
     cat <<EOF
   The main menu should show a Co-op entry ("Совместная игра" in Russian builds).
   If it does not, run:  $0 check
-
-  Backups of everything replaced are in: $BACKUP
-  To undo this install:  $0 restore
 EOF
+    if [ -f "$BACKUP/manifest.tsv" ]; then
+        printf '\n  Backups of everything replaced are in: %s\n  To undo this install:  %s restore\n' "$BACKUP" "$0"
+    fi
 }
 
 # ------------------------------------------------------------------- main ----
@@ -2092,8 +2247,8 @@ main() {
     bold "System"
     ok "$OS_NAME${DEVICE:+ on a $DEVICE}"
     [ "$OS_FAMILY" = other ] && info "not SteamOS, CachyOS or Arch; using the generic Linux path"
-    if [ -r "$DATA_DIR/installed.tsv" ]; then NC_INSTALLED="$(sed -n 's/^version\t//p' "$DATA_DIR/installed.tsv")"; fi
     locate_game
+    read_installed
     if ! locate_prefix && [ "$MODE" = check ]; then warn "no Proton prefix yet (launch the game once)"; fi
     [ -n "$COMPAT" ] && locate_proton
 
@@ -2104,5 +2259,5 @@ main() {
         install)   do_install ;;
     esac
 }
-NC_INSTALLED=""
+NC_INSTALLED="" NC_RECORDED="" LATEST_STATUS="" LATEST_VER=""
 main
