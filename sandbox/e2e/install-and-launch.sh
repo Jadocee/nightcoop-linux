@@ -70,9 +70,12 @@ for patch in $PATCHES; do
     check_line "$WORK/check-$patch.log" "a Proton build chosen for the game" "^  Proton for the game: .*\(chosen in Steam\)"
     check_line "$WORK/check-$patch.log" "launch options written" "^  launch options: +WINEDLLOVERRIDES=.*%command% --launcher-skip"
     check_line "$WORK/check-$patch.log" "no newer NightCoop build" "^  NightCoop update: +none; "
-    case "$patch" in 2.5) ltbf=0.3.20 ;; *) ltbf=0.3.18 ;; esac   # the build each patch is paired with
-    check_line "$WORK/check-$patch.log" "Let There Be Flight $ltbf and what it needs" \
-        "^  Let There Be Flight: +${ltbf//./\\.}, with redscript, ArchiveXL [0-9.]+, TweakXL [0-9.]+, Input Loader [0-9.]+ \(kept up to date"
+    # the releases the installer's FLIGHT_SET pairs with this patch, as check names them
+    want="$(sed -n '/^# >>> flight set/,/^# <<< flight set/p' "$NI" | awk -v p="$patch" '
+        $2 == p { gsub("_", " ", $1); if ($1 == "Let There Be Flight") mod = $3; else rest = rest sep $1 " " $3; sep = ", " }
+        END { print mod ", with " rest }')"
+    check_line "$WORK/check-$patch.log" "Let There Be Flight and what it needs: $want" \
+        "^  Let There Be Flight: +${want//./\\.} \(kept up to date"
     if HOME="$home" bash "$NI" update --yes > "$WORK/update-$patch.log" 2>&1; then
         check_line "$WORK/update-$patch.log" "a second run changes nothing" "everything is up to date; nothing to do"
     else

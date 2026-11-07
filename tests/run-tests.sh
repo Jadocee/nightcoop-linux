@@ -285,8 +285,9 @@ section "Let There Be Flight (--with-flight)"
 newworld fly native; OSR="$T/os-arch"
 P="$G/red4ext/Plugins"; PRISTINE_FLY="$(snapshot "$G")"
 fver() { hp pever "$1" | cut -d. -f1-3; }
-run install --yes
+run install --yes --without-flight
 expect "without the option, the set is only suggested" '[ $RC = 0 ] && [[ "$OUT" == *"Let There Be Flight:"*"not installed; NightCoop supports it in co-op (add --with-flight)"* ]] && [[ "$OUT" == *"Add --with-flight"* ]] && [ ! -e "$P/let_there_be_flight" ]' "$OUT"
+expect "--without-flight with nothing to remove says so" '[[ "$OUT" == *"has not installed Let There Be Flight; nothing to remove"* ]]' "$OUT"
 BEFORE="$(snapshot "$H")"
 run install --dry-run --with-flight
 expect "a dry run with the set changes nothing, not even the cache" '[ $RC = 0 ] && [[ "$OUT" == *"dry run finished"* ]] && [ "$BEFORE" = "$(snapshot "$H")" ]' "$OUT"
@@ -294,7 +295,7 @@ run install --yes --with-flight
 expect "--with-flight installs the set paired with game 2.5" '[ $RC = 0 ] && [ "$(fver "$P/let_there_be_flight/let_there_be_flight.dll")" = 0.3.20 ] && [ "$(fver "$P/ArchiveXL/ArchiveXL.dll")" = 1.28.6 ] && [ "$(fver "$P/TweakXL/TweakXL.dll")" = 1.12.0 ] && [ "$(fver "$P/input_loader/input_loader.dll")" = 0.2.6 ] && grep -q "redscript lib 0.5.32" "$G/engine/tools/scc_lib.dll"' "$OUT"
 expect "the plan lists the set" '[[ "$OUT" == *"flight set      redscript 0.5.32, ArchiveXL 1.28.6, TweakXL 1.12.0, Input Loader 0.2.6, Let There Be Flight 0.3.20 (for game 2.5)"* ]]' "$OUT"
 expect "game files the set replaces are backed up" '[ "$(cat "$(newest_backup)game/engine/tools/scc.exe")" = "the game'"'"'s own script compiler" ] && [ -f "$(newest_backup)game/r6/cache/inputContexts.xml" ]' "$OUT"
-expect "check lists the set" '[[ "$OUT" == *"Let There Be Flight:"*"0.3.20, with redscript, ArchiveXL 1.28.6, TweakXL 1.12.0, Input Loader 0.2.6 (kept up to date by this script)"* ]]' "$OUT"
+expect "check lists the set by release" '[[ "$OUT" == *"Let There Be Flight:"*"0.3.20, with redscript 0.5.32, ArchiveXL 1.28.6, TweakXL 1.12.0, Input Loader 0.2.6 (kept up to date by this script)"* ]]' "$OUT"
 B1="$(newest_backup)"
 run update --yes
 expect "the choice is remembered; a rerun changes and downloads nothing" '[ $RC = 0 ] && [[ "$OUT" == *"everything is up to date; nothing to do"* ]] && [ "$(newest_backup)" = "$B1" ] && [[ "$OUT" != *"downloading"* ]]' "$OUT"
@@ -303,8 +304,10 @@ run update --yes
 expect "a newer ArchiveXL for the same patch, installed by hand, is kept" '[ $RC = 0 ] && [[ "$OUT" == *"keeping the installed ArchiveXL 1.28.7"* ]] && [ "$(fver "$P/ArchiveXL/ArchiveXL.dll")" = 1.28.7 ] && [ -f "$P/ArchiveXL/Scripts/ArchiveXL.reds" ]' "$OUT"
 cp "$FIX/pe/Cyberpunk2077-2.31.exe" "$G/bin/x64/Cyberpunk2077.exe"   # the game goes back to patch 2.31
 run update --yes
-expect "the set follows the game patch: the 2.31 builds" '[ $RC = 0 ] && [ "$(fver "$P/let_there_be_flight/let_there_be_flight.dll")" = 0.3.18 ] && [ "$(fver "$P/ArchiveXL/ArchiveXL.dll")" = 1.27.5 ] && [ "$(fver "$P/input_loader/input_loader.dll")" = 0.2.3 ] && grep -q "redscript lib 0.5.31" "$G/engine/tools/scc_lib.dll" && [ "$(hp pever "$G/red4ext/RED4ext.dll" product)" = 1.30.0 ]' "$OUT"
+expect "the set follows the game patch: the 2.31 builds" '[ $RC = 0 ] && [ "$(fver "$P/let_there_be_flight/let_there_be_flight.dll")" = 0.3.18 ] && [ "$(fver "$P/ArchiveXL/ArchiveXL.dll")" = 1.27.5 ] && [ "$(hp pestr "$P/input_loader/input_loader.dll" ProductVersion)" = 2.30 ] && grep -q "redscript lib 0.5.31" "$G/engine/tools/scc_lib.dll" && [ "$(hp pever "$G/red4ext/RED4ext.dll" product)" = 1.30.0 ]' "$OUT"
 expect "files only the 2.5 builds had are removed, the 2.31 ones added" '[ ! -e "$P/let_there_be_flight_uninstall.bat" ] && [ -f "$P/ArchiveXL/Scripts/Legacy.reds" ]' "$OUT"
+run check
+expect "check names each release, not what its DLL says (Input Loader 0.2.3 reports 0.1.1)" '[[ "$OUT" == *"Let There Be Flight:"*"0.3.18, with redscript 0.5.31, ArchiveXL 1.27.5, TweakXL 1.11.5, Input Loader 0.2.3 (kept"* ]]' "$OUT"
 run update --yes --without-flight
 expect "--without-flight removes Let There Be Flight, folder and all" '[ $RC = 0 ] && [ ! -e "$P/let_there_be_flight" ]' "$OUT"
 expect "the mods it needed stay" '[ -f "$P/ArchiveXL/ArchiveXL.dll" ] && [ -f "$P/TweakXL/TweakXL.dll" ] && [ -f "$P/input_loader/input_loader.dll" ] && [ -f "$G/engine/tools/scc_lib.dll" ]' "$OUT"

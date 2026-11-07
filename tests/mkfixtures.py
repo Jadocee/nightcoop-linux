@@ -216,10 +216,11 @@ def archives(fix):
         zipdir(path, files)
         table.append(f'{comp} {patch} {ver} {rule} {probe} file://{path} {sha(path)}')
 
-    for patch, (rs, axl, txl, il, il_game, ltbf, ltbf_game) in {
-            '2.31': ('0.5.31', '1.27.5', '1.11.5', '0.2.3', '2.30', '0.3.18', '2.31'),
-            '2.5': ('0.5.32', '1.28.6', '1.12.0', '0.2.6', '2.50', '0.3.20', '2.50')}.items():
-        flight('redscript', patch, rs, '-', '-', f'redscript-v{rs}-windows.zip', {
+    # il_dll: the version Input Loader's DLL reports; the real 0.2.3 build says 0.1.1
+    for patch, (rs, axl, txl, il, il_dll, il_game, ltbf, ltbf_game) in {
+            '2.31': ('0.5.31', '1.27.5', '1.11.5', '0.2.3', '0.1.1', '2.30', '0.3.18', '2.31'),
+            '2.5': ('0.5.32', '1.28.6', '1.12.0', '0.2.6', '0.2.6', '2.50', '0.3.20', '2.50')}.items():
+        flight('redscript', patch, rs, '-', 'engine/tools/scc_lib.dll', f'redscript-v{rs}-windows.zip', {
             'engine/config/base/scripts.ini': b'[Scripts]\r\nEnableCompilation = "true"\r\n',
             'engine/tools/scc.exe': f'redscript scc {rs}'.encode(),
             'engine/tools/scc_lib.dll': f'redscript lib {rs}'.encode(),
@@ -235,7 +236,7 @@ def archives(fix):
         flight('TweakXL', patch, txl, 'minor', 'red4ext/plugins/TweakXL/TweakXL.dll', f'TweakXL-{txl}.zip', {
             'red4ext/plugins/TweakXL/TweakXL.dll': f'{pe}/txl-{txl}/TweakXL.dll',
             'red4ext/plugins/TweakXL/Scripts/TweakXL.reds': f'// TweakXL {txl}\n'.encode()})
-        make_pe(f'{pe}/il-{il}/input_loader.dll', il, il_game, linker=(14, 44), imports=CRT,
+        make_pe(f'{pe}/il-{il}/input_loader.dll', il_dll, il_game, linker=(14, 44), imports=CRT,
                 strings={'Comments': f'Built for {il_game}'})
         flight('Input_Loader', patch, il, 'game', 'red4ext/plugins/input_loader/input_loader.dll', f'input_loader_v{il}.zip', {
             'red4ext/plugins/input_loader/input_loader.dll': f'{pe}/il-{il}/input_loader.dll',
