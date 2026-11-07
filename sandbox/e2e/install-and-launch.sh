@@ -30,9 +30,10 @@ say "Creating a fresh Proton prefix"
 new_prefix "$WORK/c-base"
 
 fails=0
-addon_want() {   # addon_want <patch> <set> <kind>: "Name version, ..." from the installer's ADDON_SETS, as check names them
+addon_want() {   # addon_want <patch> <set> <kind>: "Name version, ..." of the installer's ADDON_SETS as check names
+    # them, for what comes from GitHub (the Nexus mods are downloaded by the player)
     sed -n '/^# >>> add-on sets/,/^# <<< add-on sets/p' "$NI" | awk -v p="$1" -v set="$2" -v kind="$3" '
-        $2 == p && ("," $3 ",") ~ ("," set ",") && $4 == kind { gsub("_", " ", $1); s = s sep $1 " " $7; sep = ", " }
+        $2 == p && ("," $3 ",") ~ ("," set ",") && $4 == kind && $8 !~ /^nexus:/ { gsub("_", " ", $1); s = s sep $1 " " $7; sep = ", " }
         END { print s }'
 }
 check_line() {   # check_line <log> <description> <extended regex>
@@ -103,7 +104,7 @@ for patch in $PATCHES; do
         check_line "$WORK/mods-$patch.log" "the mod set's frameworks: $want" "^  Mods: +.*with ${want//./\\.} \\(kept up to date"
         check_line "$WORK/mods-$patch.log" "Cyber Engine Tweaks' loader gets the override too" "^  DLL override: +winmm,version = native,builtin"
         check_line "$WORK/mods-$patch.log" "the Nexus-only mods listed with their pages" \
-            "Virtual Atelier \\(the Basic file\\): https://www\\.nexusmods\\.com/cyberpunk2077/mods/2987"
+            "Virtual Atelier: https://www\\.nexusmods\\.com/cyberpunk2077/mods/2987"
         if HOME="$home" bash "$NI" update --yes > "$WORK/mods-again-$patch.log" 2>&1; then
             check_line "$WORK/mods-again-$patch.log" "with the frameworks in place, a rerun changes nothing" "everything is up to date; nothing to do"
         else

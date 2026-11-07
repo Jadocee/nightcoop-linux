@@ -258,25 +258,124 @@ def archives(fix):
         'bin/x64/plugins/cyber_engine_tweaks.asi': f'{pe}/cet/cyber_engine_tweaks.asi',
         'bin/x64/plugins/cyber_engine_tweaks/scripts/autoexec.lua': b'-- CET\n',
         'bin/x64/plugins/cyber_engine_tweaks/fonts/Noto.ttf': b'font'})
-    for line in ('Virtual_Atelier 2.5 mods mod - - - nexus:2987:basic:full', 'A.G.I.S. 2.5 mods mod - - - nexus:10909',
-                 'Night_City_Marketplace 2.5 mods mod - - - nexus:4433', 'Quick_Stash 2.5 mods mod - - - nexus:30016',
-                 'No_Intro_Videos 2.5 mods mod - - - nexus:533'):
-        table.append(line)
+    make_pe(f'{pe}/ms/mod_settings.dll', '0.2.28', '2.50', linker=(14, 44), imports=CRT)
+    github('Mod_Settings', 'mods', 'lib', 'game', 'red4ext/plugins/mod_settings/mod_settings.dll', '0.2.28', 'mod_settings_v0.2.28.zip', {
+        'red4ext/plugins/mod_settings/mod_settings.dll': f'{pe}/ms/mod_settings.dll',
+        'red4ext/plugins/mod_settings/ModSettings.archive': b'RDAR',
+        'red4ext/plugins/mod_settings/ModSettings.archive.xl': b'resource:\n',
+        'red4ext/plugins/mod_settings/module.reds': b'module ModSettingsModule\n',
+        'red4ext/plugins/mod_settings/packed.reds': b'// Mod Settings 0.2.28\n'})
+    github('Audioware', 'mods', 'lib', '-', 'red4ext/plugins/audioware/audioware.dll', '1.11.1', 'Audioware-windows-v1.11.1.zip', {
+        'red4ext/plugins/audioware/audioware.dll': b'MZ audioware 1.11.1, no version resource',
+        'r6/scripts/Audioware/Service.reds': b'// Audioware 1.11.1\n'})
+    # the Nexus mods: the installer's own rows, so that the tests use its file rules and minimum versions
+    installer = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'nightcoop-install.sh')
+    rows = open(installer, encoding='utf-8').read().split('# >>> add-on sets\n', 1)[1].split('# <<< add-on sets', 1)[0]
+    table += [' '.join(r.split()) for r in rows.splitlines() if len(r.split()) == 8 and r.split()[7].startswith('nexus:')]
     write(f'{fix}/addon-sets.txt', '\n'.join(table) + '\n')
     make_pe(f'{pe}/axl-1.28.7/ArchiveXL.dll', '1.28.7.0', linker=(14, 44), imports=CRT)   # a newer copy, installed by hand
 
-    nx = f'{fix}/nexus'   # as Nexus names its downloads: <file name>-<mod id>-<version>-<upload time>
-    zipdir(f'{nx}/Virtual Atelier - Basic-2987-1-6-4-1730000000.zip', {'r6/scripts/VirtualAtelier/Basic.reds': b'// basic\n'})
-    zipdir(f'{nx}/Virtual Atelier - Full-2987-1-6-4-1730000001.zip', {'r6/scripts/VirtualAtelier/Full.reds': b'// full\n',
-                                                                       'bin/x64/plugins/cyber_engine_tweaks/mods/VirtualAtelier/init.lua': b'--\n'})
-    zipdir(f'{nx}/A.G.I.S. - All Game Items Store-10909-2-1-1720000000.zip', {   # wrapped in a folder, with a read-me
-        'AGIS/r6/scripts/AGIS/agis.reds': b'// agis\n', 'AGIS/readme.txt': b'read me\n'})
-    zipdir(f'{nx}/Night City Marketplace-4433-1-2-1700000000.zip', {'r6/scripts/NCMarketplace/stores.reds': b'// ncm\n'})
-    zipdir(f"{nx}/Quick Stash - Transfer All Inventory Items To V's Stash-30016-1-1-1720000000.zip",
-           {'bin/x64/plugins/cyber_engine_tweaks/mods/QuickStash/init.lua': b'-- quick stash\n'})
-    zipdir(f'{nx}/No Intro Videos-533-1-0-1600000000.zip', {'archive/pc/mod/NoIntroVideos.archive': b'RDAR'})
-    zipdir(f'{fix}/nexus-bad/No Intro Videos-533-1-1-1700000000.zip', {'readme.txt': b'install by hand\n'})   # no game folders
+    # Downloads, named as Nexus names them: <file name>-<mod id>-<version>-<upload time> until 2026,
+    # <file name> <mod id> <version> <YYYY-MM-DDTHH-MMZ> <file key> since (the real files of each mod)
+    nx = f'{fix}/nexus'
+    zipdir(f'{nx}/Virtual Atelier 2987 1.6.4 2026-10-25T17-42Z HncQn22j7.zip', {
+        'archive/pc/mod/VirtualAtelier.archive': b'RDAR', 'archive/pc/mod/VirtualAtelier.archive.xl': b'localization:\n',
+        'r6/scripts/virtual-atelier-full/Config.reds': b'// Virtual Atelier 1.6.4\n'})
+    zipdir(f'{nx}/Virtual Atelier - Basic-2987-1-2-4-1706771312.zip', {   # the last Basic file, of 2024: too old for 2.5
+        'r6/scripts/VirtualAtelier/Basic.reds': b'// basic 1.2.4\n'})
+    zipdir(f'{nx}/PUBLICNET-10909-1-2-1-1702220953.zip', {   # A.G.I.S.'s main file, wrapped in a folder, with a read-me
+        'AGIS/r6/scripts/AGIS/agis.reds': b'// agis publicnet\n', 'AGIS/readme.txt': b'read me\n'})
+    zipdir(f'{nx}/BLACKWALL-10909-1-2-1-1702221109.zip', {   # another edition, newer: never installed
+        'r6/scripts/AGIS_BLACKWALL/agis.reds': b'// agis blackwall\n'})
+    zipdir(f'{nx}/Darks Night City Marketplace-4433-2-3-0-1757877636.zip', {'r6/scripts/NCMarketplace/stores.reds': b'// ncm\n'})
+    zipdir(f'{nx}/Quick Stash-30016-v1-1-1779816414.zip', {   # a version written with a v
+        'bin/x64/plugins/cyber_engine_tweaks/mods/QuickStash/init.lua': b'-- quick stash\n'})
+    zipdir(f'{nx}/No Intro Videos-533-0-5-1721546294.zip', {'archive/pc/mod/NoIntroVideos.archive': b'RDAR'})
+    zipdir(f'{nx}/No Intro Videos - redscript-533-0-8-1760416944.zip', {   # the redscript file: never installed
+        'r6/scripts/NoIntroVideos/NoIntroVideos.reds': b'// no intro, redscript\n'})
+    zipdir(f'{fix}/nexus-bad/No Intro Videos-533-0-6-1730000000.zip', {'readme.txt': b'install by hand\n'})   # no game folders
+    zipdir(f'{nx}/Virtual Car Dealer 4454 2.3.0 2026-10-25T11-18Z lcXrcZZMt.zip', {
+        'archive/pc/mod/VirtualCarDealer.archive': b'RDAR',
+        'r6/scripts/VirtualCarDealer/core/CarDealer-System.reds': b'// virtual car dealer 2.3.0\n'})
+    zipdir(f'{nx}/Native Settings UI 1.97 3518 1.97 2026-10-22T15-26Z cB3xB00Va.zip', {
+        'bin/x64/plugins/cyber_engine_tweaks/mods/nativeSettings/init.lua': b'-- native settings ui 1.97\n'})
+    cd = 'bin/x64/plugins/cyber_engine_tweaks/mods'
+    zipdir(f'{nx}/CyberDrift 2.0 Light for game ver. 2.31 8306 2.31 2026-08-03T18-29Z 4rpqrKU17.zip', {
+        f'{cd}/CyberDrift Light/init.lua': b'-- cyber drift light\n',
+        f'{cd}/CyberDrift Light/custom/car_list.json': b'{"cars": []}\n',
+        f'{cd}/CyberDrift Light/db.sqlite3': b''})
+    zipdir(f'{nx}/Cyber Drift 2.0 for game ver. 2.31 8306 2.31 2026-07-03T23-03Z ymA1m8KJ2.zip', {
+        f'{cd}/CyberDrift/init.lua': b'-- cyber drift, all parameters\n'})
+    zipdir(f'{nx}/Cyber Drift 2.0 for game ver. 2.5 8306 2.5 2026-11-03T10-00Z Rq4tLm9Wx.zip', {   # newer, not the Light file
+        f'{cd}/CyberDrift/init.lua': b'-- cyber drift, all parameters, 2.5\n'})
+    zipdir(f'{nx}/Cyber Drift for game 2.3 TweakXL-8306-2-3-1754137206.zip', {'r6/tweaks/CyberDrift/drift.yaml': b'# 2.3\n'})
 
+    def dav(chunk):   # Drive an Aerial Vehicle, with the files it writes to while the game runs
+        d = f'{cd}/DriveAerialVehicle'
+        return {'archive/pc/mod/DriveAerialVehicle.archive': b'RDAR', f'{d}/init.lua': b'-- dav\n',
+                f'{d}/Data/user_setting_v3.json': b'{"language": "default"}\n',
+                f'{d}/Data/map_bin/chunk_0_0.bin': chunk, f'{d}/Data/map_bin/chunk_0_1.bin': b'map 0 1',
+                'r6/audioware/DriveAerialVehicle/manifest.yml': b'version: 1.0.0\n',
+                'r6/scripts/DriveAerialVehicle/DriveAerialVehicle.reds': b'// dav\n',
+                'r6/tweaks/DriveAerialVehicle/dav_default_model.yaml': b'Vehicle.av_rayfield_excalibur_dav_dummy: {}\n',
+                'red4ext/plugins/DriveAerialVehicle/DriveAerialVehicle.dll': b'MZ dav'}
+    zipdir(f'{nx}/Drive an Aerial Vehicle 13842 3.5.0 2026-10-26T16-09Z mPgaPVV1e.zip', dav(b'map 0 0 v1'))
+    zipdir(f'{fix}/nexus-later/Drive an Aerial Vehicle 13842 3.5.1 2026-11-02T09-30Z Zx81kQp0a.zip', dav(b'map 0 0 v2'))
+
+    # clothing stores and outfits, car and bike packs, and Vehicle Customizer: the real file names
+    # of each mod's main and other files (the .rar of the bikes and the .7z of Material and Texture
+    # Override are zips here, so that the suite needs no bsdtar)
+    st = f'{fix}/style'
+    zipdir(f'{st}/All Vanilla Clothes Atelier Store-5544-v1-0-1738160755.zip', {
+        'r6/scripts/AllVanillaClothes/store.reds': b'// all vanilla clothes\n'})
+    zipdir(f'{st}/IconicShops 7215 3.6.2 2026-11-04T06-43Z FKtYKrCFm.zip', {
+        'archive/pc/mod/IconicShop.archive': b'RDAR', 'r6/scripts/iconicshop/shops/top.reds': b'// iconic\n',
+        'r6/tweaks/iconicShop/duplicateItems.yaml': b'Items: {}\n'})
+    zipdir(f'{st}/Zenitex Virtual Atelier 10090 4.13 2026-08-28T15-44Z gMz5MuNQO.zip', {
+        'archive/pc/mod/scorpion_zenitex_virtual_atelier.archive': b'RDAR',
+        'r6/scripts/ScorpionTank/scorpion_zenitex_virtual_atelier.reds': b'// zenitex store\n'})
+
+    def gear(name, item):   # a Zenitex outfit: its archive, its TweakXL records, and a list of codes
+        return {f'archive/pc/mod/{item}.archive': b'RDAR', f'archive/pc/mod/{item}.archive.xl': b'localization:\n',
+                f'r6/tweaks/scorpiontank/{item}.yaml': f'Items.{item}: {{}}\n'.encode(), 'codes.txt': b'Game.AddToInventory\n'}
+    zipdir(f'{st}/Zenitex Ballistic Mask-12422-4-1-1780618307.zip', gear('mask', 'zenitex_mask'))
+    zipdir(f'{st}/Zenitex Ballistic Mask - Alt. Colors-12422-4-1-1780618751.zip', {'r6/tweaks/scorpiontank/zenitex_mask_alt.yaml': b'#\n'})
+    zipdir(f'{st}/Zenitex Ballistic Mask - GS-12422-4-1-1780618658.zip', gear('mask', 'zenitex_mask_gs'))
+    zipdir(f'{st}/Zenitex Tactical Harness 9774 4.0 2026-08-11T13-01Z 9ka2kyJHP.zip', gear('harness', 'zenitex_harness'))
+    zipdir(f'{st}/Zenitex Tactical Harness - GS 9774 4.0 2026-08-11T13-02Z xNHtNXgf4.zip', gear('harness', 'zenitex_harness_gs'))
+    zipdir(f'{st}/Zenitex Combat Jacket 19119 2.0.1 2026-08-03T19-10Z SlR4l6sri.zip', gear('jacket', 'zenitex_jacket'))
+    zipdir(f'{st}/Zenitex Armor Pads 12044 4.1 2026-06-20T11-45Z MTheTj2uo.zip', gear('pads', 'zenitex_pads'))
+    zipdir(f'{st}/Zenitex Panam Pants 10842 4.0 2026-08-09T13-53Z PYMIYqZfI.zip', gear('pants', 'zenitex_pants'))
+    zipdir(f'{st}/Zenitex Combat Gloves-19432-2-0-1-1780856480.zip', gear('gloves', 'zenitex_gloves'))
+    zipdir(f'{st}/Zenitex Combat Gloves - Garment Support-19432-2-0-1780856305.zip', gear('gloves', 'zenitex_gloves_gs'))
+    zipdir(f'{st}/Comfy Boots - Female V and Male V-11212-1-1-1701090170.zip', gear('boots', 'comfy_boots'))
+    zipdir(f'{st}/Comfy Boots - Gymfiend-11212-1-1-1704816258.zip', gear('boots', 'comfy_boots_gymfiend'))
+    zipdir(f'{st}/Virtual Car Dealer - Car Pack-4625-1-8-2-1674936277.zip', {   # Car Pack 1, as Nexus names it
+        'archive/pc/mod/vcd_car_pack_1.archive': b'RDAR', 'r6/tweaks/VirtualCarDealer/car_pack_1.yaml': b'Vehicle.v_pack1: {}\n'})
+    zipdir(f'{st}/Virtual Car Dealer - Car Pack 2-4625-1-9-0-1675361670.zip', {
+        'archive/pc/mod/vcd_car_pack_2.archive': b'RDAR', 'r6/tweaks/VirtualCarDealer/car_pack_2.yaml': b'Vehicle.v_pack2: {}\n'})
+    zipdir(f'{st}/Cyberpunk Bikes - Edge 14719 1.03 2026-10-17T09-22Z k8Iw8mmHf.zip', {
+        'archive/pc/mod/Methodd_Edge.archive': b'RDAR', 'r6/tweaks/Methodd/Methodd_Edge/mthdd_Methodd_Edge.yaml': b'Vehicle.v_edge: {}\n'})
+    zipdir(f'{st}/VehicleExitFix-22786-1-0-1752937333.zip', {'r6/tweaks/VehicleExitFix/exit.yaml': b'# exit fix\n'})
+    zipdir(f'{st}/BDF_DRe_ArchV4-18736-1-3-1766091835.zip', {
+        'archive/pc/mod/BDF_DRe_ArchV4.archive': b'RDAR', 'r6/tweaks/BDF/archv4.tweak': b'// arch v4\n'})
+    zipdir(f'{st}/BDF_DRe_ArchV4_Mirrors-18736-1-3-1766092481.zip', {'archive/pc/mod/BDF_DRe_ArchV4_Mirrors.archive': b'RDAR'})
+    zipdir(f'{st}/dre_cyberhelmets-18736-1-1753577287.zip', {'archive/pc/mod/dre_cyberhelmets.archive': b'RDAR'})
+    zipdir(f'{st}/VMF-28744-1-0-1775609654.zip', {'r6/scripts/VMF/vmf.reds': b'// vehicle manufacturer fix\n'})
+    zipdir(f'{st}/KRNLNIK Toyota Supra MK5 HKS Widebody-12652-1-0-5-Minor-1775612074.zip', {
+        'archive/pc/mod/krnlnik_supra.archive': b'RDAR', 'r6/tweaks/krnlnik/supra.yaml': b'Vehicle.v_supra: {}\n'})
+    zipdir(f'{st}/Supra Colors-12652-1-0-1706484697.zip', {'r6/tweaks/krnlnik/supra_colors.yaml': b'#\n'})
+    zipdir(f'{st}/Material and Texture Override-5266-1-2-1695907754.zip', {'archive/pc/mod/MaterialTextureOverride.archive': b'RDAR'})
+    zipdir(f'{st}/Material and Texture Override (REDmod)-5266-1-2-1695948618.zip', {'mods/MaterialTextureOverride/archives/mto.archive': b'RDAR'})
+    zipdir(f'{st}/Porsche 911 GT3 RS (Main File)you need this-11180-1-2-1703436412.zip', {
+        'archive/pc/mod/porsche_gt3rs.archive': b'RDAR', 'r6/tweaks/porsche/gt3rs.yaml': b'Vehicle.v_gt3rs: {}\n'})
+    zipdir(f'{st}/Porsche 911 GT3 RS Grey_Red-11180-1-2-1703436491.zip', {'archive/pc/mod/porsche_gt3rs_grey_red.archive': b'RDAR'})
+    vc = 'bin/x64/plugins/cyber_engine_tweaks/mods/VehicleCustomizerSVE'
+    zipdir(f'{st}/Vehicle Customizer SVE 3dot0-9034-3-0-1738340467.zip', {
+        f'{vc}/init.lua': b'-- vehicle customizer 3.0\n', f'{vc}/data/appearances.json': b'{"Quadra": ["a", "b"]}\n',
+        f'{vc}/saved.json': b'{}\n'})
+    zipdir(f'{st}/Vehicle Customizer SVE 3dot1 9034 3.1 2026-09-21T11-33Z tvQTvsQ74.zip', {   # the 3.1 update, in a folder
+        f'Vehicle Customizer SVE 3dot1/{vc}/init.lua': b'-- vehicle customizer 3.1\n'})
 
 # --------------------------------------------------------------------- world
 VDF_LOCALCONFIG = '''"UserLocalConfigStore"
