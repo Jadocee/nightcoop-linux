@@ -119,6 +119,11 @@ expect "MANGOHUD=0 turned on"        '[ "$(lo "MANGOHUD=0 %command%" 2 winmm "" 
 expect "MangoHud taken out: wrapper, its --dlsym and the variable" '[ "$(lo "MANGOHUD=1 mangohud --dlsym game-performance %command%" 2 winmm "" -mangohud)" = "WINEDLLOVERRIDES=\"winmm=n,b\" game-performance %command%" ]'
 expect "a quoted value is one word, its spacing kept" '[ "$(lo "DXVK_HUD=\"fps,  memory\" %command%" 2 winmm "" +game-performance)" = "WINEDLLOVERRIDES=\"winmm=n,b\" DXVK_HUD=\"fps,  memory\" game-performance %command%" ]'
 
+section "The fixtures' add-on table"
+rows() { awk -v n="$2" 'NF == n { $NF = ""; if (n == 9) $(NF - 1) = ""; print }' "$1" | sort; }   # rows <file> <fields>: without source and SHA-256
+expect "its GitHub rows are the installer's, but for their URL and SHA-256" '[ "$(rows "$FIX/addon-sets.txt" 9)" = "$(sed -n "/^ADDON_SETS=\"/,/^\"/p" "$SCRIPT" | rows /dev/stdin 9)" ] && [ "$(rows "$FIX/addon-sets.txt" 9 | wc -l)" = 9 ]'
+expect "its Nexus rows are the installer's" '[ "$(awk "NF == 8" "$FIX/addon-sets.txt" | sort)" = "$(sed -n "/^ADDON_SETS=\"/,/^\"/p" "$SCRIPT" | awk "NF == 8 {\$1 = \$1; print}" | sort)" ]'
+
 section "Release selection (releases.json, as nightcoop.net publishes it)"
 pick() { hp pick "$FIX/site/releases.json" "$1" "https://nightcoop.net" "${2:-}" | tr '\037' '|'; }
 expect "2.5 picks the 2.5 archive"    '[[ "$(pick 2.5,2.5)" == "ok|0.2.0-beta|https://nightcoop.net/dl/0.2.0-beta/NightCoop-0.2.0-beta-2.5.zip|"*"|2.5|164|1.31.0|1|0" ]]'
@@ -474,6 +479,41 @@ expect "one file of a mod with two: Car Pack 2 installs, Car Pack 1 is listed, w
 cp "$FIX/style/Vehicle Customizer SVE 3dot1 9034 3.1 2026-09-21T11-33Z tvQTvsQ74.zip" "$D/"
 run update --yes
 expect "an update file alone is not taken for its main file: the update waits for it" '[ $RC = 0 ] && [ ! -e "$G/bin/x64/plugins/cyber_engine_tweaks/mods/VehicleCustomizerSVE" ] && [[ "$OUT" == *"Vehicle Customizer update needs Vehicle Customizer, which is not here"* ]] && [[ "$OUT" == *"Vehicle Customizer (SVE 3dot0, among the main files): https://www.nexusmods.com/cyberpunk2077/mods/9034?tab=files"* ]]' "$OUT"
+
+# ------------------------------------- the third round, and Equipment-EX ----
+section "Mods (--with-mods): six cars, the clothes of four stores, Impact FX, Immersive Audio Distance; Equipment-EX"
+newworld round3 native; OSR="$T/os-arch"; D="$H/Downloads"; mkdir -p "$D"
+PRISTINE_R3="$(snapshot "$G")"
+cp "$FIX/nexus/Virtual Atelier 2987 1.6.4 2026-10-25T17-42Z HncQn22j7.zip" "$FIX/nexus/Virtual Car Dealer 4454 2.3.0 2026-10-25T11-18Z lcXrcZZMt.zip" "$FIX"/round3/* "$D/"
+# the GR Yaris's drift tune as a later release, newer than the main file: the rule still takes the main file
+cp "$FIX/round3/Toyota Yaris GR Drift Handling Spec (Tune Only) 34357 1 2026-10-29T18-57Z Co8doe62d.zip" "$D/Toyota Yaris GR Drift Handling Spec (Tune Only) 34357 3.4 2026-11-20T09-00Z Co8doe62e.zip"
+came() { grep -q -F -- "$2" "$G/$1" 2>/dev/null; }   # came <file> <part of a download's name>: the file is that download's
+run install --yes --with-mods
+expect "the six cars: the GR Yaris's main file and kit, not its drift tune (a newer release of it too); the Silvia with what it needs, not its second livery" '[ $RC = 0 ] && [ -f "$G/r6/tweaks/xaires/apollo_ie.yaml" ] && [ -f "$G/r6/tweaks/xaires/countach.yaml" ] && [ -f "$G/r6/tweaks/xaires/countach_lbwk.yaml" ] && [ -f "$G/r6/tweaks/FIGI6_Oka/vaz1111_oka.yaml" ] && came r6/tweaks/toyota_gr_yaris/toyota_gr_yaris.yaml "All Purpose" && [ -f "$G/archive/pc/mod/00_Toyota_Yaris_GR_RocketBunny.archive" ] && [ -f "$G/r6/tweaks/ctrlsec/ctrlsec_UnboundS14_Nomad.yaml" ] && [ ! -e "$G/archive/pc/mod/Livery_2.archive" ] && [ -f "$G/archive/pc/mod/car_manuf.archive" ]' "$OUT"
+expect "Impact FX, and Immersive Audio Distance's file for 2.5, not the one for 2.31" '[ -f "$G/r6/scripts/CinematicImpactFX/CinematicImpactFX.reds" ] && came "r6/scripts/Immersive Audio Distance/ImmersiveAudioDistance.reds" "Immersive Voice Distance (2.5)"' "$OUT"
+expect "The RVC00N Dumpster 3 with VendorsXL and Deceptious Quest Core; its garments, the Fifth Element's all-in-one file and Dexter's three" '[ -f "$G/r6/tweaks/PinkyDude_TheRVC00NDumpster3/PinkyDude_TheRVC00NDumpster3.yaml" ] && [ -f "$G/r6/scripts/VendorsXL/VendorsXL.reds" ] && [ -f "$G/archive/pc/mod/zDeceptiousQuestCore.archive" ] && [ -f "$G/r6/tweaks/PinkyDude_TheRVC00NDumpster3/PinkyDude_Clothes_GoliathCoat.yaml" ] && [ -f "$G/r6/tweaks/PinkyDude_TheRVC00NDumpster3/PinkyDude_Clothes_KnifeBandolier.yaml" ] && came archive/pc/mod/PinkyDude_Clothes_TFEC_LeelooPants.archive "ALL IN ONE" && ( for p in pants vest shoes; do [ -f "$G/r6/tweaks/PinkyDude_TheRVC00NDumpster3/PinkyDude_Clothes_DexterFit_$p.yaml" ] || exit 1; done )' "$OUT"
+expect "Veegee's and Street Ninja's stores and clothes, Dolly Go-Go's two files, Nola Dreamer's store and accessories; no read-me, code list or PDF in the game folder" '[ -f "$G/r6/scripts/veegee_shop_3.reds" ] && [ ! -e "$G/Veegee Shop 3" ] && [ -f "$G/r6/tweaks/Veegee/veegee_urban_techwear_outfit.yaml" ] && [ -f "$G/r6/tweaks/StreetNinja20_Collection.yaml" ] && [ -f "$G/bin/x64/plugins/cyber_engine_tweaks/mods/StreetNinjaShopOrder/init.lua" ] && [ -f "$G/r6/tweaks/fairyexe/fairyexe_dolly_gogo_minidresses.yaml" ] && [ -f "$G/r6/tweaks/fairyexe/fairyexe_dolly_gogo_fur_set.yaml" ] && [ -f "$G/r6/scripts/ND_Accessories_store.reds" ] && [ -f "$G/r6/tweaks/nola_dreamer/ND_AirPods_Max_FemV.yaml" ] && [ -f "$G/r6/tweaks/nola_dreamer/ND_Spiked_Collar_BothV.yaml" ] && [ ! -e "$G/veegee_urban_techwear_outfit_code.txt" ] && [ ! -e "$G/StreetNinja20_Collection_README.txt" ] && [ ! -e "$G/StreetNinjaStreetwearShop_README.txt" ] && [ ! -e "$G/Street_Ninja_Remake_1.14.0_Item_Catalog.pdf" ]' "$OUT"
+expect "Equipment-EX only when asked; co-op notes on outfits, layers and VendorsXL; the clothes no store sells" '[ ! -e "$G/r6/scripts/EquipmentEx" ] && [[ "$OUT" == *"a partner without the same outfit mod sees a plain game piece"* ]] && [[ "$OUT" == *"worn together with Equipment-EX"* ]] && [[ "$OUT" == *"VendorsXL changes how every vendor restocks"* ]] && [[ "$OUT" == *"No store of the set sells Dolly Go-Go'"'"'s pieces and Nola Dreamer'"'"'s mini dress"* ]]' "$OUT"
+run update --yes
+expect "a rerun changes nothing" '[ $RC = 0 ] && [[ "$OUT" == *"everything is up to date; nothing to do"* ]]' "$OUT"
+run update --yes --with-equipment-ex
+expect "--with-equipment-ex adds its main file, not the Hide Hub Buttons patch, and says partners need it too" '[ $RC = 0 ] && [ -f "$G/r6/scripts/EquipmentEx/EquipmentEx.reds" ] && [ ! -e "$G/r6/scripts/EquipmentEx/EquipmentEx.HideHubButtons.reds" ] && [[ "$OUT" == *"Equipment-EX in co-op: every partner needs it too"* ]] && [[ "$OUT" != *"worn together with Equipment-EX"* ]]' "$OUT"
+run check
+expect "check: Equipment-EX is kept up to date" '[[ "$OUT" == *"Equipment-EX:"*"Equipment EX 1.2.10 (kept up to date by this script)"* ]]' "$OUT"
+run update --yes --without-equipment-ex
+expect "--without-equipment-ex takes it out again; the mods stay" '[ $RC = 0 ] && [ ! -e "$G/r6/scripts/EquipmentEx" ] && [ -f "$G/r6/tweaks/StreetNinja20_Collection.yaml" ]' "$OUT"
+run update --yes --without-mods
+expect "--without-mods removes the cars and clothes; VendorsXL, Deceptious Quest Core and Vehicle Manufacturers Resource stay" '[ $RC = 0 ] && [ ! -e "$G/r6/tweaks/xaires" ] && [ ! -e "$G/r6/tweaks/nola_dreamer" ] && [ ! -e "$G/r6/tweaks/PinkyDude_TheRVC00NDumpster3/PinkyDude_Clothes_GoliathCoat.yaml" ] && [ -f "$G/r6/scripts/VendorsXL/VendorsXL.reds" ] && [ -f "$G/archive/pc/mod/zDeceptiousQuestCore.archive" ] && [ -f "$G/archive/pc/mod/car_manuf.archive" ]' "$OUT"
+run uninstall --yes
+expect "uninstall puts the game folder back exactly" '[ $RC = 0 ] && [ "$PRISTINE_R3" = "$(snapshot "$G")" ]' "$(diff <(echo "$PRISTINE_R3") <(snapshot "$G"))"
+newworld round3needs native; OSR="$T/os-arch"; D="$H/Downloads"; mkdir -p "$D"
+cp "$FIX/nexus/Virtual Atelier 2987 1.6.4 2026-10-25T17-42Z HncQn22j7.zip" "$FIX/round3/Goliath Coat "* "$FIX/round3/The RVC00N Dumpster 3 "* "$FIX/round3/Deceptious Quest Core "* "$D/"
+run install --yes --with-mods
+expect "without VendorsXL the RVC00N store waits and says why; its garment installs" '[ $RC = 0 ] && [ ! -e "$G/r6/scripts/PinkyDude_TheRVC00NDumpster3.reds" ] && [ -f "$G/r6/tweaks/PinkyDude_TheRVC00NDumpster3/PinkyDude_Clothes_GoliathCoat.yaml" ] && [[ "$OUT" == *"RVC00N Dumpster 3 needs VendorsXL, which is not here"* ]] && [[ "$OUT" != *"No store of the set sells"* ]]' "$OUT"
+newworld eqexonly native; OSR="$T/os-arch"; D="$H/Downloads"; mkdir -p "$D"
+cp "$FIX/round3/Equipment-EX "* "$FIX/round3/EquipmentEx-HideHubButtons-"* "$D/"
+run install --yes --with-equipment-ex
+expect "--with-equipment-ex alone brings the frameworks it needs, and nothing of the mod set" '[ $RC = 0 ] && [ -f "$G/r6/scripts/EquipmentEx/EquipmentEx.reds" ] && [ -f "$G/red4ext/Plugins/ArchiveXL/ArchiveXL.dll" ] && [ -f "$G/red4ext/Plugins/TweakXL/TweakXL.dll" ] && [ -f "$G/red4ext/Plugins/Codeware/Codeware.dll" ] && [ -f "$G/engine/tools/scc_lib.dll" ] && [ ! -e "$G/bin/x64/plugins/cyber_engine_tweaks.asi" ]' "$OUT"
 
 # ------------------------------------------------- Cyber Engine Tweaks ----
 section "Cyber Engine Tweaks installed alongside"

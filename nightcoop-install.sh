@@ -47,13 +47,18 @@
 #   --with-flight         also install Let There Be Flight (flying cars), which NightCoop
 #                         supports in co-op, with what it needs; kept up to date afterwards
 #   --without-flight      remove Let There Be Flight again (the mods it needed stay)
-#   --with-mods           also install Virtual Atelier with clothing and item stores and seven
-#                         Zenitex outfits, Virtual Car Dealer with car and bike packs, Drive an
-#                         Aerial Vehicle, Vehicle Customizer, Cyber Drift, Quick Stash and No
-#                         Intro Videos (download them from Nexus Mods; the installer lists them),
-#                         with the frameworks they need (Cyber Engine Tweaks, Codeware, TweakXL,
-#                         ArchiveXL, redscript, Mod Settings, Audioware and more); kept up to date
+#   --with-mods           also install Virtual Atelier with clothing and item stores and their
+#                         outfits (Zenitex, The RVC00N Dumpster, Nola Dreamer, Veegee, Street
+#                         Ninja, Dolly Go-Go), Virtual Car Dealer with car and bike packs, Drive an
+#                         Aerial Vehicle, Vehicle Customizer, Cyber Drift, Impact FX, Immersive
+#                         Audio Distance, Quick Stash and No Intro Videos (download them from
+#                         Nexus Mods; the installer lists them), with the frameworks they need
+#                         (Cyber Engine Tweaks, Codeware, TweakXL, ArchiveXL, redscript, Mod
+#                         Settings, Audioware, VendorsXL and more); kept up to date
 #   --without-mods        remove those mods again (the frameworks stay)
+#   --with-equipment-ex   also install Equipment-EX (from Nexus Mods), to wear layered outfits;
+#                         every partner in a session needs it too
+#   --without-equipment-ex remove Equipment-EX again
 #   --mods-from DIR       where the Nexus downloads are (default: your Downloads folder)
 #   --force               reinstall every mod file, even those that already match
 #   --backup-saves        copy the save games first (the default on a first install)
@@ -68,7 +73,7 @@
 # SPDX-License-Identifier: MIT
 set -euo pipefail
 
-SCRIPT_VERSION="3.3.0"
+SCRIPT_VERSION="3.4.0"
 APPID=1091500
 GAME_EXE_REL="bin/x64/Cyberpunk2077.exe"
 RED4EXT_VER="1.31.0"
@@ -92,10 +97,13 @@ MIN_GAME_FILEVER="3.0.88.46235" MIN_GAME_PATCH="2.5"
 #   flight (--with-flight)  Let There Be Flight, which NightCoop supports in co-op: its
 #                           archive ships the port (r6/scripts/NightCoopFlight), which
 #                           compiles to nothing without it.
-#   mods (--with-mods)      Virtual Atelier with stores of the game's own items and the Zenitex
-#                           store with seven of its outfits, Virtual Car Dealer with car and bike
-#                           packs, Drive an Aerial Vehicle, Vehicle Customizer, Cyber Drift (Light),
-#                           Quick Stash and No Intro Videos, and the frameworks they need.
+#   mods (--with-mods)      Virtual Atelier with stores of the game's own items and the stores of
+#                           Zenitex, The RVC00N Dumpster 3, Nola Dreamer, Veegee and Street Ninja with
+#                           their outfits, Virtual Car Dealer with car and bike packs, Drive an Aerial
+#                           Vehicle, Vehicle Customizer, Cyber Drift (Light), Impact FX, Immersive
+#                           Audio Distance, Quick Stash and No Intro Videos, and the frameworks they need.
+#   eqex (--with-equipment-ex)  Equipment-EX, which wears clothes in layers. NightCoop sends looks by
+#                           its slots: a partner without it sees other slots.
 # A component in both sets is installed once. When its sets are dropped (--without-...), a
 # "mod" is removed and a "lib" stays, since other mods use it too.
 # Source: a GitHub release (archive and pinned SHA-256), or nexus:<mod id>[:<prefer>[:<avoid>,...]]
@@ -114,12 +122,12 @@ MIN_GAME_FILEVER="3.0.88.46235" MIN_GAME_PATCH="2.5"
 #   component                   patch sets        kind rule  version file  version  source  SHA-256
 # >>> add-on sets
 ADDON_SETS="
-redscript                     2.5 flight,mods lib  -     engine/tools/scc_lib.dll                                    0.5.32 https://github.com/jac3km4/redscript/releases/download/v0.5.32/redscript-v0.5.32-windows.zip 882c57a80b07e453bc8a34cd8430f460aceed789581de8743638e19dcfb7936f
-ArchiveXL                     2.5 flight,mods lib  minor red4ext/plugins/ArchiveXL/ArchiveXL.dll                     1.28.6 https://github.com/psiberx/cp2077-archive-xl/releases/download/v1.28.6/ArchiveXL-1.28.6.zip 25d0493a1b3e8ec4c26b7144a4d8f1a1def4d6dc840fff94b4c91c908583da09
-TweakXL                       2.5 flight,mods lib  minor red4ext/plugins/TweakXL/TweakXL.dll                         1.12.0 https://github.com/psiberx/cp2077-tweak-xl/releases/download/v1.12.0/TweakXL-1.12.0.zip a7c39b769e6c51d9f27412a101fb87e6a1fb8452f0e37ee0d1d1f3f44e656fa8
+redscript                     2.5 flight,mods,eqex lib  -     engine/tools/scc_lib.dll                                    0.5.32 https://github.com/jac3km4/redscript/releases/download/v0.5.32/redscript-v0.5.32-windows.zip 882c57a80b07e453bc8a34cd8430f460aceed789581de8743638e19dcfb7936f
+ArchiveXL                     2.5 flight,mods,eqex lib  minor red4ext/plugins/ArchiveXL/ArchiveXL.dll                     1.28.6 https://github.com/psiberx/cp2077-archive-xl/releases/download/v1.28.6/ArchiveXL-1.28.6.zip 25d0493a1b3e8ec4c26b7144a4d8f1a1def4d6dc840fff94b4c91c908583da09
+TweakXL                       2.5 flight,mods,eqex lib  minor red4ext/plugins/TweakXL/TweakXL.dll                         1.12.0 https://github.com/psiberx/cp2077-tweak-xl/releases/download/v1.12.0/TweakXL-1.12.0.zip a7c39b769e6c51d9f27412a101fb87e6a1fb8452f0e37ee0d1d1f3f44e656fa8
 Input_Loader                  2.5 flight      lib  game  red4ext/plugins/input_loader/input_loader.dll               0.2.6  https://github.com/jackhumbert/cyberpunk2077-input-loader/releases/download/v0.2.6/input_loader_v0.2.6.zip 6b420ba1e27b2e13c275a576a37a17d48771a0d35e52731f08e3584444a3e2b9
 Let_There_Be_Flight           2.5 flight      mod  game  red4ext/plugins/let_there_be_flight/let_there_be_flight.dll 0.3.20 https://github.com/jackhumbert/let_there_be_flight/releases/download/v0.3.20/let_there_be_flight_v0.3.20.zip b265d3c6a711f0647d34835374652f5a84b7f3110df944e6d9059aaa7cbfa243
-Codeware                      2.5 mods        lib  minor red4ext/plugins/Codeware/Codeware.dll                       1.21.2 https://github.com/psiberx/cp2077-codeware/releases/download/v1.21.2/Codeware-1.21.2.zip 269b65b8b97d26ea85d4516f5eb34c01a19dc85e299be57fb4f764e16c164dd2
+Codeware                      2.5 mods,eqex   lib  minor red4ext/plugins/Codeware/Codeware.dll                       1.21.2 https://github.com/psiberx/cp2077-codeware/releases/download/v1.21.2/Codeware-1.21.2.zip 269b65b8b97d26ea85d4516f5eb34c01a19dc85e299be57fb4f764e16c164dd2
 Cyber_Engine_Tweaks           2.5 mods        lib  minor bin/x64/plugins/cyber_engine_tweaks.asi                     1.38.1 https://github.com/maximegmd/CyberEngineTweaks/releases/download/v1.38.1/cet_1_38_1.zip 2e52be4ed431fad787e64ecbf75db346b4224577d2b89894912bc3f159020e73
 Mod_Settings                  2.5 mods        lib  game  red4ext/plugins/mod_settings/mod_settings.dll               0.2.28 https://github.com/jackhumbert/mod_settings/releases/download/v0.2.28/mod_settings_v0.2.28.zip b9488daa7da85c0430853df4570dbf94dd768d11c4dabee97d732072746d40e7
 Audioware                     2.5 mods        lib  -     red4ext/plugins/audioware/audioware.dll                     1.11.1 https://github.com/cyb3rpsych0s1s/audioware/releases/download/v1.11.1/Audioware-windows-v1.11.1.zip 3831c9f931323a7462d84b8c391dded43288acf98af356a2d4ad4695c0603789
@@ -153,6 +161,62 @@ Material_and_Texture_Override 2.5 mods        lib  -     -                      
 Porsche_911_GT3_RS            2.5 mods        mod  -     -                                                           1.2    nexus:11180:+main_file
 Vehicle_Customizer            2.5 mods        mod  -     -                                                           3.0    nexus:9034:+3dot0
 Vehicle_Customizer_update     2.5 mods        mod  -     -                                                           3.1    nexus:9034:+3dot1
+Deceptious_Quest_Core         2.5 mods        lib  -     -                                                           3.3.3  nexus:7831
+VendorsXL                     2.5 mods        lib  -     -                                                           2.2.0  nexus:19679:+vendorsxl
+Vehicle_Manufacturers_Resource 2.5 mods        lib  -     -                                                           1.1    nexus:7855
+Equipment_EX                  2.5 eqex        mod  -     -                                                           1.2.10 nexus:6945:+equipment-ex
+Impact_FX                     2.5 mods        mod  -     -                                                           0.8.3.3 nexus:36631
+Immersive_Audio_Distance      2.5 mods        mod  -     -                                                           1.2.0  nexus:36809:+(2.5)
+Apollo_Intensa_Emozione       2.5 mods        mod  -     -                                                           1      nexus:37233
+Countach_LPI_800-4            2.5 mods        mod  -     -                                                           1      nexus:37234
+Countach_Liberty_Walk         2.5 mods        mod  -     -                                                           1      nexus:37235
+VAZ_Oka_Yozakura              2.5 mods        mod  -     -                                                           4      nexus:36381
+Toyota_GR_Yaris               2.5 mods        mod  -     -                                                           3.3    nexus:34357:+all_purpose
+Toyota_GR_Yaris_Rocket_Bunny  2.5 mods        mod  -     -                                                           3.2    nexus:34357:+rocket_bunny
+Nissan_Silvia_S14             2.5 mods        mod  -     -                                                           1.1    nexus:25997:+main_files
+Goliath_Coat                  2.5 mods        mod  -     -                                                           1.0.0  nexus:36516
+Cityfolk_Hoodie               2.5 mods        mod  -     -                                                           1.0.2  nexus:37493
+Knife_Bandolier               2.5 mods        mod  -     -                                                           1.0.2  nexus:26000
+Bunny_Slippers                2.5 mods        mod  -     -                                                           1.0.1  nexus:26996
+Saul_Pants                    2.5 mods        mod  -     -                                                           1.0.3  nexus:27128
+CrystalJock_Bomber            2.5 mods        mod  -     -                                                           1.1.2  nexus:27304
+Master_Chief_Suit             2.5 mods        mod  -     -                                                           1.1.0  nexus:33439
+Indiana_Jones_Outfit          2.5 mods        mod  -     -                                                           1.0.0  nexus:34748
+Fifth_Element_Collection      2.5 mods        mod  -     -                                                           1.1.0  nexus:27709:+all_in_one
+Cityfolk_Short_Jacket         2.5 mods        mod  -     -                                                           1.2.0  nexus:27736
+Jackies_Jacket                2.5 mods        mod  -     -                                                           1.0.0  nexus:31662
+Stinky_Burnt_Top              2.5 mods        mod  -     -                                                           2.1.0  nexus:20042
+Stinky_Slashed_Top            2.5 mods        mod  -     -                                                           2.1.0  nexus:12757
+Stinky_Croptop                2.5 mods        mod  -     -                                                           1.1.0  nexus:26048
+Yeehaw_Collar_Shirt           2.5 mods        mod  -     -                                                           1.3.0  nexus:26873
+Chuckwalla_T-Shirt            2.5 mods        mod  -     -                                                           1.0.1  nexus:31111
+Stinky_Mechanic_Pants         2.5 mods        mod  -     -                                                           2.0.2  nexus:16402
+Stinky_Quilted_Pants          2.5 mods        mod  -     -                                                           1.0.1  nexus:26049
+Stinky_Bootcut_Jeans          2.5 mods        mod  -     -                                                           1.0.1  nexus:26050
+Stinky_Leather_Jeans          2.5 mods        mod  -     -                                                           1.0.1  nexus:26818
+David_Martinez_Pants          2.5 mods        mod  -     -                                                           1.0.1  nexus:35536
+Yeehaw_Spur_Boots             2.5 mods        mod  -     -                                                           1.0.1  nexus:26982
+Latex_Succubus_Tail           2.5 mods        mod  -     -                                                           1.0.0  nexus:32638
+Trauma_Team_Jumpsuit          2.5 mods        mod  -     -                                                           1.0.0  nexus:32329
+Dexter_Pants                  2.5 mods        mod  -     -                                                           1.2.0  nexus:28660:+pants
+Dexter_Vest                   2.5 mods        mod  -     -                                                           1.2.0  nexus:28660:+vest
+Dexter_Shoes                  2.5 mods        mod  -     -                                                           1      nexus:28660:+shoes
+PinkyBlume_Croptop            2.5 mods        mod  -     -                                                           1      nexus:27455
+RVC00N_Dumpster_3             2.5 mods        mod  -     -                                                           21.0.0 nexus:25981
+Urban_Techwear_Outfit         2.5 mods        mod  -     -                                                           1.0    nexus:25512
+Veegee_Shop_3                 2.5 mods        mod  -     -                                                           1.5.2  nexus:18890
+Street_Ninja_Remake           2.5 mods        mod  -     -                                                           1.14.0 nexus:36978:+main
+Street_Ninja_Shop             2.5 mods        mod  -     -                                                           1.12.0 nexus:36978:+shop
+Dolly_GoGo_Minidresses        2.5 mods        mod  -     -                                                           2      nexus:37279:+minidresses
+Dolly_GoGo_Fur_Set            2.5 mods        mod  -     -                                                           1      nexus:37279:+fur_set
+AirPods_Max                   2.5 mods        mod  -     -                                                           1.1    nexus:28288
+Nola_Barbed_Accessories       2.5 mods        mod  -     -                                                           1.0    nexus:14371
+Nola_Bracelets                2.5 mods        mod  -     -                                                           1.0    nexus:16722
+Nola_Heart_Choker             2.5 mods        mod  -     -                                                           1.1    nexus:11685
+Nola_Mini_Dress               2.5 mods        mod  -     -                                                           1.1    nexus:15704
+Nola_Moon_Accessories         2.5 mods        mod  -     -                                                           1.0    nexus:14324
+Nola_Spiked_Collar            2.5 mods        mod  -     -                                                           1.1    nexus:14269
+Nola_Accessories_Store        2.5 mods        mod  -     -                                                           1.8    nexus:14299
 "
 # <<< add-on sets
 # What a component needs besides RED4ext: without it, it is not installed (a store without
@@ -170,7 +234,43 @@ Comfy_Boots:ArchiveXL,TweakXL Vehicle_Pack_Basic_1:Virtual_Car_Dealer Vehicle_Pa
 Cyberpunk_Bikes_Edge:ArchiveXL,TweakXL Bikes_of_the_Dark_Future:ArchiveXL,TweakXL,Cyber_Engine_Tweaks,redscript,Vehicle_Exit_Fix
 Toyota_Supra_HKS:ArchiveXL,TweakXL,Cyber_Engine_Tweaks,redscript,Vehicle_Manufacturer_Fix
 Porsche_911_GT3_RS:ArchiveXL,TweakXL,Cyber_Engine_Tweaks,Material_and_Texture_Override,Virtual_Car_Dealer
-Vehicle_Customizer:Cyber_Engine_Tweaks Vehicle_Customizer_update:Vehicle_Customizer"
+Vehicle_Customizer:Cyber_Engine_Tweaks Vehicle_Customizer_update:Vehicle_Customizer
+Deceptious_Quest_Core:ArchiveXL VendorsXL:redscript,Codeware,ArchiveXL,TweakXL,Deceptious_Quest_Core
+Equipment_EX:redscript,Codeware,ArchiveXL,TweakXL Impact_FX:redscript,Codeware,TweakXL
+Immersive_Audio_Distance:redscript,Codeware
+Apollo_Intensa_Emozione:redscript,Codeware,ArchiveXL,TweakXL,Cyber_Engine_Tweaks,Virtual_Car_Dealer
+Countach_LPI_800-4:redscript,Codeware,ArchiveXL,TweakXL,Cyber_Engine_Tweaks,Virtual_Car_Dealer
+Countach_Liberty_Walk:redscript,Codeware,ArchiveXL,TweakXL,Cyber_Engine_Tweaks,Virtual_Car_Dealer
+VAZ_Oka_Yozakura:redscript,Codeware,ArchiveXL,TweakXL,Cyber_Engine_Tweaks,Virtual_Car_Dealer
+Toyota_GR_Yaris:ArchiveXL,TweakXL,Virtual_Car_Dealer Toyota_GR_Yaris_Rocket_Bunny:Toyota_GR_Yaris
+Nissan_Silvia_S14:redscript,ArchiveXL,TweakXL,Vehicle_Manufacturers_Resource,Virtual_Car_Dealer
+Goliath_Coat:ArchiveXL,TweakXL Cityfolk_Hoodie:ArchiveXL,TweakXL Knife_Bandolier:ArchiveXL,TweakXL
+Bunny_Slippers:ArchiveXL,TweakXL Saul_Pants:ArchiveXL,TweakXL CrystalJock_Bomber:ArchiveXL,TweakXL
+Master_Chief_Suit:ArchiveXL,TweakXL Indiana_Jones_Outfit:ArchiveXL,TweakXL
+Fifth_Element_Collection:ArchiveXL,TweakXL Cityfolk_Short_Jacket:ArchiveXL,TweakXL
+Jackies_Jacket:ArchiveXL,TweakXL Stinky_Burnt_Top:ArchiveXL,TweakXL Stinky_Slashed_Top:ArchiveXL,TweakXL
+Stinky_Croptop:ArchiveXL,TweakXL Yeehaw_Collar_Shirt:ArchiveXL,TweakXL Chuckwalla_T-Shirt:ArchiveXL,TweakXL
+Stinky_Mechanic_Pants:ArchiveXL,TweakXL Stinky_Quilted_Pants:ArchiveXL,TweakXL
+Stinky_Bootcut_Jeans:ArchiveXL,TweakXL Stinky_Leather_Jeans:ArchiveXL,TweakXL
+David_Martinez_Pants:ArchiveXL,TweakXL Yeehaw_Spur_Boots:ArchiveXL,TweakXL
+Latex_Succubus_Tail:ArchiveXL,TweakXL Trauma_Team_Jumpsuit:ArchiveXL,TweakXL Dexter_Pants:ArchiveXL,TweakXL
+Dexter_Vest:ArchiveXL,TweakXL Dexter_Shoes:ArchiveXL,TweakXL PinkyBlume_Croptop:ArchiveXL,TweakXL
+RVC00N_Dumpster_3:Virtual_Atelier,ArchiveXL,TweakXL,VendorsXL Urban_Techwear_Outfit:ArchiveXL,TweakXL
+Veegee_Shop_3:Virtual_Atelier Street_Ninja_Remake:redscript,Codeware,ArchiveXL,TweakXL
+Street_Ninja_Shop:Virtual_Atelier,Cyber_Engine_Tweaks,Street_Ninja_Remake
+Dolly_GoGo_Minidresses:ArchiveXL,TweakXL Dolly_GoGo_Fur_Set:ArchiveXL,TweakXL AirPods_Max:ArchiveXL,TweakXL
+Nola_Barbed_Accessories:ArchiveXL,TweakXL Nola_Bracelets:ArchiveXL,TweakXL Nola_Heart_Choker:ArchiveXL,TweakXL
+Nola_Mini_Dress:ArchiveXL,TweakXL Nola_Moon_Accessories:ArchiveXL,TweakXL Nola_Spiked_Collar:ArchiveXL,TweakXL
+Nola_Accessories_Store:Virtual_Atelier"
+# Outfit mods: in co-op, a partner without the same mod sees a plain game piece in their place.
+OUTFITS="Zenitex_Ballistic_Mask Zenitex_Tactical_Harness Zenitex_Combat_Jacket Zenitex_Armor_Pads Zenitex_Panam_Pants
+Zenitex_Combat_Gloves Comfy_Boots Goliath_Coat Cityfolk_Hoodie Knife_Bandolier Bunny_Slippers Saul_Pants CrystalJock_Bomber
+Master_Chief_Suit Indiana_Jones_Outfit Fifth_Element_Collection Cityfolk_Short_Jacket Jackies_Jacket Stinky_Burnt_Top
+Stinky_Slashed_Top Stinky_Croptop Yeehaw_Collar_Shirt Chuckwalla_T-Shirt Stinky_Mechanic_Pants Stinky_Quilted_Pants
+Stinky_Bootcut_Jeans Stinky_Leather_Jeans David_Martinez_Pants Yeehaw_Spur_Boots Latex_Succubus_Tail Trauma_Team_Jumpsuit
+Dexter_Pants Dexter_Vest Dexter_Shoes PinkyBlume_Croptop Urban_Techwear_Outfit Street_Ninja_Remake Dolly_GoGo_Minidresses
+Dolly_GoGo_Fur_Set AirPods_Max Nola_Barbed_Accessories Nola_Bracelets Nola_Heart_Choker Nola_Mini_Dress Nola_Moon_Accessories
+Nola_Spiked_Collar"
 # Files a mod writes to while the game runs (its settings, its database, what it has learned):
 # the player's copy stays, and is replaced only when a new release changes the file it ships.
 # "*" is every component; a "*" in a pattern also matches across folders.
@@ -1639,6 +1739,8 @@ while [ $# -gt 0 ]; do
         --without-flight) SET_WANT+=(-flight); shift ;;
         --with-mods)      SET_WANT+=(+mods); shift ;;
         --without-mods)   SET_WANT+=(-mods); shift ;;
+        --with-equipment-ex) SET_WANT+=(+eqex); shift ;;
+        --without-equipment-ex) SET_WANT+=(-eqex); shift ;;
         --mods-from)      need_arg "$1" $#; NEXUS_DIRS+=("$(readlink -m "$2")"); shift 2 ;;
         --force)          FORCE=1; shift ;;
         --dry-run)        DRY_RUN=1; shift ;;
@@ -2352,7 +2454,7 @@ addon_parts() {   # each component once: name sets kind rule version-file
     done < <(addon_lines all)
 }
 name_of() { echo "${1//_/ }"; }   # name_of <component>: its name for people
-set_label() { case "$1" in flight) echo "Let There Be Flight" ;; *) echo "the mod set" ;; esac; }
+set_label() { case "$1" in flight) echo "Let There Be Flight" ;; eqex) echo "Equipment-EX" ;; *) echo "the mod set" ;; esac; }
 listing() { local IFS=,; local s="$*"; echo "${s//,/, }"; }   # listing <items...>: "a, b, c"
 in_sets_on() { local s; for s in ${1//,/ }; do [[ " $SETS_ON " == *" $s "* ]] && return 0; done; return 1; }
 recorded_roots() {   # recorded_roots <component>: what the last install put in place for it
@@ -2405,6 +2507,20 @@ nexus_file() {   # nexus_file <component>: which file to download, of a mod with
         Material_and_Texture_Override) echo "the Legacy file, not REDmod" ;;
         Vehicle_Customizer) echo "SVE 3dot0, among the main files" ;;
         Vehicle_Customizer_update) echo "SVE 3dot1, among the update files" ;;
+        Immersive_Audio_Distance) echo "the main file for 2.5, Immersive Voice Distance (2.5)" ;;
+        Toyota_GR_Yaris) echo "the main file Toyota Yaris GR All Purpose Drive Spec, not the Drift Handling Spec" ;;
+        Toyota_GR_Yaris_Rocket_Bunny) echo "GR YARIS Rocket Bunny Kit, among the main files" ;;
+        Nissan_Silvia_S14) echo "the main file, S14 Nomad Main files and Livery 1" ;;
+        VendorsXL) echo "the main file, not the template and example files" ;;
+        Equipment_EX) echo "the main file, not the Hide Hub Buttons patch" ;;
+        Fifth_Element_Collection) echo "ALL IN ONE - Fifth Element Collection" ;;
+        Dexter_Pants) echo "Dexter's Pants" ;;
+        Dexter_Vest) echo "Dexter's Vest" ;;
+        Dexter_Shoes) echo "Dexter's Shoes" ;;
+        Street_Ninja_Remake) echo "the main file, STREET NINJA REMAKE - MAIN" ;;
+        Street_Ninja_Shop) echo "STREET NINJA STREETWEAR SHOP, among the optional files" ;;
+        Dolly_GoGo_Minidresses) echo "FAIRYEXE DOLLY GOGO MINIDRESSES" ;;
+        Dolly_GoGo_Fur_Set) echo "0 FAIRYEXE DOLLY GOGO FUR SET" ;;
     esac
 }
 nexus_avoided() {   # nexus_avoided <component>: what a file of it that is never installed is
@@ -2441,13 +2557,13 @@ newer_same_line() {   # newer_same_line <installed DLL> <our DLL> <rule>: the in
 step_addons() {   # the add-on sets (--with-flight, --with-mods), matched to the game patch
     local s w r on="" lines comp patch sets kind rule probe ver src sha id prefer avoid path which dir root files t inst ours e why n h v
     local -a cands found
-    for s in flight mods; do   # which sets are on this time: as recorded, unless an option says otherwise
+    for s in flight mods eqex; do   # which sets are on this time: as recorded, unless an option says otherwise
         w=""
         for r in "${SET_WANT[@]}"; do if [ "${r:1}" = "$s" ]; then w="${r:0:1}"; fi; done
         if [ "$w" = + ] || { [ -z "$w" ] && [[ " $SETS_RECORDED " == *" $s "* ]]; }; then on+=" $s"; fi
         if [ "$w" = - ]; then
             if [[ " $SETS_RECORDED " == *" $s "* ]]; then SETS_DROPPED+=" $s"
-            else info "--without-$s: this script has not installed $(set_label "$s"); nothing to remove"; fi
+            else info "--without-${s/eqex/equipment-ex}: this script has not installed $(set_label "$s"); nothing to remove"; fi
         fi
     done
     SETS_ON="${on# }"
@@ -2551,9 +2667,33 @@ step_addons() {   # the add-on sets (--with-flight, --with-mods), matched to the
         info "Cars and AVs in co-op: partners see a car of a mod (one Virtual Car Dealer sells, an AV of Drive an"
         info "Aerial Vehicle) only when they have that mod too; otherwise NightCoop shows a game car with as many seats."
     fi
-    if [[ "$ADDON_HAVE" =~ \ (Zenitex_[A-Za-z]+_[A-Za-z_]+|Comfy_Boots)\  ]]; then
+    local o outfit=0 layered=0
+    for o in $ADDON_HAVE; do
+        if [[ " ${OUTFITS//$'\n'/ } " == *" $o "* ]]; then outfit=1; fi
+        case "$o" in Street_Ninja_Remake|Dolly_GoGo_*) layered=1 ;; esac
+    done
+    if [ "$outfit" = 1 ]; then
         info "Outfits of mods in co-op: a partner without the same outfit mod sees a plain game piece for that body"
         info "part (head, face and accessories stay empty), so share the outfit mods with everyone you play with."
+    fi
+    if [ "$layered" = 1 ] && [[ "$ADDON_HAVE" != *" Equipment_EX "* ]]; then
+        info "Street Ninja's four layers, and Dolly Go-Go's fur bodice over a dress or fur hem over its shorts,"
+        info "are worn together with Equipment-EX (--with-equipment-ex); without it, each piece takes its game slot."
+    fi
+    local coded=""   # clothes that no store of the set sells
+    if [[ "$ADDON_HAVE" == *" Dolly_GoGo_"* ]]; then coded="Dolly Go-Go's pieces"; fi
+    if [[ "$ADDON_HAVE" == *" Nola_Mini_Dress "* ]]; then coded="${coded:+$coded and }Nola Dreamer's mini dress"; fi
+    if [ -n "$coded" ]; then
+        info "No store of the set sells $coded: add the items in Cyber Engine Tweaks' console"
+        info "(Game.AddToInventory), with the codes listed on their Nexus Mods pages."
+    fi
+    if [[ "$ADDON_HAVE" == *" Equipment_EX "* ]]; then
+        info "Equipment-EX in co-op: every partner needs it too. NightCoop sends looks by its slots, so a partner"
+        info "without it sees other slots; NightCoop also notes that it overrides photo-mode functions."
+    fi
+    if [[ "$ADDON_HAVE" == *" VendorsXL "* ]]; then
+        info "VendorsXL changes how every vendor restocks (larger stock limits). The RVC00N Dumpster 3's shop is"
+        info "behind Dakota's garage; the computer next to it sells the whole catalogue."
     fi
     if [[ "$ADDON_HAVE" == *" Vehicle_Customizer "* ]]; then
         info "Vehicle Customizer works only with the game's language set to English."
@@ -2584,7 +2724,7 @@ release_of() {   # release_of <component> <file>: the release this script record
 }
 addon_rows() {   # check: each add-on set
     local set comp sets kind rule probe d v mods libs missing
-    for set in flight mods; do
+    for set in flight mods eqex; do
         mods=() libs=() missing=()
         while read -r comp sets kind rule probe; do
             [[ ",$sets," == *",$set,"* ]] || continue
@@ -2599,6 +2739,9 @@ addon_rows() {   # check: each add-on set
                 row "Let There Be Flight" "${v:-missing}, with $(listing "${libs[@]:-nothing}") (kept up to date by this script)"
             elif [ -n "$v" ]; then row "Let There Be Flight" "$v (installed by hand; --with-flight keeps it and what it needs up to date)"
             else row "Let There Be Flight" "not installed; NightCoop supports it in co-op (add --with-flight)"; fi
+        elif [ "$set" = eqex ]; then
+            if [[ " $SETS_RECORDED " == *" eqex "* ]]; then row "Equipment-EX" "$(listing "${mods[@]:-missing}") (kept up to date by this script)"
+            else row "Equipment-EX" "not installed by this script (add --with-equipment-ex to wear layered outfits)"; missing=(); fi
         elif [[ " $SETS_RECORDED " == *" mods "* ]]; then
             row "Mods" "$(listing "${mods[@]:-none yet}"), with $(listing "${libs[@]:-nothing}") (kept up to date by this script)"
         else

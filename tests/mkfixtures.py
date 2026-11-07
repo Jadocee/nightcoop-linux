@@ -12,6 +12,7 @@ packages installed, Steam's default set to Proton 10, no config_info yet). OPTS:
 import hashlib
 import json
 import os
+import re
 import struct
 import sys
 import zipfile
@@ -128,6 +129,93 @@ GAME = {   # patch: (Cyberpunk2077.exe file version, fixed product version), as 
 }
 
 
+# The third round of the mod set (cars, the clothes of The RVC00N Dumpster 3, Nola Dreamer, Veegee,
+# Street Ninja and Dolly Go-Go, Impact FX, Immersive Audio Distance) and Equipment-EX: each download's
+# real file name and entries, read from the archive itself (or, for a .rar or .7z, its Nexus manifest),
+# with the files a rule must pass over. Contents are stand-ins (see placeholder).
+ROUND3 = {
+    '0 FAIRYEXE DOLLY GOGO FUR SET 37279 1 2026-11-04T19-01Z PYMIYqW21.zip': ['0_FAIRYEXE_DOLLY_GOGO_FUR_SET/Dolly Go-Go Fur - Codes.txt', '0_FAIRYEXE_DOLLY_GOGO_FUR_SET/archive/pc/mod/FAIRYEXE_DOLLY_GOGO_FUR_SET.archive', '0_FAIRYEXE_DOLLY_GOGO_FUR_SET/archive/pc/mod/fairyexe_dolly_gogo_fur_set.xl', '0_FAIRYEXE_DOLLY_GOGO_FUR_SET/r6/tweaks/fairyexe/fairyexe_dolly_gogo_fur_set.yaml'],
+    'ALL IN ONE - Fifth Element Collection 27709 1.1.0 2026-10-17T10-38Z Z0ER0BBOy.zip': ['archive/pc/mod/PinkyDude_Clothes_TFEC_KorbenJacket.archive', 'archive/pc/mod/PinkyDude_Clothes_TFEC_KorbenJacket.xl', 'archive/pc/mod/PinkyDude_Clothes_TFEC_KorbenTanktop.archive', 'archive/pc/mod/PinkyDude_Clothes_TFEC_KorbenTanktop.xl', 'archive/pc/mod/PinkyDude_Clothes_TFEC_LeelooCroptop.archive', 'archive/pc/mod/PinkyDude_Clothes_TFEC_LeelooCroptop.xl', 'archive/pc/mod/PinkyDude_Clothes_TFEC_LeelooPants.archive', 'archive/pc/mod/PinkyDude_Clothes_TFEC_LeelooPants.xl', 'archive/pc/mod/PinkyDude_Clothes_TFEC_LeelooRuuberSuspenders.archive', 'archive/pc/mod/PinkyDude_Clothes_TFEC_LeelooRuuberSuspenders.xl', 'archive/pc/mod/PinkyDude_Clothes_TFEC_LeelooStrapBodysuit.archive', 'archive/pc/mod/PinkyDude_Clothes_TFEC_LeelooStrapBodysuit.xl', 'r6/tweaks/PinkyDude_TheRVC00NDumpster3/PinkyDude_Clothes_TFEC_KorbenJacket.yaml', 'r6/tweaks/PinkyDude_TheRVC00NDumpster3/PinkyDude_Clothes_TFEC_KorbenTanktop.yaml', 'r6/tweaks/PinkyDude_TheRVC00NDumpster3/PinkyDude_Clothes_TFEC_LeelooCroptop.yaml', 'r6/tweaks/PinkyDude_TheRVC00NDumpster3/PinkyDude_Clothes_TFEC_LeelooPants.yaml', 'r6/tweaks/PinkyDude_TheRVC00NDumpster3/PinkyDude_Clothes_TFEC_LeelooRuuberSuspenders.yaml', 'r6/tweaks/PinkyDude_TheRVC00NDumpster3/PinkyDude_Clothes_TFEC_LeelooStrapBodysuit.yaml'],
+    'Apollo Intensa Emozione 1.0 37233 1 2026-11-04T08-23Z k8Iw8mo5Q.zip': ['archive/pc/mod/apollo_ie.archive', 'archive/pc/mod/apollo_ie.archive.xl', 'r6/scripts/xaires_apollo_ie/apollo_ie.reds', 'r6/scripts/xaires_apollo_ie/apollo_ie_int_ui.reds', 'r6/tweaks/xaires/apollo_ie.yaml'],
+    'Bunny Slippers-26996-1-0-1-1770378913.zip': ['archive/pc/mod/PinkyDude_Clothes_BunnySlippers.archive', 'archive/pc/mod/PinkyDude_Clothes_BunnySlippers.xl', 'r6/tweaks/PinkyDude_TheRVC00NDumpster3/PinkyDude_Clothes_BunnySlippers.yaml'],
+    'Chuckwalla Tight Shirt 31111 1.0.1 2026-07-25T16-48Z 5em9eoIid.zip': ['archive/pc/mod/PinkyDude_Clothes_ChuckwallaTightShirt.archive', 'archive/pc/mod/PinkyDude_Clothes_ChuckwallaTightShirt.xl', 'r6/tweaks/PinkyDude_TheRVC00NDumpster3/PinkyDude_Clothes_ChuckwallaTightShirt.yaml'],
+    'CinematicImpactFX Settings 0.8.3.3 36631 0.8.3.3 2026-11-07T10-09Z 4rpqrKQhc.zip': ['archive/pc/mod/######CinematicImpactFX_ExplosionSmoke.archive', 'archive/pc/mod/#####CinematicImpactFX_Frag.archive', 'archive/pc/mod/CinematicImpactFX.archive', 'archive/pc/mod/CinematicImpactFX_CharacterHaze.archive', 'archive/pc/mod/CinematicImpactFX_Explosions.archive', 'archive/pc/mod/CinematicImpactFX_GunSmoke.archive', 'archive/pc/mod/CinematicImpactFX_Malorian.archive', 'archive/pc/mod/CinematicImpactFX_Melee.archive', 'archive/pc/mod/CinematicImpactFX_Tech.archive', 'r6/scripts/CIFXCharacterHaze/CIFXCharacterHaze.reds', 'r6/scripts/CIFXTechImpacts/CIFXTechImpacts.reds', 'r6/scripts/CinematicImpactFX/CIFXExplosionSmoke.reds', 'r6/scripts/CinematicImpactFX/CinematicImpactFX.reds', 'r6/tweaks/CinematicImpactFX/cinematicimpactfx.yaml', 'r6/tweaks/CinematicImpactFX/tech-prototype.yaml'],
+    'Cityfolk Hoodie 37493 1.0.2 2026-11-06T16-54Z Q6xF6lDTX.zip': ['archive/pc/mod/PinkyDude_Clothes_CityfolkHoodie.archive', 'archive/pc/mod/PinkyDude_Clothes_CityfolkHoodie.xl', 'r6/tweaks/PinkyDude_TheRVC00NDumpster3/PinkyDude_Clothes_CityfolkHoodie.yaml'],
+    'Cityfolk Short Jacket 27736 1.2.0 2026-10-17T10-44Z 6ZNKZcc0C.zip': ['archive/pc/mod/PinkyDude_Clothes_CityfolkShortJacket.archive', 'archive/pc/mod/PinkyDude_Clothes_CityfolkShortJacket.xl', 'r6/tweaks/PinkyDude_TheRVC00NDumpster3/PinkyDude_Clothes_CityfolkShortJacket.yaml'],
+    'Collarless CrystalJock Bomber 27304 1.1.2 2026-11-05T11-50Z zhqmhWTfR.zip': ['archive/pc/mod/PinkyDude_Clothes_CollarlessCrystaljockBomber.archive', 'archive/pc/mod/PinkyDude_Clothes_CollarlessCrystaljockBomber.xl', 'r6/tweaks/PinkyDude_TheRVC00NDumpster3/PinkyDude_Clothes_CollarlessCrystaljockBomber.yaml'],
+    'David Martinez Pants 35536 1.0.1 2026-10-22T09-30Z n1B61wwNg.zip': ['archive/pc/mod/PinkyDude_Clothes_DavidPants.archive', 'archive/pc/mod/PinkyDude_Clothes_DavidPants.xl', 'r6/tweaks/PinkyDude_TheRVC00NDumpster3/PinkyDude_Clothes_DavidPants.yaml'],
+    'Deceptious Quest Core 7831 3.3.3 2026-10-27T04-49Z E91D9ddiK.zip': ['archive/pc/mod/zDeceptiousQuestCore.archive', 'archive/pc/mod/zDeceptiousQuestCore.archive.xl'],
+    "Dexter's Pants 28660 1.2.0 2026-10-19T08-34Z MTheTjjIT.zip": ['archive/pc/mod/PinkyDude_Clothes_DexterFit_pants.archive', 'archive/pc/mod/PinkyDude_Clothes_DexterFit_pants.xl', 'r6/tweaks/PinkyDude_TheRVC00NDumpster3/PinkyDude_Clothes_DexterFit_pants.yaml'],
+    "Dexter's Shoes-28660-1-1775376200.zip": ['archive/pc/mod/PinkyDude_Clothes_DexterFit_shoes.archive', 'archive/pc/mod/PinkyDude_Clothes_DexterFit_shoes.xl', 'r6/tweaks/PinkyDude_TheRVC00NDumpster3/PinkyDude_Clothes_DexterFit_shoes.yaml'],
+    "Dexter's Vest 28660 1.2.0 2026-10-19T08-34Z 5em9eoo0R.zip": ['archive/pc/mod/PinkyDude_Clothes_DexterFit_vest.archive', 'archive/pc/mod/PinkyDude_Clothes_DexterFit_vest.xl', 'r6/tweaks/PinkyDude_TheRVC00NDumpster3/PinkyDude_Clothes_DexterFit_vest.yaml'],
+    'Equipment-EX 6945 1.2.10 2026-10-25T21-07Z k8Iw8mmPd.zip': ['archive/pc/mod/EquipmentEx.archive', 'archive/pc/mod/EquipmentEx.archive.xl', 'r6/config/redsUserHints/EquipmentEx.toml', 'r6/scripts/EquipmentEx/EquipmentEx.Global.reds', 'r6/scripts/EquipmentEx/EquipmentEx.reds', 'r6/scripts/EquipmentEx/LICENSE'],
+    'EquipmentEx-HideHubButtons-6945-1-0-1778915785.zip': ['r6/scripts/EquipmentEx/EquipmentEx.HideHubButtons.reds'],
+    'FAIRYEXE DOLLY GOGO MINIDRESSES 37279 2 2026-11-05T04-12Z xNHtNXZcV.rar': ['0_FAIRYEXE_DOLLY_GOGO_MINIDRESSES/Dolly Go-Go Mini Dresses - Codes.txt', '0_FAIRYEXE_DOLLY_GOGO_MINIDRESSES/archive/pc/mod/FAIRYEXE_DOLLY_GOGO_MINIDRESSES.archive', '0_FAIRYEXE_DOLLY_GOGO_MINIDRESSES/archive/pc/mod/fairyexe_dolly_gogo_minidresses.xl', '0_FAIRYEXE_DOLLY_GOGO_MINIDRESSES/r6/tweaks/fairyexe/fairyexe_dolly_gogo_minidresses.yaml'],
+    'FIGI6 VAZ1111 Oka Yozakura 36381 4 2026-11-03T12-57Z G5yE5CSBd.zip': ['archive/pc/mod/FIGI6_Yozakura.archive', 'bin/x64/plugins/cyber_engine_tweaks/mods/FIGI6_Oka/init.lua', 'r6/scripts/FIGI6_Oka/Localization.reds', 'r6/tweaks/FIGI6_Oka/vaz1111_oka.yaml'],
+    'Goliath Coat 36516 1.0.0 2026-10-30T12-23Z FKtYKrCnU.zip': ['archive/pc/mod/PinkyDude_Clothes_GoliathCoat.archive', 'archive/pc/mod/PinkyDude_Clothes_GoliathCoat.xl', 'r6/tweaks/PinkyDude_TheRVC00NDumpster3/PinkyDude_Clothes_GoliathCoat.yaml'],
+    'GR YARIS Rocket Bunny Kit 34357 3.2 2026-10-20T20-01Z 6ZNKZccrN.zip': ['archive/pc/mod/00_Toyota_Yaris_GR_RocketBunny.archive'],
+    'Immersive Audio Distance (2.31) 36809 1.2.0 2026-11-07T13-09Z X32s3EBoo.zip': ['archive/pc/mod/ImmersiveAudioDistance.archive', 'r6/scripts/Immersive Audio Distance/ImmersiveAudioDistance.reds'],
+    'Immersive Voice Distance (2.5) 36809 1.2.0 2026-11-07T13-09Z NEnvE30eR.zip': ['archive/pc/mod/ImmersiveAudioDistance.archive', 'r6/scripts/Immersive Audio Distance/ImmersiveAudioDistance.reds'],
+    'Indiana Jones Outfit 34748 1.0.0 2026-10-06T10-59Z zhqmhW33v.zip': ['archive/pc/mod/PinkyDude_Clothes_IndianaJonesOutfit.archive', 'archive/pc/mod/PinkyDude_Clothes_IndianaJonesOutfit.xl', 'r6/tweaks/PinkyDude_TheRVC00NDumpster3/PinkyDude_Clothes_IndianaJonesOutfit.yaml'],
+    "Jackie's Jacket 31662 1.0.0 2026-07-17T16-30Z Co8doeAFo.zip": ['archive/pc/mod/PinkyDude_Clothes_JackiesJacket.archive', 'archive/pc/mod/PinkyDude_Clothes_JackiesJacket.xl', 'r6/tweaks/PinkyDude_TheRVC00NDumpster3/PinkyDude_Clothes_JackiesJacket.yaml'],
+    'Knife Bandolier-26000-1-0-2-1771242764.zip': ['archive/pc/mod/PinkyDude_Clothes_KnifeBandolier.archive', 'archive/pc/mod/PinkyDude_Clothes_KnifeBandolier.xl', 'r6/tweaks/PinkyDude_TheRVC00NDumpster3/PinkyDude_Clothes_KnifeBandolier.yaml'],
+    "Korben's Jacket 27709 1.1.0 2026-10-17T10-39Z IieOiggu9.zip": ['archive/pc/mod/PinkyDude_Clothes_TFEC_KorbenJacket.archive', 'archive/pc/mod/PinkyDude_Clothes_TFEC_KorbenJacket.xl', 'r6/tweaks/PinkyDude_TheRVC00NDumpster3/PinkyDude_Clothes_TFEC_KorbenJacket.yaml'],
+    "Korben's Tank Top 27709 1.1.0 2026-10-17T10-39Z hF7PF44K6.zip": ['archive/pc/mod/PinkyDude_Clothes_TFEC_KorbenTanktop.archive', 'archive/pc/mod/PinkyDude_Clothes_TFEC_KorbenTanktop.xl', 'r6/tweaks/PinkyDude_TheRVC00NDumpster3/PinkyDude_Clothes_TFEC_KorbenTanktop.yaml'],
+    'Lamborghini Countach Liberty Walk 1.0 37235 1 2026-11-04T08-35Z LACBAImkA.zip': ['archive/pc/mod/countach_lbwk.archive', 'archive/pc/mod/countach_lbwk.archive.xl', 'r6/scripts/xaires_countach_lbwk/countach_lbwk.reds', 'r6/tweaks/xaires/countach_lbwk.yaml'],
+    'Lamborghini Countach LPI 800 4 1.0 37234 1 2026-11-04T08-29Z Z0ER0Bwn3.zip': ['archive/pc/mod/countach.archive', 'archive/pc/mod/countach.archive.xl', 'r6/scripts/xaires_countach/countach.reds', 'r6/tweaks/xaires/countach.yaml'],
+    'Latex Succubus Tail 32638 1.0.0 2026-08-13T14-39Z G5yE5Ctn9.zip': ['archive/pc/mod/PinkyDude_Clothes_LatexSuccubus_tail.archive', 'archive/pc/mod/PinkyDude_Clothes_LatexSuccubus_tail.xl', 'r6/tweaks/PinkyDude_TheRVC00NDumpster3/PinkyDude_Clothes_LatexSuccubus_tail.yaml'],
+    "Leeloo's Croptop 27709 1.1.0 2026-10-17T10-39Z KRvfRxxXW.zip": ['archive/pc/mod/PinkyDude_Clothes_TFEC_LeelooCroptop.archive', 'archive/pc/mod/PinkyDude_Clothes_TFEC_LeelooCroptop.xl', 'r6/tweaks/PinkyDude_TheRVC00NDumpster3/PinkyDude_Clothes_TFEC_LeelooCroptop.yaml'],
+    "Leeloo's Pants-27709-1-0-0-1772729872.zip": ['archive/pc/mod/PinkyDude_Clothes_TFEC_LeelooPants.archive', 'archive/pc/mod/PinkyDude_Clothes_TFEC_LeelooPants.xl', 'r6/tweaks/PinkyDude_TheRVC00NDumpster3/PinkyDude_Clothes_TFEC_LeelooPants.yaml'],
+    "Leeloo's Rubber Suspenders 27709 1.1.0 2026-10-17T10-39Z LACBAIIgM.zip": ['archive/pc/mod/PinkyDude_Clothes_TFEC_LeelooRuuberSuspenders.archive', 'archive/pc/mod/PinkyDude_Clothes_TFEC_LeelooRuuberSuspenders.xl', 'r6/tweaks/PinkyDude_TheRVC00NDumpster3/PinkyDude_Clothes_TFEC_LeelooRuuberSuspenders.yaml'],
+    "Leeloo's Strap Bodysuit 27709 1.1.0 2026-10-17T10-38Z SlR4l66ch.zip": ['archive/pc/mod/PinkyDude_Clothes_TFEC_LeelooStrapBodysuit.archive', 'archive/pc/mod/PinkyDude_Clothes_TFEC_LeelooStrapBodysuit.xl', 'r6/tweaks/PinkyDude_TheRVC00NDumpster3/PinkyDude_Clothes_TFEC_LeelooStrapBodysuit.yaml'],
+    'Livery 2-25997-1-0-1764883469.7z': ['archive/pc/mod/Livery_2.archive'],
+    'manufacturers 7855 1.1 2026-10-31T22-56Z rxs7xRes9.zip': ['archive/pc/mod/car_manuf.archive'],
+    'Master Chief Evolved Suit 33439 1.1.0 2026-09-04T08-36Z ujWojTWGT.zip': ['archive/pc/mod/PinkyDude_Clothes_MasterChiefEvolvedSuit.archive', 'archive/pc/mod/PinkyDude_Clothes_MasterChiefEvolvedSuit.xl', 'r6/tweaks/PinkyDude_TheRVC00NDumpster3/PinkyDude_Clothes_MasterChiefEvolvedSuit.yaml'],
+    'ND_Accessories_store 14299 1.8 2026-09-24T19-58Z 9ka2kytLJ.zip': ['archive/pc/mod/ND_Accessories_store.archive', 'r6/scripts/ND_Accessories_store.reds'],
+    'ND_AirPods_Max_FemV-28288-1-1-1776453640.zip': ['ND_AirPods_Max item codes.txt', 'archive/pc/mod/ND_AirPods_Max_FemV.archive', 'archive/pc/mod/ND_AirPods_Max_FemV.xl', 'r6/tweaks/nola_dreamer/ND_AirPods_Max_FemV.yaml'],
+    'ND_Barbed_accessories_BothV-14371-1-0-1714058490.zip': ['archive/pc/mod/ND_Barbed_accessories_BothV.archive', 'archive/pc/mod/ND_Barbed_accessories_BothV.xl', 'r6/tweaks/nola_dreamer/ND_Barbed_accessories_BothV.yaml'],
+    'ND_Bracelets_Collection_FemV-16722-1-0-1729405657.zip': ['archive/pc/mod/ND_Bracelets_Collection_FemV.archive', 'archive/pc/mod/ND_Bracelets_Collection_FemV.xl', 'r6/tweaks/nola_dreamer/ND_Bracelets_Collection_FemV.yaml'],
+    'ND_heart_choker_garters_FemV-11685-1-1-1763540890.zip': ['ND_heart_choker_garters Item codes.txt', 'archive/pc/mod/ND_heart_choker_garters_FemV.archive', 'archive/pc/mod/nd_heart_choker_garters.xl', 'r6/tweaks/nola_dreamer/nd_heart_choker_garters.yaml'],
+    'ND_Mini_dress_with_glasses_FemV-15704-1-1-1747683086.zip': ['archive/pc/mod/ND_Mini_dress_with_glasses_FemV.archive', 'archive/pc/mod/ND_Mini_dress_with_glasses_FemV.xl', 'r6/tweaks/nola_dreamer/ND_Mini_dress_with_glasses_FemV.yaml'],
+    'ND_Moon_accessories_FemV-14324-1-0-1713729065.zip': ['archive/pc/mod/ND_Moon_accessories_FemV.archive', 'archive/pc/mod/ND_Moon_accessories_FemV.xl', 'r6/tweaks/nola_dreamer/ND_Moon_accessories_FemV.yaml'],
+    'ND_Spiked_Collar_BothV-14269-1-1-1713545051.zip': ['archive/pc/mod/ND_Spiked_Collar_BothV.archive', 'archive/pc/mod/ND_Spiked_Collar_BothV.xl', 'r6/tweaks/nola_dreamer/ND_Spiked_Collar_BothV.yaml'],
+    'PinkyBlume - Croptop-27455-1-1771261287.zip': ['archive/pc/mod/PinkyBlume_Clothes_Croptop.archive', 'archive/pc/mod/PinkyBlume_Clothes_Croptop.xl', 'r6/tweaks/PinkyBlume/PinkyBlume_Clothes_Croptop.yaml'],
+    'S14 Nomad Main files and Livery 1 25997 1.1 2026-10-31T10-30Z UQrhQSION.7z': ['archive/pc/mod/ctrlsec_s14unbound_nomad.archive', 'archive/pc/mod/ctrlsec_s14unbound_nomad.xl', 'archive/pc/mod/ctrlsec_s14unbound_nomad_livery.archive', 'bin/x64/plugins/cyber_engine_tweaks/mods/Dedka Auto Shop/cars/ra5392.json', 'r6/tweaks/ctrlsec/ctrlsec_UnboundS14_Nomad.yaml'],
+    'Saul Pants-27128-1-0-3-1770378839.zip': ['archive/pc/mod/PinkyDude_Clothes_SaulsPants.archive', 'archive/pc/mod/PinkyDude_Clothes_SaulsPants.xl', 'r6/tweaks/PinkyDude_TheRVC00NDumpster3/PinkyDude_Clothes_SaulsPants.yaml'],
+    'Stinky Bootcut Jeans-26050-1-0-1-1770379979.zip': ['archive/pc/mod/PinkyDude_Clothes_StinkyBootcutJeans.archive', 'archive/pc/mod/PinkyDude_Clothes_StinkyBootcutJeans.xl', 'r6/tweaks/PinkyDude_TheRVC00NDumpster3/PinkyDude_Clothes_StinkyBootcutJeans.yaml'],
+    'Stinky Burnt Top 20042 2.1.0 2026-10-17T10-54Z UQrhQSS6a.zip': ['archive/pc/mod/PinkyDude_Clothes_StinkyBurntTop.archive', 'archive/pc/mod/PinkyDude_Clothes_StinkyBurntTop.xl', 'r6/tweaks/PinkyDude_TheRVC00NDumpster3/PinkyDude_Clothes_StinkyBurntTop.yaml'],
+    'Stinky Croptop 26048 1.1.0 2026-10-17T10-50Z cB3xB00GX.zip': ['archive/pc/mod/PinkyDude_Clothes_StinkyCroptop.archive', 'archive/pc/mod/PinkyDude_Clothes_StinkyCroptop.xl', 'r6/tweaks/PinkyDude_TheRVC00NDumpster3/PinkyDude_Clothes_StinkyCroptop.yaml'],
+    'Stinky Leather Jeans-26818-1-0-1-1770379415.zip': ['archive/pc/mod/PinkyDude_Clothes_StinkyLeatherJeans.archive', 'archive/pc/mod/PinkyDude_Clothes_StinkyLeatherJeans.xl', 'r6/tweaks/PinkyDude_TheRVC00NDumpster3/PinkyDude_Clothes_StinkyLeatherJeans.yaml'],
+    'Stinky Mechanic Pants-16402-2-0-2-1771242914.zip': ['archive/pc/mod/PinkyDude_Clothes_StinkyMechanicPants.archive', 'archive/pc/mod/PinkyDude_Clothes_StinkyMechanicPants.xl', 'r6/tweaks/PinkyDude_TheRVC00NDumpster3/PinkyDude_Clothes_StinkyMechanicPants.yaml'],
+    'Stinky Quilted Pants-26049-1-0-1-1770379701.zip': ['archive/pc/mod/PinkyDude_Clothes_StinkyQuiltedPants.archive', 'archive/pc/mod/PinkyDude_Clothes_StinkyQuiltedPants.xl', 'r6/tweaks/PinkyDude_TheRVC00NDumpster3/PinkyDude_Clothes_StinkyQuiltedPants.yaml'],
+    'Stinky Slashed Top 12757 2.1.0 2026-10-17T10-55Z gMz5MuuTP.zip': ['archive/pc/mod/PinkyDude_Clothes_StinkySlashedtop.archive', 'archive/pc/mod/PinkyDude_Clothes_StinkySlashedtop.xl', 'r6/tweaks/PinkyDude_TheRVC00NDumpster3/PinkyDude_Clothes_StinkySlashedtop.yaml'],
+    'STREET NINJA REMAKE - 1.14.0 ItemIDs Catalog (PDF) 36978 1.14.0 2026-11-04T20-14Z q7jg7fF7W.zip': ['Street_Ninja_Remake_1.14.0_Item_Catalog.pdf'],
+    'STREET NINJA REMAKE - MAIN 36978 1.14.0 2026-11-04T20-12Z ozVyzbMNx.zip': ['StreetNinja20_CET_spawn_commands.txt', 'StreetNinja20_Collection_README.txt', 'StreetNinja20_Collection_README_RU.txt', 'StreetNinja20_ItemCatalog.tsv', 'StreetNinja20_New_1.13.0_CET.txt', 'StreetNinja20_New_1.14.0_CET.txt', 'StreetNinja20_Updated_1.13.1_CET.txt', 'archive/pc/mod/StreetNinja20_Collection.archive', 'archive/pc/mod/StreetNinja20_Collection.archive.xl', 'r6/tweaks/StreetNinja20_Collection.yaml'],
+    'STREET NINJA REMAKE - Palette Handbook (PDF) 36978 1 2026-11-04T16-35Z D2ZS2n3cJ.zip': ['StreetNinja_Palette_Handbook_1.12.0.pdf'],
+    'STREET NINJA STREETWEAR SHOP - OPTIONAL 36978 1.12.0 2026-11-04T20-13Z 4rpqrKQy4.zip': ['StreetNinjaStreetwearShop_README.txt', 'archive/pc/mod/StreetNinjaStreetwearShop.archive', 'bin/x64/plugins/cyber_engine_tweaks/mods/StreetNinjaShopOrder/init.lua', 'r6/scripts/StreetNinjaStreetwearShop/StreetNinjaStreetwearShop.reds'],
+    'Template and Example files-19679-0-c-1739925604.zip': ['VendorsXL_Example.yaml', 'VendorsXL_Template.yaml'],
+    'The RVC00N Dumpster 3 25981 21.0.0 2026-11-06T14-29Z k8Iw8moq3.zip': ['archive/pc/mod/PinkyDude_TheRVC00NDumpster3.archive', 'archive/pc/mod/PinkyDude_TheRVC00NDumpster3.xl', 'r6/scripts/PinkyDude_TheRVC00NDumpster3.reds', 'r6/tweaks/PinkyDude_TheRVC00NDumpster3/PinkyDude_TheRVC00NDumpster3.yaml'],
+    'Toyota Yaris GR All Purpose Drive Spec 34357 3.3 2026-10-29T18-56Z PYMIYq3GS.zip': ['archive/pc/mod/Toyota_Yaris_GR.archive', 'archive/pc/mod/Toyota_Yaris_GR.xl', 'r6/tweaks/toyota_gr_yaris/toyota_gr_yaris.yaml'],
+    'Toyota Yaris GR Drift Handling Spec (Tune Only) 34357 1 2026-10-29T18-57Z Co8doe62d.zip': ['r6/tweaks/toyota_gr_yaris/toyota_gr_yaris.yaml'],
+    'Traum Team Combi 32329 1.0.0 2026-08-06T11-18Z rxs7xRAva.zip': ['archive/pc/mod/PinkyDude_Clothes_TraumaTeamCombi.archive', 'archive/pc/mod/PinkyDude_Clothes_TraumaTeamCombi.xl', 'r6/tweaks/PinkyDude_TheRVC00NDumpster3/PinkyDude_Clothes_TraumaTeamCombi.yaml'],
+    'Urban Techwear Outfit - Both V-25512-1-0-1764371099.zip': ['archive/pc/mod/Urban Techwear Outfit.archive', 'archive/pc/mod/veegee_urban_techwear_outfit.xl', 'r6/tweaks/Veegee/veegee_urban_techwear_outfit.yaml', 'veegee_urban_techwear_outfit_code.txt'],
+    'uv layout for livery creators-25997-1-1764895541.7z': ['archive/pc/mod/uv_layout_for_livery_creators.archive'],
+    'Veegee Shop 3-18890-1-5-2-1779738603.zip': ['Veegee Shop 3/archive/pc/mod/Veegee Shop 3.archive', 'Veegee Shop 3/r6/scripts/veegee_shop_3.reds'],
+    'VendorsXL 19679 2.2.0 2026-08-07T15-58Z cB3xB0qjH.zip': ['archive/pc/mod/VendorsXL.archive', 'archive/pc/mod/VendorsXL.archive.xl', 'r6/scripts/VendorsXL/VendorsXL.reds', 'r6/tweaks/##########VendorsXL/##########_VendorsXL.yaml'],
+    'Yeehaw Collar Shirt 26873 1.3.0 2026-10-17T10-47Z ymA1m88PG.zip': ['archive/pc/mod/PinkyDude_Clothes_YeehawCollarShirt.archive', 'archive/pc/mod/PinkyDude_Clothes_YeehawCollarShirt.xl', 'r6/tweaks/PinkyDude_TheRVC00NDumpster3/PinkyDude_Clothes_YeehawCollarShirt.yaml'],
+    'Yeehaw Spur Boots-26982-1-0-1-1770378994.zip': ['archive/pc/mod/PinkyDude_Clothes_YeehawSpurBoots.archive', 'archive/pc/mod/PinkyDude_Clothes_YeehawSpurBoots.xl', 'r6/tweaks/PinkyDude_TheRVC00NDumpster3/PinkyDude_Clothes_YeehawSpurBoots.yaml'],
+}
+
+
+def placeholder(path, archive):
+    """Small stand-in contents for a file of a mod archive, by its type, naming the file and the archive
+    it came from (two files of one mod may hold the same paths)."""
+    leaf = path.rsplit('/', 1)[-1]
+    ext = leaf.rsplit('.', 1)[-1].lower() if '.' in leaf else ''
+    form = {'archive': b'RDAR %s', 'reds': b'// %s\n', 'lua': b'-- %s\n', 'yaml': b'# %s\n', 'yml': b'# %s\n',
+            'xl': b'# %s\n', 'json': b'{"file": "%s"}\n', 'dll': b'MZ %s', 'bnk': b'BKHD %s'}.get(ext, b'%s\n')
+    return form.replace(b'%s', ('%s from %s' % (leaf, archive)).encode())
+
 def archives(fix):
     pe = os.path.join(fix, 'pe')
     make_pe(f'{pe}/nc1/NightCoop.dll', '0.2.0.0', linker=(14, 51), imports=CRT)
@@ -217,18 +305,18 @@ def archives(fix):
         zipdir(path, files)
         table.append(f'{comp} 2.5 {sets} {kind} {rule} {probe} {ver} file://{path} {sha(path)}')
 
-    github('redscript', 'flight,mods', 'lib', '-', 'engine/tools/scc_lib.dll', '0.5.32', 'redscript-v0.5.32-windows.zip', {
+    github('redscript', 'flight,mods,eqex', 'lib', '-', 'engine/tools/scc_lib.dll', '0.5.32', 'redscript-v0.5.32-windows.zip', {
         'engine/config/base/scripts.ini': b'[Scripts]\r\nEnableCompilation = "true"\r\n',
         'engine/tools/scc.exe': b'redscript scc 0.5.32',
         'engine/tools/scc_lib.dll': b'redscript lib 0.5.32',
         'r6/config/cybercmd/scc.toml': b'[args]\r\n'})
     make_pe(f'{pe}/axl/ArchiveXL.dll', '1.28.6.0', linker=(14, 44), imports=CRT)
-    github('ArchiveXL', 'flight,mods', 'lib', 'minor', 'red4ext/plugins/ArchiveXL/ArchiveXL.dll', '1.28.6', 'ArchiveXL-1.28.6.zip', {
+    github('ArchiveXL', 'flight,mods,eqex', 'lib', 'minor', 'red4ext/plugins/ArchiveXL/ArchiveXL.dll', '1.28.6', 'ArchiveXL-1.28.6.zip', {
         'red4ext/plugins/ArchiveXL/ArchiveXL.dll': f'{pe}/axl/ArchiveXL.dll',
         'red4ext/plugins/ArchiveXL/Scripts/ArchiveXL.reds': b'// ArchiveXL 1.28.6\n',
         'r6/config/redsUserHints/ArchiveXL.toml': b'# hints\n'})
     make_pe(f'{pe}/txl/TweakXL.dll', '1.12.0.0', linker=(14, 44), imports=CRT)
-    github('TweakXL', 'flight,mods', 'lib', 'minor', 'red4ext/plugins/TweakXL/TweakXL.dll', '1.12.0', 'TweakXL-1.12.0.zip', {
+    github('TweakXL', 'flight,mods,eqex', 'lib', 'minor', 'red4ext/plugins/TweakXL/TweakXL.dll', '1.12.0', 'TweakXL-1.12.0.zip', {
         'red4ext/plugins/TweakXL/TweakXL.dll': f'{pe}/txl/TweakXL.dll',
         'red4ext/plugins/TweakXL/Scripts/TweakXL.reds': b'// TweakXL 1.12.0\n'})
     make_pe(f'{pe}/il/input_loader.dll', '0.2.6', '2.50', linker=(14, 44), imports=CRT, strings={'Comments': 'Built for 2.50'})
@@ -245,7 +333,7 @@ def archives(fix):
                'red4ext/plugins/let_there_be_flight/inputs.xml': b'<inputs/>\r\n',
                'red4ext/plugins/let_there_be_flight_uninstall.bat': b'@echo off\r\n'})
     make_pe(f'{pe}/cw/Codeware.dll', '1.21.2.0', linker=(14, 44), imports=CRT)
-    github('Codeware', 'mods', 'lib', 'minor', 'red4ext/plugins/Codeware/Codeware.dll', '1.21.2', 'Codeware-1.21.2.zip', {
+    github('Codeware', 'mods,eqex', 'lib', 'minor', 'red4ext/plugins/Codeware/Codeware.dll', '1.21.2', 'Codeware-1.21.2.zip', {
         'red4ext/plugins/Codeware/Codeware.dll': f'{pe}/cw/Codeware.dll',
         'red4ext/plugins/Codeware/Scripts/Codeware.reds': b'// Codeware 1.21.2\n',
         'red4ext/plugins/Codeware/LICENSE': b'MIT\n'})
@@ -376,6 +464,12 @@ def archives(fix):
         f'{vc}/saved.json': b'{}\n'})
     zipdir(f'{st}/Vehicle Customizer SVE 3dot1 9034 3.1 2026-09-21T11-33Z tvQTvsQ74.zip', {   # the 3.1 update, in a folder
         f'Vehicle Customizer SVE 3dot1/{vc}/init.lua': b'-- vehicle customizer 3.1\n'})
+
+    # the third round and Equipment-EX: the real archives' entries (ROUND3); a .rar or .7z is a .zip
+    # here, so that the suite needs no bsdtar (the mods7z world unpacks a real 7z where bsdtar is)
+    for name, paths in ROUND3.items():
+        zname = re.sub(r'\.(rar|7z)$', '.zip', name)
+        zipdir(f'{fix}/round3/{zname}', {p: placeholder(p, name) for p in paths})
 
 # --------------------------------------------------------------------- world
 VDF_LOCALCONFIG = '''"UserLocalConfigStore"

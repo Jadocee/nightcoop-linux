@@ -197,8 +197,10 @@ WINEDLLOVERRIDES="winmm,version=n,b" MANGOHUD=1 game-performance %command% --lau
 | `--steam-root DIR` | Use this Steam installation instead of detecting one. |
 | `--with-flight` | Also install Let There Be Flight and the mods it needs (see below). Later runs keep them up to date. |
 | `--without-flight` | Remove Let There Be Flight again. The mods it needed stay, because other mods use them too. |
-| `--with-mods` | Also install the mod set: Virtual Atelier with clothing and item stores and seven Zenitex outfits, Virtual Car Dealer with car and bike packs, Drive an Aerial Vehicle, Vehicle Customizer, Cyber Drift, Quick Stash, No Intro Videos, and the frameworks they need (see below). Later runs keep it up to date. |
+| `--with-mods` | Also install the mod set: Virtual Atelier with clothing and item stores and their outfits (Zenitex, The RVC00N Dumpster, Nola Dreamer, Veegee, Street Ninja, Dolly Go-Go), Virtual Car Dealer with car and bike packs, Drive an Aerial Vehicle, Vehicle Customizer, Cyber Drift, Impact FX, Immersive Audio Distance, Quick Stash, No Intro Videos, and the frameworks they need (see below). Later runs keep it up to date. |
 | `--without-mods` | Remove the mod set's mods again. The frameworks stay. |
+| `--with-equipment-ex` | Also install Equipment-EX, to wear layered outfits (see below). Every partner in a session needs it too. |
+| `--without-equipment-ex` | Remove Equipment-EX again. |
 | `--mods-from DIR` | Look for the Nexus Mods downloads in DIR instead of your Downloads folder. |
 
 When Steam is running, its two settings are not written, but the registry override alone
@@ -257,6 +259,13 @@ work with the patch.
 | Iconic Shops | [7215](https://www.nexusmods.com/cyberpunk2077/mods/7215?tab=files) | 3.6.1 or newer | Every iconic item, 74 clothes among them |
 | Zenitex Virtual Atelier | [10090](https://www.nexusmods.com/cyberpunk2077/mods/10090?tab=files) | 4.13 or newer | ScorpionTank's Zenitex military gear |
 | Zenitex Ballistic Mask, Tactical Harness, Combat Jacket, Armor Pads, Panam Pants, Combat Gloves, and Comfy Boots | [12422](https://www.nexusmods.com/cyberpunk2077/mods/12422?tab=files), [9774](https://www.nexusmods.com/cyberpunk2077/mods/9774?tab=files), [19119](https://www.nexusmods.com/cyberpunk2077/mods/19119?tab=files), [12044](https://www.nexusmods.com/cyberpunk2077/mods/12044?tab=files), [10842](https://www.nexusmods.com/cyberpunk2077/mods/10842?tab=files), [19432](https://www.nexusmods.com/cyberpunk2077/mods/19432?tab=files), [11212](https://www.nexusmods.com/cyberpunk2077/mods/11212?tab=files) | 4.1, 4.0, 2.0.1, 4.1, 4.0, 2.0.1, 1.1 | Seven of the outfits the Zenitex store sells: each main file (not Alt. Colors or GS); for Comfy Boots, the Female V and Male V file |
+| The RVC00N Dumpster 3 | [25981](https://www.nexusmods.com/cyberpunk2077/mods/25981?tab=files) | 21.0.0 or newer | PinkyDude's store: on computers, and at its own shop behind Dakota's garage (VendorsXL) |
+| The RVC00N Dumpster: Goliath Coat and Cityfolk Hoodie | [36516](https://www.nexusmods.com/cyberpunk2077/mods/36516?tab=files), [37493](https://www.nexusmods.com/cyberpunk2077/mods/37493?tab=files) | 1.0.0, 1.0.2 or newer | Two of PinkyDude's garments for game 2.5 |
+| The RVC00N Dumpster: the other 24 garments its store sells | [26000](https://www.nexusmods.com/cyberpunk2077/mods/26000?tab=files), [26996](https://www.nexusmods.com/cyberpunk2077/mods/26996?tab=files), [27128](https://www.nexusmods.com/cyberpunk2077/mods/27128?tab=files), [27304](https://www.nexusmods.com/cyberpunk2077/mods/27304?tab=files), [33439](https://www.nexusmods.com/cyberpunk2077/mods/33439?tab=files), [34748](https://www.nexusmods.com/cyberpunk2077/mods/34748?tab=files), [27709](https://www.nexusmods.com/cyberpunk2077/mods/27709?tab=files), [27736](https://www.nexusmods.com/cyberpunk2077/mods/27736?tab=files), [31662](https://www.nexusmods.com/cyberpunk2077/mods/31662?tab=files), [20042](https://www.nexusmods.com/cyberpunk2077/mods/20042?tab=files), [12757](https://www.nexusmods.com/cyberpunk2077/mods/12757?tab=files), [26048](https://www.nexusmods.com/cyberpunk2077/mods/26048?tab=files), [26873](https://www.nexusmods.com/cyberpunk2077/mods/26873?tab=files), [31111](https://www.nexusmods.com/cyberpunk2077/mods/31111?tab=files), [16402](https://www.nexusmods.com/cyberpunk2077/mods/16402?tab=files), [26049](https://www.nexusmods.com/cyberpunk2077/mods/26049?tab=files), [26050](https://www.nexusmods.com/cyberpunk2077/mods/26050?tab=files), [26818](https://www.nexusmods.com/cyberpunk2077/mods/26818?tab=files), [35536](https://www.nexusmods.com/cyberpunk2077/mods/35536?tab=files), [26982](https://www.nexusmods.com/cyberpunk2077/mods/26982?tab=files), [32638](https://www.nexusmods.com/cyberpunk2077/mods/32638?tab=files), [32329](https://www.nexusmods.com/cyberpunk2077/mods/32329?tab=files), [28660](https://www.nexusmods.com/cyberpunk2077/mods/28660?tab=files), [27455](https://www.nexusmods.com/cyberpunk2077/mods/27455?tab=files) | the current file of each | Knife Bandolier, Bunny Slippers, Saul's Pants, Collarless CrystalJock Bomber, Master Chief Evolved Suit, Indiana Jones Outfit, The Fifth Element Collection (its ALL IN ONE file), Cityfolk Short Jacket, Jackie's Jacket, Stinky Burnt Top, Stinky Slashed Top, Stinky Croptop, Yeehaw Collar Shirt, Chuckwalla Tight T-Shirt, Stinky Mechanic Pants, Stinky Quilted Pants, Stinky Bootcut Jeans, Stinky Leather Jeans, David Martinez's Pants, Yeehaw Spur Boots, Latex Succubus Tail, Trauma Team Jumpsuit, Dexter DeShawn's outfit (Pants, Vest and Shoes), PinkyBlume Croptop Shirt |
+| Urban Techwear Outfit, with Veegee Shop 3 | [25512](https://www.nexusmods.com/cyberpunk2077/mods/25512?tab=files), [18890](https://www.nexusmods.com/cyberpunk2077/mods/18890?tab=files) | 1.0, 1.5.2 or newer | Veegee's techwear for both V. Veegee Shop 3 sells Veegee's whole catalogue; the set installs this outfit, and the store skips what is not installed |
+| Street Ninja Remake: its MAIN file and its Streetwear Shop | [36978](https://www.nexusmods.com/cyberpunk2077/mods/36978?tab=files) | 1.14.0, 1.12.0 or newer | 652 streetwear pieces for both V, in four layers |
+| Dolly Go-Go Mini Set: the mini dresses and the fur set | [37279](https://www.nexusmods.com/cyberpunk2077/mods/37279?tab=files) | 2, 1 or newer | A 1960s mini set for Fem V. No store sells it yet (its author plans one): add the pieces in Cyber Engine Tweaks' console with the codes on its page |
+| Nola Dreamer's Accessories store, with AirPods Max and six accessories | [14299](https://www.nexusmods.com/cyberpunk2077/mods/14299?tab=files), [28288](https://www.nexusmods.com/cyberpunk2077/mods/28288?tab=files), [14371](https://www.nexusmods.com/cyberpunk2077/mods/14371?tab=files), [16722](https://www.nexusmods.com/cyberpunk2077/mods/16722?tab=files), [11685](https://www.nexusmods.com/cyberpunk2077/mods/11685?tab=files), [15704](https://www.nexusmods.com/cyberpunk2077/mods/15704?tab=files), [14324](https://www.nexusmods.com/cyberpunk2077/mods/14324?tab=files), [14269](https://www.nexusmods.com/cyberpunk2077/mods/14269?tab=files) | 1.8, 1.1 and the current file of each | AirPods Max, Barbed accessories, Bracelets collection, heart choker and garters, Mini dress and glasses, Moon accessories, Spiked Collar. The store sells the glasses of Mini dress and glasses; the dress itself is sold by Nola Dreamer Virtual Boutique, which the set does not install, so add it with the codes on its page |
 
 **Vehicles** (Virtual Car Dealer, on in-game computers)
 
@@ -270,6 +279,10 @@ work with the patch.
 | Porsche 911 GT3 RS, its Main File, with Material and Texture Override's Legacy file | [11180](https://www.nexusmods.com/cyberpunk2077/mods/11180?tab=files), [5266](https://www.nexusmods.com/cyberpunk2077/mods/5266?tab=files) | 1.2, 1.2 or newer | A 911 GT3 RS |
 | Drive an Aerial Vehicle | [13842](https://www.nexusmods.com/cyberpunk2077/mods/13842?tab=files) | 3.5.0 or newer | Fly AVs and helicopters, with an autopilot; buy them at Virtual Car Dealer |
 | Vehicle Customizer (stolen vehicles edition): SVE 3dot0, then its 3dot1 update | [9034](https://www.nexusmods.com/cyberpunk2077/mods/9034?tab=files) | 3.0, 3.1 or newer | Switch a car you own or claim between the appearances the game has for it |
+| Apollo Intensa Emozione, Lamborghini Countach LPI 800-4 and Countach Liberty Walk | [37233](https://www.nexusmods.com/cyberpunk2077/mods/37233?tab=files), [37234](https://www.nexusmods.com/cyberpunk2077/mods/37234?tab=files), [37235](https://www.nexusmods.com/cyberpunk2077/mods/37235?tab=files) | 1 or newer | xa1res's cars, tested on 2.5 |
+| VAZ Oka Yozakura Sport | [36381](https://www.nexusmods.com/cyberpunk2077/mods/36381?tab=files) | 4 or newer | A VAZ-1111 Oka in a night-sakura livery; hood and hatch on two CET hotkeys you bind |
+| Toyota GR Yaris: its All Purpose Drive Spec and its Rocket Bunny Kit | [34357](https://www.nexusmods.com/cyberpunk2077/mods/34357?tab=files) | 3.3, 3.2 or newer | A GR Yaris with an optional widebody kit |
+| Nissan Silvia S14 'Marked One', its main file, with Vehicle Manufacturers Resource | [25997](https://www.nexusmods.com/cyberpunk2077/mods/25997?tab=files), [7855](https://www.nexusmods.com/cyberpunk2077/mods/7855?tab=files) | 1.1, 1.1 or newer | A nomad-tuned S14 (a 7z archive) |
 
 **Gameplay**
 
@@ -279,11 +292,23 @@ work with the patch.
 | Quick Stash | [30016](https://www.nexusmods.com/cyberpunk2077/mods/30016?tab=files) | 1.1 or newer | Moves your inventory to V's stash or your car in one go (not equipped or quest items) |
 | No Intro Videos, its archive file | [533](https://www.nexusmods.com/cyberpunk2077/mods/533?tab=files) | 0.5 or newer | Skips the logo videos at start-up |
 | Native Settings UI | [3518](https://www.nexusmods.com/cyberpunk2077/mods/3518?tab=files) | 1.97 or newer | The settings pages of Drive an Aerial Vehicle and Cyber Drift |
+| Impact FX | [36631](https://www.nexusmods.com/cyberpunk2077/mods/36631?tab=files) | 0.8.3.3 or newer | Dust, smoke and debris that linger after a gunfight |
+| Immersive Audio Distance, its file for 2.5 | [36809](https://www.nexusmods.com/cyberpunk2077/mods/36809?tab=files) | 1.2.0 or newer | Voices, TVs, adverts and radios fade with distance |
 
 **Frameworks**, downloaded from GitHub by the script: Mod Settings 0.2.28 (which Virtual
 Atelier needs), Audioware 1.11.1 (mods' own sounds), Cyber Engine Tweaks 1.38.1 (Lua mods),
 Codeware 1.21.2, TweakXL 1.12.0, ArchiveXL 1.28.6 and redscript 0.5.32 (the script mods,
-NightCoop's included).
+NightCoop's included). From Nexus Mods: VendorsXL 2.2.0 and Deceptious Quest Core 3.3.3, which
+The RVC00N Dumpster 3's shop in the world needs.
+
+**Equipment-EX** (`--with-equipment-ex`, from Nexus Mods,
+[6945](https://www.nexusmods.com/cyberpunk2077/mods/6945?tab=files), 1.2.10 or newer, its main file)
+wears clothes in layers: Street Ninja's four layers, or Dolly Go-Go's fur bodice over a dress
+and fur hem over its shorts (Dolly Go-Go's page calls it required for the set to look as intended).
+Every piece of the set is wearable without it, one per game slot. It is a set of its own
+because NightCoop lists it as a known overlap: NightCoop sends looks by its slots, so a
+partner without it sees other slots, and it overrides photo-mode functions. Use it only if
+everyone you play with does. `--without-equipment-ex` removes it again.
 
 A download older than its minimum is passed over, with the reason. Nexus Mods does not let
 scripts download files (a browser check, and an API that needs each user's key; downloads
@@ -329,14 +354,24 @@ new release of the mod changes the file it ships, and your copy is backed up fir
   since needs Mod Settings.)
 - **Clothing.** NightCoop sends your look by its items. A.G.I.S., Night City Marketplace,
   All Vanilla Clothes and Iconic Shops sell the game's own items, which every partner's game
-  has (Phantom Liberty pieces only where the partner owns it). A Zenitex outfit shows for a
+  has (Phantom Liberty pieces only where the partner owns it). An outfit of a mod shows for a
   partner only when they have the same outfit mod; otherwise NightCoop shows a plain game
-  piece for that body part, and head, face and accessories stay empty. The Zenitex store
-  sells 33 outfit mods, and ten of them need Equipment-EX, which NightCoop's guide lists for
-  changing clothing slots (partners without it see other slots) and overriding photo mode.
-  The set takes seven of the most endorsed that need neither; you can add others of the 23
-  by hand. NC Fashion, the most downloaded store, is left out for the same reason: it needs
-  Equipment-EX.
+  piece for that body part, and head, face and accessories stay empty.
+- **Clothes that ask for Equipment-EX** still work without it. In every outfit of the set,
+  each item keeps a game slot first (checked in each mod's TweakXL files): Equipment-EX
+  only adds its own slots, so that layered pieces can be worn together. NightCoop sends
+  looks by the game slot when Equipment-EX is absent. This also holds for the seven Zenitex
+  outfits whose pages list Equipment-EX, which earlier versions of this script left out
+  (an earlier note here said ten); you can add them by hand. NC Fashion's store lists
+  Equipment-EX as mandatory and is left out.
+- **The RVC00N Dumpster 3, VendorsXL and Deceptious Quest Core.** VendorsXL places vendors
+  in the world. It replaces the game's vendor restocking for every vendor, with a copy that
+  raises stock limits; NightCoop does not list that function. Deceptious Quest Core is
+  quest data (a journal and a streaming block), and the store adds its shop area and a
+  computer to the world. Everyone in a session should have them, like the outfits.
+- **Veegee's clothes are made for photo mode**, in their author's words: expect some
+  clipping in gameplay. Two of Nola Dreamer's accessories are marked adult on Nexus and are
+  left out; the store skips them.
 - **Cars and AVs of mods.** A partner sees your modded car, or your Drive an Aerial Vehicle
   AV, only when they have the mod that adds it; otherwise NightCoop shows a game vehicle
   with as many seats in its place. A car bought from Virtual Car Dealer opens in a guest's
@@ -347,6 +382,24 @@ new release of the mod changes the file it ships, and your copy is backed up fir
   Pack - Basic (2023), the Porsche (2023), Material and Texture Override (2023), and
   Bikes of the Dark Future with its Vehicle Exit Fix, which was made for patch 2.3. Vehicle
   mods are mostly data and usually outlast patches, but try each once.
+- **This round's cars.** Their scripts wrap game functions and call the originals: the
+  speedometer and tachometer of the HUD, and the Countach's spoiler and air brake (none in
+  NightCoop's tables). They are built on game vehicles with the game's seats, so a partner
+  riding along sits properly. The VAZ Oka's hood and hatch hotkeys are unbound until you
+  bind them in Cyber Engine Tweaks. The GR Yaris and the Silvia are data only. The Silvia
+  also ships a file for Dedka Car Dealership, which Dedka reads if you install it and is
+  inert otherwise. The GR Yaris's newest kit (3.2) is a version behind its main file (3.3),
+  and the car was tested on 2.31; try the kit once.
+- **Six cars are left out: the Porsche 992 GT3 R and SDH0's five Garage cars** (Porsche 911
+  Targa 4 GTS, Porsche Singer 911 Armed and three Mazda RX7s). They need AudioXL for their
+  engine sounds, and AudioXL watches whichever player body appeared last. NightCoop's
+  partners' bodies are player bodies too, so in co-op AudioXL's underwater muffling can
+  follow a partner instead of you.
+- **Impact FX** wraps hit and attach functions and calls the originals. When a partner's
+  body appears it re-applies its own local settings once. Its smoke and debris are local:
+  each player with the mod sees their own.
+- **Immersive Audio Distance** hooks nothing. It retunes how far sounds carry in the game's
+  audio data when that loads, in your game only.
 - **Customising a car.** Vehicle Customizer switches a car between the appearances the
   game itself has for it, so the appearance exists in every partner's game; NightCoop
   shows partners your car's appearance and its CrystalCoat paint (the game's own colour
@@ -544,6 +597,13 @@ installation. It covers:
     over for a copy that works;
   - `--without-mods` removing only the mods, those inside Cyber Engine Tweaks' folder
     too, while the flight set keeps the frameworks it shares;
+  - the mods added in 3.4.0 (six cars, the clothes of four stores, Impact FX, Immersive
+    Audio Distance) from archives with the real downloads' names and entries, as read from Nexus:
+    each mod's file rule against its other files, folders that wrap an archive, read-me
+    files and code lists left out, a missing requirement holding its store back;
+- Equipment-EX: only with `--with-equipment-ex`, alone or with the mod set, and removed
+  again with `--without-equipment-ex`;
+- the fixtures' add-on table matching the installer's, so that a change to one shows;
 - install, update, restore and uninstall back to a byte-identical game folder.
 
 `tests/mkfixtures.py` generates the PE files, archives (shaped like nightcoop.net's, the
