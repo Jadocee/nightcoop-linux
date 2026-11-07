@@ -35,6 +35,10 @@
 #   --proton TOOL         Proton build for the game: auto (default), keep, experimental,
 #                         cachyos, ge, or a tool name such as GE-Proton10-25
 #   --no-launcher-skip    keep CDPR's launcher: do not add --launcher-skip to the launch options
+#   --no-game-performance do not start the game with CachyOS's game-performance (added to the
+#                         launch options when it can run); remembered, --game-performance undoes it
+#   --mangohud            show MangoHud's overlay in the game (MANGOHUD=1 in the launch options;
+#                         not on SteamOS, which has its own); --no-mangohud takes it out again
 #   --close-steam         close Steam to write its settings, then reopen it
 #   --nightcoop-zip FILE  use a downloaded NightCoop archive instead of the latest
 #   --red4ext-zip FILE    use a downloaded RED4ext release archive
@@ -64,7 +68,7 @@
 # SPDX-License-Identifier: MIT
 set -euo pipefail
 
-SCRIPT_VERSION="3.2.0"
+SCRIPT_VERSION="3.3.0"
 APPID=1091500
 GAME_EXE_REL="bin/x64/Cyberpunk2077.exe"
 RED4EXT_VER="1.31.0"
@@ -189,6 +193,8 @@ OPT_STEAM_ROOT=""
 CLOSE_STEAM=0
 PROTON_WANT="auto"
 GAME_ARGS="--launcher-skip"
+GP_OPT=""        # on or off: --game-performance, --no-game-performance (remembered in settings.tsv)
+MH_OPT=""        # on or off: --mangohud, --no-mangohud
 SAVE_BACKUP=""   # 1 or 0; empty: copy the saves on the first install only
 SET_WANT=()      # +flight, -flight, +mods, -mods from the options; a set not named stays as it was
 NEXUS_DIRS=()    # where to look for the Nexus downloads (--mods-from); default: the Downloads folder
@@ -800,22 +806,85 @@ def wdo_modes(s):
     return m, modes
 
 
-def lo_state(s, dlls='winmm', args=''):
-    """ok: every DLL in dlls is native-first before %command% and every argument is present;
-    broken: the override sits after %command% (Steam passes it to the game as an argument);
-    missing: anything else."""
+# The words before %command%: VARIABLE=value settings, then wrappers. A quoted value is one word.
+LO_WORD = re.compile(r'''(?:[^\s"']+|"[^"]*"|'[^']*')+''')
+
+
+def lo_prefix(s):
+    i = (s or '').find('%command%')
+    return [m.group(0) for m in LO_WORD.finditer(s[:i])] if i >= 0 else []
+
+
+def lo_name(w):
+    """A wrapper's program name; nothing for a VARIABLE=value setting."""
+    return '' if re.match(r'[A-Za-z_][A-Za-z0-9_]*=', w) else os.path.basename(w.replace('"', '').replace("'", ''))
+
+
+def lo_uses(s):
+    """The wrappers the script manages that a launch option line runs: game-performance,
+    mangohud (the wrapper) and MANGOHUD=1 (the variable that turns on MangoHud's layer); and
+    gamescope, in which MangoHud's own overlay is not supported."""
+    used = []
+    for w in lo_prefix(s):
+        n = 'MANGOHUD=1' if re.fullmatch(r'''MANGOHUD=(1|"1"|'1')''', w) else lo_name(w)
+        if n in ('game-performance', 'mangohud', 'MANGOHUD=1', 'gamescope') and n not in used:
+            used.append(n)
+    return used
+
+
+def lo_wish_met(s, wish):
+    """wish: +game-performance, -game-performance, +mangohud or -mangohud."""
+    used = lo_uses(s)
+    on = 'game-performance' in used if wish[1:] == 'game-performance' else bool({'mangohud', 'MANGOHUD=1'} & set(used))
+    return on == (wish[0] == '+')
+
+
+def lo_wrap(s, wrap):
+    """Apply the wishes to the words before %command%. game-performance goes last, right
+    before %command% (CachyOS's order); MANGOHUD=1 goes after the DLL overrides."""
+    i = s.index('%command%')
+    words, rest = lo_prefix(s), s[i:]
+    for wish in [w for w in wrap.split(',') if w]:
+        if lo_wish_met(' '.join(words + [rest]), wish):
+            continue
+        op, name = wish[0], wish[1:]
+        if name == 'game-performance':
+            words = words + [name] if op == '+' else [w for w in words if lo_name(w) != name]
+        elif op == '-':   # the wrapper (with its --dlsym) and the variable
+            kept, after = [], False
+            for w in words:
+                if not (after and w == '--dlsym') and lo_name(w) != 'mangohud' and not w.startswith('MANGOHUD='):
+                    kept.append(w)
+                after = lo_name(w) == 'mangohud'
+            words = kept
+        else:
+            k = next((j for j, w in enumerate(words) if w.startswith('MANGOHUD=')), None)
+            if k is not None:
+                words[k] = 'MANGOHUD=1'
+            else:
+                k = next((j for j, w in enumerate(words) if w.startswith('WINEDLLOVERRIDES=')), -1)
+                words.insert(k + 1, 'MANGOHUD=1')
+    return ' '.join(words + [rest])
+
+
+def lo_state(s, dlls='winmm', args='', wrap=''):
+    """ok: every DLL in dlls is native-first before %command%, every argument is present and
+    every wrapper wish is met; broken: the override sits after %command% (Steam passes it to
+    the game as an argument); missing: anything else."""
     s, dlls = s or '', [d for d in dlls.split(',') if d]
     m, modes = wdo_modes(s)
     if not m or any(not modes.get(d, '').startswith('n') for d in dlls):
         return 'missing'
     if '%command%' not in s or m.start() > s.index('%command%'):
         return 'broken'
-    return 'ok' if all(a in s.split() for a in args.split()) else 'missing'
+    if not all(a in s.split() for a in args.split()):
+        return 'missing'
+    return 'ok' if all(lo_wish_met(s, w) for w in wrap.split(',') if w) else 'missing'
 
 
-def lo_merge(s, dlls='winmm', args=''):
-    """Make the DLLs native-first and add the game arguments, keeping every other override,
-    wrapper (game-performance, gamemoderun, mangohud) and argument."""
+def lo_merge(s, dlls='winmm', args='', wrap=''):
+    """Make the DLLs native-first, add the game arguments and apply the wrapper wishes,
+    keeping every other override, variable, wrapper (gamemoderun, gamescope, ...) and argument."""
     s, dlls = (s or '').strip(), [d for d in dlls.split(',') if d]
     m, _ = wdo_modes(s)
     keep = []
@@ -835,7 +904,7 @@ def lo_merge(s, dlls='winmm', args=''):
         if a not in s.split():
             i = s.index('%command%') + len('%command%')
             s = s[:i] + ' ' + a + s[i:]
-    return s.strip()
+    return lo_wrap(s.strip(), wrap) if wrap else s.strip()
 
 
 def lo_files(root):
@@ -891,30 +960,34 @@ def write_text(path, text):
     os.replace(tmp, path)
 
 
-def cmd_lo_status(root, appid, dlls='winmm', args=''):
-    """state of the full wish (dlls and args), current line, state of the winmm override alone."""
+def cmd_lo_status(root, appid, dlls='winmm', args='', wrap=''):
+    """state of the full wish (dlls, args and wrappers), current line, state of the winmm override alone."""
     files = lo_files(root)
     if not files:
         out('nofile', '', 'nofile')
         return
     lo = lo_scan(read_text(files[0]), appid)[2]
     cur = lo[2] if lo else ''
-    out(lo_state(cur, dlls, args), cur, lo_state(cur))
+    out(lo_state(cur, dlls, args, wrap), cur, lo_state(cur))
 
 
-def cmd_lo_merge(s, dlls='winmm', args=''):
-    out(lo_state(s, dlls, args), lo_merge(s, dlls, args))
+def cmd_lo_merge(s, dlls='winmm', args='', wrap=''):
+    out(lo_state(s, dlls, args, wrap), lo_merge(s, dlls, args, wrap))
 
 
-def cmd_lo_set(root, appid, dlls='winmm', args=''):
+def cmd_lo_uses(s):
+    print(' '.join(lo_uses(s)))
+
+
+def cmd_lo_set(root, appid, dlls='winmm', args='', wrap=''):
     for f in lo_files(root):
         text = read_text(f)
         apps_open, app_open, lo = lo_scan(text, appid)
         cur = lo[2] if lo else ''
-        if lo_state(cur, dlls, args) == 'ok':
+        if lo_state(cur, dlls, args, wrap) == 'ok':
             out(f, 'already set')
             continue
-        new = lo_merge(cur, dlls, args)
+        new = lo_merge(cur, dlls, args, wrap)
         if lo:
             text = text[:lo[0]] + '"' + esc(new) + '"' + text[lo[1]:]
         else:
@@ -1492,7 +1565,7 @@ CMDS = {
     'pever': cmd_pever, 'gamever': cmd_gamever, 'r4ok': cmd_r4ok, 'pestr': cmd_pestr, 'vge': cmd_vge, 'builtin': cmd_builtin, 'pecrt': cmd_pecrt,
     'libs': cmd_libs, 'proton': cmd_proton, 'slr': cmd_slr,
     'ct-get': cmd_ct_get, 'ct-list': cmd_ct_list, 'ct-pick': cmd_ct_pick, 'ct-set': cmd_ct_set,
-    'lo-status': cmd_lo_status, 'lo-set': cmd_lo_set, 'lo-merge': cmd_lo_merge,
+    'lo-status': cmd_lo_status, 'lo-set': cmd_lo_set, 'lo-merge': cmd_lo_merge, 'lo-uses': cmd_lo_uses,
     'pick': cmd_pick, 'reg-get': cmd_reg_get, 'reg-set': cmd_reg_set, 'reg-del': cmd_reg_del, 'wsrv': cmd_wsrv,
     'unzip': cmd_unzip, 'ncroot': cmd_ncroot, 'findci': cmd_findci, 'rmci': cmd_rmci, 'merge': cmd_merge,
     'tree-plan': cmd_tree_plan, 'tree-apply': cmd_tree_apply, 'tree-restore': cmd_tree_restore,
@@ -1556,6 +1629,10 @@ while [ $# -gt 0 ]; do
         --close-steam)    CLOSE_STEAM=1; shift ;;
         --proton)         need_arg "$1" $#; PROTON_WANT="$2"; shift 2 ;;
         --no-launcher-skip) GAME_ARGS=""; shift ;;
+        --game-performance) GP_OPT=on; shift ;;
+        --no-game-performance) GP_OPT=off; shift ;;
+        --mangohud)       MH_OPT=on; shift ;;
+        --no-mangohud)    MH_OPT=off; shift ;;
         --no-save-backup) SAVE_BACKUP=0; shift ;;
         --backup-saves)   SAVE_BACKUP=1; shift ;;
         --with-flight)    SET_WANT+=(+flight); shift ;;
@@ -1747,6 +1824,107 @@ dll_overrides() {   # DLLs that must load native-first: RED4ext's loader, plus C
             || { [ -n "${TMP:-}" ] && findci "$TMP/stage" bin/x64/version.dll >/dev/null 2>&1; }; then echo winmm,version
     else echo winmm; fi
 }
+
+# Launch wrappers. CachyOS's game-performance runs the game in the performance power profile;
+# it goes into the launch options when it can run, and out when it cannot, because Steam then
+# fails to start the game. MangoHud's overlay goes in only when asked (--mangohud), as
+# MANGOHUD=1: under Proton the game draws with Vulkan, for which that variable is what turns
+# MangoHud's layer on (the mangohud wrapper sets it too, with an OpenGL hook the game does not
+# use), and unlike the wrapper it cannot stop the game from starting once MangoHud is gone.
+have_tool() {   # have_tool <name>: where it is on PATH (on NIGHTCOOP_TOOL_PATH in the tests)
+    local d
+    while IFS= read -r -d : d; do
+        if [ -n "$d" ] && [ -f "$d/$1" ] && [ -x "$d/$1" ]; then echo "$d/$1"; return 0; fi
+    done <<< "${NIGHTCOOP_TOOL_PATH-$PATH}:"
+    return 1
+}
+gp_problem() {   # why game-performance cannot start the game here (nothing when it can)
+    local gp
+    if [ "$STEAM_KIND" = flatpak ]; then echo "Flatpak Steam cannot run it"
+    elif ! gp="$(have_tool game-performance)"; then echo "it is not installed"
+    elif have_tool powerprofilesctl >/dev/null; then :
+    elif ! grep -q tlpctl "$gp" 2>/dev/null; then   # TLP's tlpctl came after cachyos-settings 1.4.1
+        echo "it needs powerprofilesctl (power-profiles-daemon), which is not installed"
+    elif ! have_tool tlpctl >/dev/null; then
+        echo "it needs powerprofilesctl (power-profiles-daemon) or tlpctl (TLP), and neither is installed"
+    fi
+}
+mh_missing() {   # why MangoHud's overlay cannot show in the game (nothing when it can)
+    local fp br=""
+    if [ "$STEAM_KIND" = flatpak ]; then   # its Vulkan layer, a Flatpak extension for the runtime Steam uses
+        if fp="$(have_tool flatpak)"; then
+            br="$("$fp" info --show-runtime com.valvesoftware.Steam 2>/dev/null | head -n1 || true)"; br="${br##*/}"
+            [ -n "$br" ] && "$fp" info "org.freedesktop.Platform.VulkanLayer.MangoHud//$br" >/dev/null 2>&1 && return 0
+        fi
+        echo "its Flatpak extension is not installed (flatpak install flathub org.freedesktop.Platform.VulkanLayer.MangoHud${br:+//$br})"
+    elif ! have_tool mangohud >/dev/null; then
+        if is_arch_family; then echo "it is not installed (sudo pacman -S mangohud)"
+        else echo "it is not installed (install it with your package manager)"; fi
+    fi
+}
+setting() { if [ -f "$DATA_DIR/settings.tsv" ]; then sed -n "s/^$1\t//p" "$DATA_DIR/settings.tsv" | tail -n1; fi; }
+save_settings() {   # remember --no-game-performance (or --game-performance) for later runs
+    [ -n "$GP_OPT" ] && [ "$DRY_RUN" != 1 ] || return 0
+    local f="$DATA_DIR/settings.tsv"
+    mkdir -p "$DATA_DIR"
+    { if [ -f "$f" ]; then grep -v $'^game-performance\t' "$f" || true; fi
+      if [ "$GP_OPT" = off ]; then printf 'game-performance\toff\n'; fi; } > "$f.new"
+    if [ -s "$f.new" ]; then mv "$f.new" "$f"; else rm -f "$f.new" "$f"; fi
+}
+wrap_plan() {   # wrap_plan <launch options>: WRAP, the wrapper wishes for the lo-* helpers, and why
+    local used; used=" $(py lo-uses "$1") "
+    GP_USED=0 MH_USED=0 MH_WRAPPER=0
+    [[ "$used" != *" game-performance "* ]] || GP_USED=1
+    [[ "$used" != *" mangohud "* ]] || MH_USED=1 MH_WRAPPER=1
+    [[ "$used" != *" MANGOHUD=1 "* ]] || MH_USED=1
+    GP_WANT="${GP_OPT:-$(setting game-performance)}"
+    GP_WHY="$(gp_problem)" MH_MISSING="$(mh_missing)"
+    MH_WHY="$MH_MISSING"
+    [[ "$used" != *" gamescope "* ]] || MH_WHY="the launch options run the game in gamescope, where MangoHud's own overlay is not supported (gamescope's --mangoapp option shows it)"
+    [ "$OS_FAMILY" != steamos ] || MH_WHY="SteamOS has its own performance overlay (Quick Access menu > Performance)"
+    if [ "$GP_WANT" = off ] || [ -n "$GP_WHY" ]; then WRAP="-game-performance"; else WRAP="+game-performance"; fi
+    case "$MH_OPT" in on) [ -n "$MH_WHY" ] || WRAP+=",+mangohud" ;; off) WRAP+=",-mangohud" ;; esac
+}
+wrap_notes() {   # install: what happens to game-performance and MangoHud in the launch options
+    if [ "$GP_USED" = 1 ] && [ -n "$GP_WHY" ]; then
+        warn "the launch options run game-performance, but $GP_WHY: the game would not start, so it is taken out"
+    elif [ "$GP_WANT" = off ]; then
+        local how="left out of"; [ "$GP_USED" = 0 ] || how="taken out of"
+        info "game-performance: $how the launch options (--no-game-performance; --game-performance adds it again)"
+    elif [ -z "$GP_WHY" ] && [ "$GP_USED" = 0 ]; then
+        info "game-performance found: the game will run in the performance power profile (--no-game-performance leaves it out)"
+    elif [ -n "$GP_WHY" ] && [ "$GP_OPT" = on ]; then
+        info "game-performance is not added: $GP_WHY"
+    fi
+    case "$MH_OPT" in
+        on) if [ "$MH_USED" = 1 ]; then ok "MangoHud is already in the launch options"
+            elif [ -n "$MH_WHY" ]; then info "MangoHud is not added: $MH_WHY"
+            else info "MangoHud: MANGOHUD=1 shows its overlay in the game (--no-mangohud takes it out)"; fi ;;
+        off) if [ "$MH_USED" = 1 ]; then info "MangoHud: taken out of the launch options (--no-mangohud)"
+             else info "--no-mangohud: MangoHud is not in the launch options"; fi ;;
+        *) if [ "$MH_WRAPPER" = 1 ] && [ -n "$MH_MISSING" ]; then
+               warn "the launch options run mangohud, but $MH_MISSING: the game will not start; install it, or run this again with --no-mangohud"
+           elif [ "$MH_USED" = 0 ] && [ -z "$MH_WHY" ]; then
+               info "MangoHud is installed: --mangohud shows its overlay in the game"
+           fi ;;
+    esac
+}
+wrap_rows() {   # check: game-performance and MangoHud
+    if [ "$GP_USED" = 1 ] && [ -n "$GP_WHY" ]; then
+        row "game-performance" "in the launch options, but $GP_WHY"
+        warn "the game will not start this way; run '$0' with Steam closed to take it out"
+    elif [ "$GP_USED" = 1 ]; then row "game-performance" "in the launch options"
+    elif [ -z "$GP_WHY" ] && [ "$GP_WANT" = off ]; then row "game-performance" "installed; left out (--no-game-performance)"
+    elif [ -z "$GP_WHY" ]; then row "game-performance" "installed; run '$0' to start the game with it"
+    fi
+    if [ "$MH_WRAPPER" = 1 ] && [ -n "$MH_MISSING" ]; then
+        row "MangoHud" "in the launch options, but $MH_MISSING"
+        warn "the game will not start this way; install MangoHud, or run '$0 --no-mangohud' with Steam closed"
+    elif [ "$MH_USED" = 1 ]; then row "MangoHud" "in the launch options"
+    elif [ -z "$MH_WHY" ]; then row "MangoHud" "installed; '$0 --mangohud' shows its overlay in the game"
+    fi
+    return 0
+}
 reg_state() {   # reg_state [dlls] : ok | missing | noreg
     local v d
     [ -f "$USERREG" ] || { echo noreg; return 0; }
@@ -1931,12 +2109,17 @@ do_check() {
         *) row "DLL override" "$dlls not set in the prefix registry" ;;
     esac
     IFS=$'\x1f' read -r lo lo_val lo_winmm < <(py lo-status "$STEAM_ROOT" "$APPID" "$dlls" "$GAME_ARGS") || true
+    case "$lo" in ok|broken|missing)
+        wrap_plan "$lo_val"
+        IFS=$'\x1f' read -r lo lo_val lo_winmm < <(py lo-status "$STEAM_ROOT" "$APPID" "$dlls" "$GAME_ARGS" "$WRAP") || true ;;
+    esac
     case "$lo" in
         ok) row "launch options" "$lo_val" ;;
         broken) row "launch options" "WINEDLLOVERRIDES present but placed after %command% or without it: $lo_val" ;;
-        missing) row "launch options" "${lo_val:-empty}; recommended: $(py lo-merge "$lo_val" "$dlls" "$GAME_ARGS" | cut -d$'\x1f' -f2)" ;;
+        missing) row "launch options" "${lo_val:-empty}; recommended: $(py lo-merge "$lo_val" "$dlls" "$GAME_ARGS" "$WRAP" | cut -d$'\x1f' -f2)" ;;
         *) row "launch options" "Steam user config not found" ;;
     esac
+    case "$lo" in ok|broken|missing) wrap_rows ;; esac
     if [ "$(reg_state winmm)" != ok ] && [ "${lo_winmm:-}" != ok ]; then
         warn "neither override is set: Proton will ignore RED4ext's loader and the mod will not start"
     fi
@@ -2028,6 +2211,7 @@ PLAN_ADDED=0 PLAN_REPLACED=0 PLAN_REMOVED=0 PLAN_SAME=0 PLAN_STALE=() FILES_CHAN
 SETS_ON="" SETS_DROPPED="" ADDON_ROOTS=() ADDON_VERS=() ADDON_STATE_NEW=() ADDON_PLAN=() ADDON_KEEP=() ADDON_DROP=() ADDON_MISSING=() ADDON_HAVE=" " ADDON_USED=" " PROTECT=()
 NC_ROOT="" NC_DLL_REL="" NC_PLUGIN_DIR="" R4_CHOICE="" R4_FINAL="" RT_WANT="" RT_TARGET="" RV="" RK="" NEED_RT=0
 VCREDIST_VER="" REG_STATE="" LO_STATE="" LO_VALUE="" LO_WINMM="" RESTART_STEAM=0 DLLS="winmm"
+WRAP="" GP_WANT="" GP_WHY="" GP_USED=0 MH_WHY="" MH_MISSING="" MH_USED=0 MH_WRAPPER=0
 TOOL_NAME="" TOOL_DIR="" TOOL_REASON="" TOOL_LABEL="" TOOL_STATE="none"
 
 step_nightcoop() {
@@ -2514,10 +2698,14 @@ step_override() {
         *) warn "the prefix has no user.reg; relying on the launch options" ;;
     esac
     IFS=$'\x1f' read -r LO_STATE LO_VALUE LO_WINMM < <(py lo-status "$STEAM_ROOT" "$APPID" "$DLLS" "$GAME_ARGS") || LO_STATE=nofile
+    if [ "$LO_STATE" != nofile ]; then
+        wrap_plan "$LO_VALUE"; wrap_notes
+        IFS=$'\x1f' read -r LO_STATE LO_VALUE LO_WINMM < <(py lo-status "$STEAM_ROOT" "$APPID" "$DLLS" "$GAME_ARGS" "$WRAP") || LO_STATE=nofile
+    fi
     case "$LO_STATE" in
         ok) ok "launch options already set: $LO_VALUE" ;;
         nofile) warn "Steam's per-user config was not found; launch options cannot be checked" ;;
-        *) info "launch options: will be set to $(py lo-merge "$LO_VALUE" "$DLLS" "$GAME_ARGS" | cut -d$'\x1f' -f2)"
+        *) info "launch options: will be set to $(py lo-merge "$LO_VALUE" "$DLLS" "$GAME_ARGS" "$WRAP" | cut -d$'\x1f' -f2)"
            [ -z "$GAME_ARGS" ] || info "(--launcher-skip starts the game without CDPR's launcher window; --no-launcher-skip keeps it)"
            steam_settings_note ;;
     esac
@@ -2587,7 +2775,7 @@ print_plan() {
     [ "$NEED_RT" = 1 ] && info "run             VC_redist.x64.exe ${VCREDIST_VER} quietly in the game's Proton prefix"
     [ "$REG_STATE" = missing ] && info "registry        $DLLS = native,builtin for Cyberpunk2077.exe"
     if [ "$LO_STATE" = missing ] || [ "$LO_STATE" = broken ]; then
-        info "launch options  $(py lo-merge "$LO_VALUE" "$DLLS" "$GAME_ARGS" | cut -d$'\x1f' -f2)$later"
+        info "launch options  $(py lo-merge "$LO_VALUE" "$DLLS" "$GAME_ARGS" "$WRAP" | cut -d$'\x1f' -f2)$later"
     fi
     [ "$TOOL_STATE" = pending ] && info "Proton          $TOOL_LABEL for Cyberpunk 2077$later"
     return 0
@@ -2683,13 +2871,13 @@ apply_steam_settings() {
     case "$LO_STATE" in missing|broken) ;; *) return 0 ;; esac
     bold "Writing Steam launch options"
     while IFS=$'\x1f' read -r f res; do info "user $(basename "$(dirname "$(dirname "$f")")"): $res"; done \
-        < <(py lo-set "$STEAM_ROOT" "$APPID" "$DLLS" "$GAME_ARGS")
-    IFS=$'\x1f' read -r LO_STATE LO_VALUE LO_WINMM < <(py lo-status "$STEAM_ROOT" "$APPID" "$DLLS" "$GAME_ARGS") || true
+        < <(py lo-set "$STEAM_ROOT" "$APPID" "$DLLS" "$GAME_ARGS" "$WRAP")
+    IFS=$'\x1f' read -r LO_STATE LO_VALUE LO_WINMM < <(py lo-status "$STEAM_ROOT" "$APPID" "$DLLS" "$GAME_ARGS" "$WRAP") || true
     if [ "$LO_STATE" = ok ]; then ok "launch options set"; else warn "could not set the launch options automatically"; fi
 }
 
 print_followups() {   # what is left to set in Steam by hand
-    local merged; merged="$(py lo-merge "$LO_VALUE" "$DLLS" "$GAME_ARGS" | cut -d$'\x1f' -f2)"
+    local merged; merged="$(py lo-merge "$LO_VALUE" "$DLLS" "$GAME_ARGS" "$WRAP" | cut -d$'\x1f' -f2)"
     if [ "$REG_STATE" != ok ] && [ "${LO_WINMM:-}" != ok ]; then
         bold "One manual step left"
         info "In Steam: right-click Cyberpunk 2077 > Properties > General > Launch Options, and enter:"
@@ -2741,13 +2929,14 @@ do_install() {
             record_install "${NC_VER:-}" "${NC_PROTO:-}" "${NC_GAMES:-}" "$R4_FINAL" ""
             info "recorded as the installed build, for later update checks"
         fi
-        if [ "$STEAM_CHANGE" = 0 ]; then ok "everything is up to date; nothing to do"; return 0; fi
-        if steam_running && [ "$CLOSE_STEAM" != 1 ]; then echo; print_followups; return 0; fi
+        if [ "$STEAM_CHANGE" = 0 ]; then save_settings; ok "everything is up to date; nothing to do"; return 0; fi
+        if steam_running && [ "$CLOSE_STEAM" != 1 ]; then save_settings; echo; print_followups; return 0; fi
     fi
     print_plan
     if [ "$DRY_RUN" = 1 ]; then echo; ok "dry run finished; nothing was changed"; return 0; fi
     echo
     confirm "Go ahead?" || { info "aborted"; exit 1; }
+    save_settings
 
     if [ "$FILES_CHANGE" = 1 ] || [ "$PREFIX_CHANGE" = 1 ]; then
         bold "Backing up"

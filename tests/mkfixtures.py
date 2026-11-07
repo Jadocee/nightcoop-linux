@@ -391,7 +391,7 @@ VDF_LOCALCONFIG = '''"UserLocalConfigStore"
 \t\t\t\t\t"1091500"
 \t\t\t\t\t{
 \t\t\t\t\t\t"LastPlayed"\t\t"1730000000"
-\t\t\t\t\t\t"LaunchOptions"\t\t"game-performance %command% --launcher-skip"
+\t\t\t\t\t\t"LaunchOptions"\t\t"gamemoderun %command% --launcher-skip"
 \t\t\t\t\t}
 \t\t\t\t}
 \t\t\t}

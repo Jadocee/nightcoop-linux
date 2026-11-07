@@ -12,7 +12,7 @@ systems. It can also install popular mods chosen to work alongside NightCoop (se
 | System | Notes |
 | --- | --- |
 | **SteamOS 3** (Steam Deck LCD and OLED, other SteamOS devices) | Run from Desktop Mode. Games on an SD card are found. Nothing is installed into the read-only system, and Steam may stay open. |
-| **CachyOS** | Uses `proton-cachyos` when it is installed, otherwise Proton Experimental. Keeps launch options such as `game-performance %command%`. Installable as a pacman package. |
+| **CachyOS** | Uses `proton-cachyos` when it is installed, otherwise Proton Experimental. Starts the game with `game-performance`, CachyOS's performance power profile. Installable as a pacman package. |
 | **Arch Linux** and derivatives (EndeavourOS, Manjaro, Garuda, …) | Steam from `[multilib]`. Installable as a pacman package. |
 | **Flatpak Steam** (any distribution) | Detected automatically. |
 | Bazzite and other distributions | Same code path. |
@@ -92,8 +92,8 @@ The main menu then shows a **Co-op** entry ("Совместная игра" in R
 It also sets the game up for Proton:
 
 - **Proton build** (`--proton`, see below): chosen in Steam's settings for the game.
-- **`--launcher-skip`** is added to the launch options, so the game starts without CDPR's
-  launcher window, which adds nothing under Proton. Use `--no-launcher-skip` to keep it.
+- **Launch options** (see [Launch options](#launch-options)): besides the DLL overrides,
+  `--launcher-skip` and, where it can run, `game-performance`. MangoHud is optional.
 
 Before it changes anything, the script does the following:
 
@@ -127,6 +127,48 @@ Before it changes anything, the script does the following:
 Whichever you choose, the runtime installed by the script is kept. When Steam moves the
 prefix to another Proton version, it replaces only Wine's own files.
 
+## Launch options
+
+Steam's launch options take the form `[variables] [wrappers] %command% [game arguments]`.
+The script merges its parts into what is already there and keeps everything else, such as
+`gamemoderun`, `prime-run` or `gamescope … --`.
+
+| Part | Added | What it does |
+| --- | --- | --- |
+| `WINEDLLOVERRIDES="winmm=n,b"` | Always. It becomes `winmm,version` once Cyber Engine Tweaks is installed. | Required: without it, Wine ignores RED4ext's loader (and Cyber Engine Tweaks'). |
+| `game-performance` | When it can run: native Steam, CachyOS's `game-performance`, and `powerprofilesctl` (power-profiles-daemon). A newer `game-performance` that supports TLP's `tlpctl` can use that instead; cachyos-settings 1.4.1 does not. | Runs the game in the performance power profile, and restores the previous profile when the game exits. It goes last, right before `%command%`. |
+| `MANGOHUD=1` | Only with `--mangohud`, and only when MangoHud is installed. | Shows MangoHud's overlay in the game. |
+| `--launcher-skip` | Unless `--no-launcher-skip` is given. | Starts the game without CDPR's launcher window, which adds nothing under Proton. |
+
+Nothing else is required. No mod in the sets is a REDmod, so `-modded` is not needed, and
+Audioware, Mod Settings and the other frameworks need no variables.
+
+- **game-performance** stops the game from starting where it cannot run:
+  - under Flatpak Steam, which starts the game inside its sandbox, without the host's
+    programs;
+  - without `powerprofilesctl` (or `tlpctl`, for a release that supports it), when it exits
+    with an error.
+
+  In those cases the script takes it out of the launch options, and says why.
+  `--no-game-performance` leaves it out on later runs too; `--game-performance` undoes that.
+- **MangoHud** is optional.
+  - `--mangohud` writes `MANGOHUD=1` rather than the `mangohud` wrapper. Under Proton the
+    game draws with Vulkan, and for Vulkan that variable is what turns MangoHud's layer on.
+    The wrapper sets it too, along with an OpenGL hook the game does not use. Unlike the
+    wrapper, the variable cannot stop the game from starting if MangoHud is removed later.
+  - It is not added on SteamOS, whose own performance overlay (Quick Access menu >
+    Performance) shows the same. Nor is it added when the game runs in gamescope, where
+    MangoHud's overlay is not supported; use gamescope's `--mangoapp` instead.
+  - Flatpak Steam needs the `org.freedesktop.Platform.VulkanLayer.MangoHud` extension for
+    Steam's runtime; the script names the one to install.
+  - `--no-mangohud` takes MangoHud out again, including the `mangohud` wrapper.
+
+On CachyOS with Cyber Engine Tweaks installed, a run with `--mangohud` gives:
+
+```
+WINEDLLOVERRIDES="winmm,version=n,b" MANGOHUD=1 game-performance %command% --launcher-skip
+```
+
 ## Commands and options
 
 | Command | Effect |
@@ -143,6 +185,8 @@ prefix to another Proton version, it replaces only Wine's own files.
 | `-y`, `--yes` | Do not ask for confirmation. |
 | `--proton TOOL` | Choose the Proton build for the game (see above). |
 | `--no-launcher-skip` | Do not add `--launcher-skip` to the launch options. |
+| `--no-game-performance` | Do not start the game with `game-performance`, and take it out of the launch options. Remembered in `~/.local/share/nightcoop-linux/settings.tsv`; `--game-performance` undoes it. |
+| `--mangohud` | Show MangoHud's overlay in the game (`MANGOHUD=1` in the launch options). Not on SteamOS. `--no-mangohud` takes it out. |
 | `--close-steam` | Close Steam to write its settings (launch options, Proton choice), then reopen it. Desktop Mode only. |
 | `--force` | Reinstall every mod file, even those that already match the latest build. |
 | `--backup-saves` | Copy the saves before an update too. By default only the first install copies them. |
@@ -392,6 +436,10 @@ Start with `check`.
 - **"To use this version of RED4ext, ensure your game is updated to patch …"** in the
   RED4ext log. The RED4ext does not match the game patch. Run the script again; it picks
   the matching one.
+- **Steam shows the game as running for a moment, and nothing starts.** A wrapper in the
+  launch options failed, often `game-performance` or `mangohud` where they are missing.
+  `check` names the one that cannot run; rerun the script with Steam closed to take
+  `game-performance` out, or add `--no-mangohud`.
 - **After a game patch.** Rerun the script; it picks the NightCoop build and RED4ext for
   the new patch. If the patch is newer than the script knows, it uses the RED4ext that
   NightCoop bundles, and leaves the mod sets as they are.
@@ -466,6 +514,12 @@ installation. It covers:
 - Steam open while installing;
 - game patch 2.5, an older patch (refused) and a newer one the tables do not know;
 - Cyber Engine Tweaks;
+- the launch options' wrappers, with stand-ins for their programs:
+  - `game-performance` added on CachyOS, and taken out where it cannot run (SteamOS,
+    Flatpak Steam, no power-profile tool it supports), with `--no-game-performance`
+    remembered;
+  - `--mangohud` and `--no-mangohud`, refused on SteamOS and in gamescope, and with Flatpak
+    Steam only when the extension for Steam's runtime is installed;
 - a hand-copied old NightCoop build;
 - updates in place: nothing changed when current, only differing files replaced, saves
   copied once, `--force` and `--backup-saves`;
