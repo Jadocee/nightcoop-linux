@@ -153,7 +153,7 @@ prefix to another Proton version, it replaces only Wine's own files.
 | `--steam-root DIR` | Use this Steam installation instead of detecting one. |
 | `--with-flight` | Also install Let There Be Flight and the mods it needs (see below). Later runs keep them up to date. |
 | `--without-flight` | Remove Let There Be Flight again. The mods it needed stay, because other mods use them too. |
-| `--with-mods` | Also install the mod set: Virtual Atelier with two stores, Quick Stash, No Intro Videos and the frameworks they need (see below). Later runs keep it up to date. |
+| `--with-mods` | Also install the mod set: Virtual Atelier with two stores, Virtual Car Dealer, Drive an Aerial Vehicle, Cyber Drift, Quick Stash, No Intro Videos and the frameworks they need (see below). Later runs keep it up to date. |
 | `--without-mods` | Remove the mod set's mods again. The frameworks stay. |
 | `--mods-from DIR` | Look for the Nexus Mods downloads in DIR instead of your Downloads folder. |
 
@@ -199,26 +199,37 @@ There Be Flight is installed.
 
 ### The mod set (`--with-mods`)
 
-| Mod | Source | What it does |
-| --- | --- | --- |
-| Virtual Atelier, the **Basic** file | Nexus Mods, [2987](https://www.nexusmods.com/cyberpunk2077/mods/2987?tab=files) | Online stores for clothing and items, opened from in-game computers |
-| A.G.I.S. (All Game Items Store) | Nexus Mods, [10909](https://www.nexusmods.com/cyberpunk2077/mods/10909?tab=files) | A Virtual Atelier store selling every item in the game |
-| Night City Marketplace | Nexus Mods, [4433](https://www.nexusmods.com/cyberpunk2077/mods/4433?tab=files) | Lore-friendly Virtual Atelier stores of the game's own items |
-| Quick Stash | Nexus Mods, [30016](https://www.nexusmods.com/cyberpunk2077/mods/30016?tab=files) | Moves your inventory to V's stash or your car in one go (not equipped or quest items) |
-| No Intro Videos | Nexus Mods, [533](https://www.nexusmods.com/cyberpunk2077/mods/533?tab=files) | Skips the logo videos at start-up |
-| Cyber Engine Tweaks 1.38.1 | GitHub, automatic | Runs Lua mods such as Quick Stash |
-| Codeware 1.21.2 | GitHub, automatic | The library Virtual Atelier is built on |
-| TweakXL 1.12.0, ArchiveXL 1.28.6 | GitHub, automatic | Load game-data changes and new assets, for the many item mods that use them |
-| redscript 0.5.32 | GitHub, automatic | Compiles the script mods, NightCoop's included |
+| Mod | Source | For game 2.5 | What it does |
+| --- | --- | --- | --- |
+| Virtual Atelier | Nexus Mods, [2987](https://www.nexusmods.com/cyberpunk2077/mods/2987?tab=files) | 1.6.4 or newer | Online stores for clothing and items, opened from in-game computers |
+| A.G.I.S. (All Game Items Store), its main file PUBLICNET | Nexus Mods, [10909](https://www.nexusmods.com/cyberpunk2077/mods/10909?tab=files) | 1.2.1 or newer | A Virtual Atelier store selling every item in the game |
+| Night City Marketplace | Nexus Mods, [4433](https://www.nexusmods.com/cyberpunk2077/mods/4433?tab=files) | 2.3.0 or newer | Lore-friendly Virtual Atelier stores of the game's own items |
+| Virtual Car Dealer | Nexus Mods, [4454](https://www.nexusmods.com/cyberpunk2077/mods/4454?tab=files) | 2.3.0 or newer | A car dealer on in-game computers for the vehicles other mods add; it sells none by itself |
+| Drive an Aerial Vehicle | Nexus Mods, [13842](https://www.nexusmods.com/cyberpunk2077/mods/13842?tab=files) | 3.5.0 or newer | Fly AVs and helicopters, with an autopilot; buy them at Virtual Car Dealer |
+| Cyber Drift 2.0, its Light file | Nexus Mods, [8306](https://www.nexusmods.com/cyberpunk2077/mods/8306?tab=files) | 2.31 or newer | Smoother drifting over a wider range of angles |
+| Quick Stash | Nexus Mods, [30016](https://www.nexusmods.com/cyberpunk2077/mods/30016?tab=files) | 1.1 or newer | Moves your inventory to V's stash or your car in one go (not equipped or quest items) |
+| No Intro Videos, its archive file | Nexus Mods, [533](https://www.nexusmods.com/cyberpunk2077/mods/533?tab=files) | 0.5 or newer | Skips the logo videos at start-up |
+| Native Settings UI | Nexus Mods, [3518](https://www.nexusmods.com/cyberpunk2077/mods/3518?tab=files) | 1.97 or newer | The settings pages of Drive an Aerial Vehicle and Cyber Drift |
+| Mod Settings 0.2.28 | GitHub, automatic | | The settings page Virtual Atelier needs |
+| Audioware 1.11.1 | GitHub, automatic | | Plays mods' own sounds, Drive an Aerial Vehicle's among them |
+| Cyber Engine Tweaks 1.38.1 | GitHub, automatic | | Runs Lua mods: Quick Stash, Cyber Drift, Drive an Aerial Vehicle |
+| Codeware 1.21.2 | GitHub, automatic | | The library most of the set is built on |
+| TweakXL 1.12.0, ArchiveXL 1.28.6 | GitHub, automatic | | Load game-data changes and new assets |
+| redscript 0.5.32 | GitHub, automatic | | Compiles the script mods, NightCoop's included |
 
-Nexus Mods does not let scripts download files (a browser check, and an API that needs
-each user's key), so you download those five yourself:
+"For game 2.5" is the oldest release known to work with the patch: a download older than
+that is passed over, with the reason. Nexus Mods does not let scripts download files (a
+browser check, and an API that needs each user's key; downloads through it need Premium),
+so you download the Nexus mods yourself:
 
-1. Run `nightcoop-install --with-mods`. It installs the frameworks and prints the Nexus
-   page of each mod you have not downloaded yet.
+1. Run `nightcoop-install --with-mods`. It installs the frameworks from GitHub and prints
+   the Nexus page of each mod you have not downloaded yet, and which file to take where a
+   mod has several.
 2. Sign in to Nexus Mods (a free account is enough). On each page's Files tab, choose
-   **Manual download**; for Virtual Atelier, take the **Basic** file. Keep the name Nexus
-   gives the file: it holds the mod's ID, which is how the script recognises it.
+   **Manual download**. Keep the name Nexus gives the file: it holds the mod's ID, which is
+   how the script recognises it. Both of Nexus's names are understood
+   (`Name-ID-version-time.zip`, and since 2026 `Name ID version date key.zip`), also when
+   the browser adds " (1)" or the spaces became underscores.
 3. Run the script again. It finds the files in your Downloads folder (or the folder given
    with `--mods-from`) and installs them. It keeps a copy in
    `~/.cache/nightcoop-linux/mods`, so you may delete the downloads. To update one of
@@ -233,24 +244,52 @@ reported and passed over for an older copy, if there is one. A mod whose require
 missing is left out with a warning; for example, a store without Virtual Atelier would
 stop redscript from compiling every script, NightCoop's included.
 
+**What the mods write while you play stays yours.** Drive an Aerial Vehicle keeps its
+settings, the AVs you own and the map it learns as you fly in `Data/`; Cyber Drift keeps
+its car lists and drift models in `custom/`; every Cyber Engine Tweaks mod may keep a
+`db.sqlite3`. Reruns and updates leave these as they are. A file is replaced only when a
+new release of the mod changes the file it ships, and your copy is backed up first.
+
 **How the set stays compatible with NightCoop:**
 
-- **Virtual Atelier's Basic file only.** The Full file needs Mod Settings, which replaces
-  the pause, death and main menus, where NightCoop's co-op entry lives; NightCoop's own
-  guide lists the overlap. The script never installs a Virtual Atelier file with "Full" in
-  its name.
+- **Mod Settings, which Virtual Atelier needs.** NightCoop's guide lists it as replacing
+  the pause, death and main menus, where NightCoop's co-op entry lives. Its releases for
+  2.5 (0.2.22 and later) no longer replace them: they add their entry beside the game's
+  and call the game's own functions. Check once that the co-op entry is still in the main
+  and pause menus. (Earlier versions of this script installed Virtual Atelier's Basic
+  file to avoid Mod Settings, but that edition ended with 1.2.4 in 2024; every release
+  since needs Mod Settings.)
 - **Stores of the game's own items.** What you buy from them is an ordinary game item, so
   partners without the stores see it too. Stores of modded outfits would need every player
   to install the same outfit mods, so none are included.
+- **Cars and AVs of mods.** A partner sees your modded car, or your Drive an Aerial Vehicle
+  AV, only when they have the mod that adds it; otherwise NightCoop shows a game vehicle
+  with as many seats in its place. A car bought from Virtual Car Dealer opens in a guest's
+  garage in the host's world: NightCoop reads its name from the mod's own TweakXL files.
+  So the simplest rule is the same mods for everyone. Drive an Aerial Vehicle's hooks call
+  the game's own functions, its hook on dialogue choices included, which NightCoop relies
+  on.
+- **Native Settings UI** adds its menu entry through the same function as NightCoop's
+  co-op entry and calls the original, which NightCoop's guide names as the safe way.
+- **Audioware** is on NightCoop's list of mods it recognises (it hooks the time system,
+  saving and menus). Its author lists issues on some Wine setups; if mods' sounds stay
+  silent under Proton, that is the likely cause.
+- **Cyber Drift** changes only how your own car handles. Partners' cars in your game are
+  mirrors that NightCoop moves, so their handling is not affected. Its files are labelled
+  for game 2.31 and have not been updated for 2.5 yet.
+- **No Intro Videos**: the archive file replaces the start-up videos rather than hooking
+  the game. The script never installs its redscript file, which hooks the start-up where
+  NightCoop skips the intro itself.
 - **Browser Extension is left out.** It adds Virtual Atelier to the in-game browser, but
   players report it broken since patch 2.3, and no update for 2.5 was found. Virtual
   Atelier's stores open from in-game computers without it.
+- **CPU Optimization (and its Plus edition) is left out.** It makes crowds spawn and
+  despawn around V, while in co-op the host leads the crowd for every player, so NPCs
+  would pop in and vanish near partners. The Plus edition also needs the Ultra Plus
+  graphics mod.
 - **Quick Stash in co-op:** everyone in a session plays in the host's world, so the stash a
   guest opens there is not the guest's own. Move items in your own game, or as the host;
   the script reminds you of this.
-- **No Intro Videos** replaces the start-up videos rather than hooking the game, so it
-  does not overlap NightCoop's own intro skip. Its page lists patch 2.3 and later, and
-  players report it working on 2.5.
 - **Cyber Engine Tweaks mods** work with NightCoop. One that replaces a game function
   without calling the original can break parts of co-op; NightCoop names such conflicts
   in its log (`red4ext/logs/nightcoop-*.log`). On its first start, Cyber Engine Tweaks
@@ -265,12 +304,14 @@ stop redscript from compiling every script, NightCoop's included.
 - **Shared frameworks** (redscript, ArchiveXL, TweakXL) are installed once.
 - **Copies you installed yourself:** a framework copy that is newer and built for the same
   patch is kept. Any other copy is replaced, and backed up like every file the script
-  replaces. redscript has no readable version, so it is always the paired build.
+  replaces. redscript and Audioware have no readable version, so they are always the
+  paired build.
 - **Removing them:** `--without-flight` removes Let There Be Flight, and `--without-mods`
-  removes the five Nexus mods, Quick Stash from inside Cyber Engine Tweaks' folder too.
-  The frameworks stay, because many other mods need them. `uninstall` removes everything
-  the script installed and puts back the game files it replaced: the game's script
-  compiler, which redscript replaces, and the input files Input Loader changes.
+  removes the mods of the set, those inside Cyber Engine Tweaks' folder too. The
+  frameworks stay, Native Settings UI among them, because many other mods need them.
+  `uninstall` removes everything the script installed and puts back the game files it
+  replaced: the game's script compiler, which redscript replaces, and the input files
+  Input Loader changes.
 - **`check`** lists each set with its versions, and any mod still to download.
 
 ## Updating and undoing
@@ -361,9 +402,10 @@ The test suite passes on all three systems.
 **Not covered:**
 
 - the real game on real hardware, with a GPU and the main menu;
-- the Nexus Mods files, which scripts cannot download. The tests use archives laid out
-  like them, and the mods' support for patch 2.5 comes from their pages and players'
-  reports.
+- the Nexus Mods files, which scripts cannot download without Premium. Their names,
+  contents, versions and requirements were read through the Nexus Mods API, and the
+  tests use archives named and laid out like them; the mods' support for patch 2.5 comes
+  from their pages and changelogs.
 
 If you try it, a report of `check` output with the result is welcome.
 
@@ -394,13 +436,19 @@ installation. It covers:
   - an archive with the wrong SHA-256 refused;
 - the mod set:
   - the frameworks from GitHub, Cyber Engine Tweaks' override from the first run;
-  - the Nexus files found in the Downloads folder, a localised one too, and installed
-    from the script's own copy once they are deleted;
-  - Virtual Atelier's Basic file preferred and its Full file never installed;
+  - the Nexus files under both of Nexus's names, as the browser saves them, found in the
+    Downloads folder (a localised one too) and installed from the script's own copy once
+    they are deleted;
+  - the file to take of a mod with several (Cyber Drift's Light file, A.G.I.S.'s main
+    file, No Intro Videos' archive file), and downloads older than the patch needs passed
+    over;
+  - files the mods write while playing kept, and replaced only by a release that changes
+    them;
   - a missing requirement leaving a mod out, and missing downloads listed;
-  - an archive wrapped in a folder, and one without game folders refused;
-  - `--without-mods` removing only the mods, Quick Stash from inside Cyber Engine Tweaks'
-    folder too, while the flight set keeps the frameworks it shares;
+  - an archive wrapped in a folder, and a damaged one or one without game folders passed
+    over for a copy that works;
+  - `--without-mods` removing only the mods, those inside Cyber Engine Tweaks' folder
+    too, while the flight set keeps the frameworks it shares;
 - install, update, restore and uninstall back to a byte-identical game folder.
 
 `tests/mkfixtures.py` generates the PE files, archives (shaped like nightcoop.net's, the

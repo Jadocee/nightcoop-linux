@@ -123,15 +123,20 @@ cannot hold more than 128 KiB, so a full system CA bundle will not fit.
   Then add the patch to `PATCHES`, and its lines to `ADDON_SETS` in the installer (next
   bullet).
 - **A new release of a GitHub-hosted add-on** (Let There Be Flight, Input Loader,
-  ArchiveXL, TweakXL, redscript, Codeware, Cyber Engine Tweaks): update its line in
-  `ADDON_SETS`: the version, the archive's URL and its SHA-256. The game patch a release
-  supports is in the project's README or release notes at that tag. For Let There Be
-  Flight and Input Loader, it is also the "Built for" version in the DLL
+  ArchiveXL, TweakXL, redscript, Codeware, Cyber Engine Tweaks, Mod Settings, Audioware):
+  update its line in `ADDON_SETS`: the version, the archive's URL and its SHA-256. The
+  game patch a release supports is in the project's README or release notes at that tag.
+  For Let There Be Flight and Input Loader, it is also the "Built for" version in the DLL
   (`nightcoop-install __py pestr <dll> Comments`). For Cyber Engine Tweaks, it is
   `Image::GetSupportedVersion()` in its source.
-- **The Nexus-only mods** have no pinned version: the installer takes the newest file of
-  each that the user has downloaded. For a new game patch, check each mod's page, and add
-  its line for the patch only once it supports it.
+- **The Nexus-only mods** have no pinned file: the installer takes the newest file of each
+  that the user has downloaded, and its version column is the oldest release known to work
+  with the patch. For a new game patch, check each mod's page and changelog (the Nexus Mods
+  API, with a personal key, gives the file names, contents, versions and requirements), and
+  add its line for the patch only once it supports it. Which file to take of a mod with
+  several, and which never to take, is in its source (`nexus:<id>:<prefer>:<avoid>,...`),
+  with the reasons in `nexus_file` and `nexus_avoided`. Files a mod rewrites while the game
+  runs go in `ADDON_STATE`.
 - **A new SteamOS release:** set `STEAMOS_BRANCH`; the image uses whichever of Valve's
   repositories exist for it.
 - **A new Proton or NightCoop build:** rebuild with `--build`; the images take the current

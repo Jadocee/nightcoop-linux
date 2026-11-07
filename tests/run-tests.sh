@@ -320,66 +320,90 @@ cp "$T/good.zip" "$Z"
 expect "an archive that does not match its SHA-256 is refused before anything changes" '[ $RC != 0 ] && [[ "$OUT" == *"SHA-256 mismatch for TweakXL-1.12.0.zip"* ]] && [ "$BEFORE" = "$(snapshot "$G")" ]' "$OUT"
 
 # ----------------------------------------------------------------- mods ----
-section "Mods (--with-mods): Virtual Atelier and its stores, Quick Stash, No Intro Videos"
+section "Mods (--with-mods): Virtual Atelier and its stores, Virtual Car Dealer, Drive an Aerial Vehicle, Cyber Drift and more"
 newworld mods native; OSR="$T/os-arch"
 D="$H/Downloads"; mkdir -p "$D"; NX="$FIX/nexus"
-P="$G/red4ext/Plugins"; CETM="$G/bin/x64/plugins/cyber_engine_tweaks/mods"; PRISTINE_MODS="$(snapshot "$G")"
-cp "$NX/Virtual Atelier - Basic-2987-1-6-4-1730000000.zip" "$NX/Virtual Atelier - Full-2987-1-6-4-1730000001.zip" "$NX/No Intro Videos-533-1-0-1600000000.zip" "$D/"
-cp "$NX/Virtual Atelier - Full-2987-1-6-4-1730000001.zip" "$D/Virtual Atelier-2987-1-6-5-1730000009.zip"   # newer, and says no edition
+P="$G/red4ext/Plugins"; CETM="$G/bin/x64/plugins/cyber_engine_tweaks/mods"; DAV="$CETM/DriveAerialVehicle"; PRISTINE_MODS="$(snapshot "$G")"
+# The first downloads: Virtual Atelier as Nexus names files since 2026 (a second copy, as the browser names it)
+# and its last Basic file (2024); both files of No Intro Videos; Cyber Drift's Light file, a newer one that is not
+# Light, and its 2.3 file
+cp "$NX/Virtual Atelier - Basic-2987-1-2-4-1706771312.zip" \
+   "$NX/No Intro Videos-533-0-5-1721546294.zip" "$NX/No Intro Videos - redscript-533-0-8-1760416944.zip" \
+   "$NX/CyberDrift 2.0 Light for game ver. 2.31 8306 2.31 2026-08-03T18-29Z 4rpqrKU17.zip" \
+   "$NX/Cyber Drift 2.0 for game ver. 2.5 8306 2.5 2026-11-03T10-00Z Rq4tLm9Wx.zip" \
+   "$NX/Cyber Drift for game 2.3 TweakXL-8306-2-3-1754137206.zip" "$D/"
+cp "$NX/Virtual Atelier 2987 1.6.4 2026-10-25T17-42Z HncQn22j7.zip" "$D/Virtual Atelier 2987 1.6.4 2026-10-25T17-42Z HncQn22j7 (1).zip"
 # xdg-user-dir names the home folder when no Downloads folder is set; ~/Downloads is used then
 mkdir -p "$T/xdg-unset" "$T/xdg-fr"
 printf '#!/bin/sh\necho "$HOME"\n' > "$T/xdg-unset/xdg-user-dir"; printf '#!/bin/sh\necho "$HOME/T\303\251l\303\251chargements"\n' > "$T/xdg-fr/xdg-user-dir"
 chmod +x "$T/xdg-unset/xdg-user-dir" "$T/xdg-fr/xdg-user-dir"
 PATH="$T/xdg-unset:$PATH" run install --yes --with-mods
-expect "the frameworks come from GitHub" '[ $RC = 0 ] && [ "$(fver "$G/bin/x64/plugins/cyber_engine_tweaks.asi")" = 1.38.1 ] && [ -f "$G/bin/x64/version.dll" ] && [ "$(fver "$P/Codeware/Codeware.dll")" = 1.21.2 ] && [ -f "$P/TweakXL/TweakXL.dll" ] && [ -f "$P/ArchiveXL/ArchiveXL.dll" ] && grep -q "redscript lib 0.5.32" "$G/engine/tools/scc_lib.dll"' "$OUT"
+expect "the frameworks come from GitHub, Mod Settings and Audioware among them" '[ $RC = 0 ] && [ "$(fver "$G/bin/x64/plugins/cyber_engine_tweaks.asi")" = 1.38.1 ] && [ -f "$G/bin/x64/version.dll" ] && [ "$(fver "$P/Codeware/Codeware.dll")" = 1.21.2 ] && [ -f "$P/TweakXL/TweakXL.dll" ] && [ -f "$P/ArchiveXL/ArchiveXL.dll" ] && grep -q "redscript lib 0.5.32" "$G/engine/tools/scc_lib.dll" && [ "$(fver "$P/mod_settings/mod_settings.dll")" = 0.2.28 ] && [ -f "$P/audioware/audioware.dll" ]' "$OUT"
 expect "Cyber Engine Tweaks loads from the first run: its override is set" '[ "$(hp reg-get "$PFX/user.reg" "$REG_KEY" version)" = native,builtin ] && [[ "$(launch_opts)" == *"winmm,version=n,b"* ]]' "$(launch_opts)"
-expect "the Basic file of Virtual Atelier is chosen over the Full one and a newer one that names no edition" '[ -f "$G/r6/scripts/VirtualAtelier/Basic.reds" ] && [ ! -e "$G/r6/scripts/VirtualAtelier/Full.reds" ] && [ ! -e "$CETM/VirtualAtelier" ] && [[ "$OUT" != *"does not look like the basic file"* ]]' "$OUT"
-expect "No Intro Videos installed" '[ -f "$G/archive/pc/mod/NoIntroVideos.archive" ]' "$OUT"
-expect "what is not downloaded yet is listed with its Nexus page" '[[ "$OUT" == *"A.G.I.S.: https://www.nexusmods.com/cyberpunk2077/mods/10909?tab=files"* ]] && [[ "$OUT" == *"Night City Marketplace: https://www.nexusmods.com/cyberpunk2077/mods/4433?tab=files"* ]] && [[ "$OUT" == *"Quick Stash: https://www.nexusmods.com/cyberpunk2077/mods/30016?tab=files"* ]]' "$OUT"
-expect "check lists the mods and what is missing" '[[ "$OUT" == *"Mods:"*"Virtual Atelier 1.6.4, No Intro Videos 1.0, with redscript 0.5.32, ArchiveXL 1.28.6, TweakXL 1.12.0, Codeware 1.21.2, Cyber Engine Tweaks 1.38.1 (kept up to date by this script)"* ]] && [[ "$OUT" == *"missing: A.G.I.S., Night City Marketplace, Quick Stash"* ]]' "$OUT"
-rm "$D"/Virtual*   # the Downloads folder cleaned up: the installer kept a copy
-cp "$NX/A.G.I.S. - All Game Items Store-10909-2-1-1720000000.zip" "$NX/Night City Marketplace-4433-1-2-1700000000.zip" "$NX/Quick Stash - Transfer All Inventory Items To V's Stash-30016-1-1-1720000000.zip" "$D/"
+expect "Virtual Atelier as Nexus names files since 2026 (a browser's second copy), not its 2024 Basic file" '[ -f "$G/r6/scripts/virtual-atelier-full/Config.reds" ] && [ ! -e "$G/r6/scripts/VirtualAtelier" ]' "$OUT"
+expect "No Intro Videos: the archive file, never the redscript one" '[ -f "$G/archive/pc/mod/NoIntroVideos.archive" ] && [ ! -e "$G/r6/scripts/NoIntroVideos" ]' "$OUT"
+expect "Cyber Drift: the Light file, over a newer full one and the one for 2.3" '[ -f "$CETM/CyberDrift Light/init.lua" ] && [ ! -e "$CETM/CyberDrift" ] && [ ! -e "$G/r6/tweaks/CyberDrift" ] && [[ "$OUT" != *"does not look like the light file"* ]]' "$OUT"
+expect "what is not downloaded yet is listed with its Nexus page" '[[ "$OUT" == *"A.G.I.S. (the main file, PUBLICNET): https://www.nexusmods.com/cyberpunk2077/mods/10909?tab=files"* ]] && [[ "$OUT" == *"Night City Marketplace: https://www.nexusmods.com/cyberpunk2077/mods/4433?tab=files"* ]] && [[ "$OUT" == *"Quick Stash: https://www.nexusmods.com/cyberpunk2077/mods/30016?tab=files"* ]] && [[ "$OUT" == *"Native Settings UI: https://www.nexusmods.com/cyberpunk2077/mods/3518?tab=files"* ]] && [[ "$OUT" == *"Virtual Car Dealer: https://www.nexusmods.com/cyberpunk2077/mods/4454?tab=files"* ]] && [[ "$OUT" == *"Drive an Aerial Vehicle: https://www.nexusmods.com/cyberpunk2077/mods/13842?tab=files"* ]]' "$OUT"
+run check
+expect "check lists the mods and what is missing" '[[ "$OUT" == *"Mods:"*"Virtual Atelier 1.6.4, No Intro Videos 0.5, Cyber Drift 2.31, with redscript 0.5.32, ArchiveXL 1.28.6, TweakXL 1.12.0, Codeware 1.21.2, Cyber Engine Tweaks 1.38.1, Mod Settings 0.2.28, Audioware 1.11.1 (kept up to date by this script)"* ]] && [[ "$OUT" == *"missing: Native Settings UI, A.G.I.S., Night City Marketplace, Virtual Car Dealer, Quick Stash, Drive an Aerial Vehicle"* ]]' "$OUT"
+find "$D" -maxdepth 1 -type f -delete   # the Downloads folder cleaned up: the installer kept its own copies
+cp "$NX/PUBLICNET-10909-1-2-1-1702220953.zip" "$NX/BLACKWALL-10909-1-2-1-1702221109.zip" "$NX/Darks Night City Marketplace-4433-2-3-0-1757877636.zip" \
+   "$NX/Quick Stash-30016-v1-1-1779816414.zip" "$NX/Virtual Car Dealer 4454 2.3.0 2026-10-25T11-18Z lcXrcZZMt.zip" \
+   "$NX/Native Settings UI 1.97 3518 1.97 2026-10-22T15-26Z cB3xB00Va.zip" "$NX/Drive an Aerial Vehicle 13842 3.5.0 2026-10-26T16-09Z mPgaPVV1e.zip" "$D/"
 run update --yes
-expect "the rest install once downloaded, a wrapped archive too, without its read-me" '[ $RC = 0 ] && [ -f "$G/r6/scripts/AGIS/agis.reds" ] && [ ! -e "$G/readme.txt" ] && [ ! -e "$G/AGIS" ] && [ -f "$G/r6/scripts/NCMarketplace/stores.reds" ] && [ -f "$CETM/QuickStash/init.lua" ]' "$OUT"
-expect "Virtual Atelier stays, from the installer's own copy" '[ -f "$G/r6/scripts/VirtualAtelier/Basic.reds" ] && [[ "$OUT" != *"Virtual Atelier (the Basic file):"* ]]' "$OUT"
-expect "Quick Stash comes with its co-op caution" '[[ "$OUT" == *"a guest'"'"'s stash there is not their own"* ]]' "$OUT"
+expect "the rest install once downloaded: A.G.I.S.'s main file, out of its folder, without its read-me" '[ $RC = 0 ] && [ -f "$G/r6/scripts/AGIS/agis.reds" ] && [ ! -e "$G/r6/scripts/AGIS_BLACKWALL" ] && [ ! -e "$G/readme.txt" ] && [ ! -e "$G/AGIS" ] && [ -f "$G/r6/scripts/NCMarketplace/stores.reds" ] && [ -f "$CETM/QuickStash/init.lua" ] && [ -f "$G/r6/scripts/VirtualCarDealer/core/CarDealer-System.reds" ] && [ -f "$CETM/nativeSettings/init.lua" ] && [ -f "$DAV/init.lua" ] && [ -f "$P/DriveAerialVehicle/DriveAerialVehicle.dll" ]' "$OUT"
+expect "the mods downloaded first stay, from the installer's own copies" '[ -f "$G/r6/scripts/virtual-atelier-full/Config.reds" ] && [ -f "$CETM/CyberDrift Light/init.lua" ] && [[ "$OUT" != *"Virtual Atelier: https://"* ]]' "$OUT"
+expect "co-op notes: Quick Stash, and cars and AVs of mods" '[[ "$OUT" == *"a guest'"'"'s stash there is not their own"* ]] && [[ "$OUT" == *"otherwise NightCoop shows a game car with as many seats"* ]]' "$OUT"
 B1="$(newest_backup)"
 run update --yes
 expect "with everything downloaded and in place, a rerun changes nothing" '[ $RC = 0 ] && [[ "$OUT" == *"everything is up to date; nothing to do"* ]] && [ "$(newest_backup)" = "$B1" ]' "$OUT"
-cp "$FIX/nexus-bad/No Intro Videos-533-1-1-1700000000.zip" "$D/"
+# Playing: Drive an Aerial Vehicle saves its settings and learns the map; Cyber Drift's car list is edited
+printf '{"language": "jp-jp"}\n' > "$DAV/Data/user_setting_v3.json"; printf 'learned 0 0' > "$DAV/Data/map_bin/chunk_0_0.bin"
+printf 'learned 0 1' > "$DAV/Data/map_bin/chunk_0_1.bin"; printf '{"cars": ["mine"]}\n' > "$CETM/CyberDrift Light/custom/car_list.json"
+printf 'SQLite format 3' > "$CETM/CyberDrift Light/db.sqlite3"
 run update --yes
-expect "a newer download without game folders is passed over for the copy that works" '[ $RC = 0 ] && [[ "$OUT" == *"No Intro Videos-533-1-1-1700000000.zip has no game folders"* ]] && [[ "$OUT" != *"none of its downloads can be used"* ]] && [[ "$OUT" == *"everything is up to date; nothing to do"* ]] && [ -f "$G/archive/pc/mod/NoIntroVideos.archive" ]' "$OUT"
-rm "$H/.cache/nightcoop-linux/mods/No Intro Videos-533-1-0-1600000000.zip" "$D/No Intro Videos-533-1-0-1600000000.zip"   # no good copy left
-printf 'not a zip' > "$D/No Intro Videos-533-1-2-1700000002.zip"
+expect "files the mods write to while the game runs stay as the player has them" '[ $RC = 0 ] && [[ "$OUT" == *"everything is up to date; nothing to do"* ]] && grep -q jp-jp "$DAV/Data/user_setting_v3.json" && grep -q "learned 0 0" "$DAV/Data/map_bin/chunk_0_0.bin" && grep -q mine "$CETM/CyberDrift Light/custom/car_list.json" && grep -q SQLite "$CETM/CyberDrift Light/db.sqlite3"' "$OUT"
+cp "$FIX/nexus-later/Drive an Aerial Vehicle 13842 3.5.1 2026-11-02T09-30Z Zx81kQp0a.zip" "$D/"
 run update --yes
-expect "with no usable download at all, the installed copy stays" '[ $RC = 0 ] && [[ "$OUT" == *"could not unpack No Intro Videos-533-1-2-1700000002.zip: not a usable zip archive"* ]] && [[ "$OUT" == *"keeping the installed No Intro Videos: none of its downloads can be used"* ]] && [ -f "$G/archive/pc/mod/NoIntroVideos.archive" ]' "$OUT"
-rm "$D/No Intro Videos-533-1-1-1700000000.zip" "$D/No Intro Videos-533-1-2-1700000002.zip"
+expect "a new release replaces only what it changed: the settings stay, its new map file comes in (backed up)" '[ $RC = 0 ] && grep -q jp-jp "$DAV/Data/user_setting_v3.json" && grep -q "map 0 0 v2" "$DAV/Data/map_bin/chunk_0_0.bin" && grep -q "learned 0 1" "$DAV/Data/map_bin/chunk_0_1.bin" && [ "$(cat "$(newest_backup)game/bin/x64/plugins/cyber_engine_tweaks/mods/DriveAerialVehicle/Data/map_bin/chunk_0_0.bin")" = "learned 0 0" ]' "$OUT"
+cp "$FIX/nexus-bad/No Intro Videos-533-0-6-1730000000.zip" "$D/"
+run update --yes
+expect "a newer download without game folders is passed over for the copy that works" '[ $RC = 0 ] && [[ "$OUT" == *"No Intro Videos-533-0-6-1730000000.zip has no game folders"* ]] && [[ "$OUT" != *"none of its downloads can be used"* ]] && [[ "$OUT" == *"everything is up to date; nothing to do"* ]] && [ -f "$G/archive/pc/mod/NoIntroVideos.archive" ]' "$OUT"
+rm "$H/.cache/nightcoop-linux/mods/No Intro Videos-533-0-5-1721546294.zip"   # no good copy left
+printf 'not a zip' > "$D/No Intro Videos-533-0-7-1740000000.zip"
+run update --yes
+expect "with no usable download at all, the installed copy stays" '[ $RC = 0 ] && [[ "$OUT" == *"could not unpack No Intro Videos-533-0-7-1740000000.zip: not a usable zip archive"* ]] && [[ "$OUT" == *"keeping the installed No Intro Videos: none of its downloads can be used"* ]] && [ -f "$G/archive/pc/mod/NoIntroVideos.archive" ]' "$OUT"
+rm "$D/No Intro Videos-533-0-6-1730000000.zip" "$D/No Intro Videos-533-0-7-1740000000.zip"
 run update --yes --with-flight
 expect "both sets: the shared frameworks once, Let There Be Flight added" '[ $RC = 0 ] && [ -f "$P/let_there_be_flight/let_there_be_flight.dll" ] && [[ "$OUT" == *"Add-ons: flight, mods"* ]]' "$OUT"
 run update --yes --without-mods
-expect "--without-mods removes the mods, Quick Stash from inside Cyber Engine Tweaks too" '[ $RC = 0 ] && [ ! -e "$G/r6/scripts/VirtualAtelier" ] && [ ! -e "$G/r6/scripts/AGIS" ] && [ ! -e "$CETM/QuickStash" ] && [ ! -e "$G/archive/pc/mod/NoIntroVideos.archive" ]' "$OUT"
-expect "the frameworks stay, and the flight set keeps its own" '[ -f "$G/bin/x64/plugins/cyber_engine_tweaks.asi" ] && [ -f "$G/bin/x64/plugins/cyber_engine_tweaks/scripts/autoexec.lua" ] && [ -f "$P/Codeware/Codeware.dll" ] && [ -f "$P/TweakXL/TweakXL.dll" ] && [ -f "$P/let_there_be_flight/let_there_be_flight.dll" ]' "$OUT"
+expect "--without-mods removes the mods, those inside Cyber Engine Tweaks' folder too" '[ $RC = 0 ] && [ ! -e "$G/r6/scripts/virtual-atelier-full" ] && [ ! -e "$G/r6/scripts/AGIS" ] && [ ! -e "$G/r6/scripts/VirtualCarDealer" ] && [ ! -e "$CETM/QuickStash" ] && [ ! -e "$G/archive/pc/mod/NoIntroVideos.archive" ] && [ ! -e "$CETM/CyberDrift Light" ] && [ ! -e "$DAV" ] && [ ! -e "$P/DriveAerialVehicle" ]' "$OUT"
+expect "the frameworks stay, and the flight set keeps its own" '[ -f "$G/bin/x64/plugins/cyber_engine_tweaks.asi" ] && [ -f "$G/bin/x64/plugins/cyber_engine_tweaks/scripts/autoexec.lua" ] && [ -f "$P/Codeware/Codeware.dll" ] && [ -f "$P/TweakXL/TweakXL.dll" ] && [ -f "$P/mod_settings/mod_settings.dll" ] && [ -f "$P/audioware/audioware.dll" ] && [ -f "$CETM/nativeSettings/init.lua" ] && [ -f "$P/let_there_be_flight/let_there_be_flight.dll" ]' "$OUT"
 run check
 expect "check: the flight set still kept up to date, the mods no longer" '[[ "$OUT" == *"Let There Be Flight:"*"0.3.20, with redscript 0.5.32, ArchiveXL 1.28.6, TweakXL 1.12.0, Input Loader 0.2.6 (kept up to date"* ]] && [[ "$OUT" == *"Mods:"*"not installed by this script (add --with-mods)"* ]]' "$OUT"
 run uninstall --yes
 expect "uninstall puts the game folder back exactly" '[ $RC = 0 ] && [ "$PRISTINE_MODS" = "$(snapshot "$G")" ]' "$(diff <(echo "$PRISTINE_MODS") <(snapshot "$G"))"
 newworld modsneeds native; OSR="$T/os-arch"; D="$H/Téléchargements"; mkdir -p "$D"   # a French desktop's Downloads folder
-cp "$FIX/nexus/A.G.I.S. - All Game Items Store-10909-2-1-1720000000.zip" "$FIX/nexus/Virtual Atelier - Full-2987-1-6-4-1730000001.zip" "$D/"
+cp "$NX/PUBLICNET-10909-1-2-1-1702220953.zip" "$NX/Virtual Atelier - Basic-2987-1-2-4-1706771312.zip" "$NX/No Intro Videos - redscript-533-0-8-1760416944.zip" \
+   "$NX/Drive an Aerial Vehicle 13842 3.5.0 2026-10-26T16-09Z mPgaPVV1e.zip" "$NX/Cyber Drift 2.0 for game ver. 2.31 8306 2.31 2026-07-03T23-03Z ymA1m8KJ2.zip" "$D/"
 PATH="$T/xdg-fr:$PATH" run install --yes --with-mods
-expect "Virtual Atelier's Full file alone is not installed (it needs Mod Settings, which clashes with NightCoop)" '[ $RC = 0 ] && [ ! -e "$G/r6/scripts/VirtualAtelier" ] && [[ "$OUT" == *"is the Full file of Virtual Atelier, which needs mods that conflict with NightCoop"* ]]' "$OUT"
-expect "a store without Virtual Atelier is left out (it would stop every script compiling)" '[ ! -e "$G/r6/scripts/AGIS" ] && [[ "$OUT" == *"A.G.I.S. needs Virtual Atelier, which is not here"* ]] && [[ "$OUT" == *"Virtual Atelier (the Basic file): https://www.nexusmods.com/cyberpunk2077/mods/2987?tab=files"* ]]' "$OUT"
-cp "$FIX/nexus/Virtual Atelier - Basic-2987-1-6-4-1730000000.zip" "$D/Virtual Atelier-2987-1-6-4-1730000005.zip"   # a file that names no edition
+expect "a download too old for the game patch is passed over, saying why" '[ $RC = 0 ] && [ ! -e "$G/r6/scripts/VirtualAtelier" ] && [[ "$OUT" == *"Virtual Atelier - Basic-2987-1-2-4-1706771312.zip is Virtual Atelier 1.2.4; game 2.5 needs 1.6.4 or newer"* ]]' "$OUT"
+expect "the redscript file of No Intro Videos is not installed, saying why and what to take" '[ ! -e "$G/r6/scripts/NoIntroVideos" ] && [[ "$OUT" == *"is not installed: it is the redscript file of No Intro Videos"* ]] && [[ "$OUT" == *"No Intro Videos (the archive file): https://www.nexusmods.com/cyberpunk2077/mods/533?tab=files"* ]]' "$OUT"
+expect "a store without Virtual Atelier is left out (it would stop every script compiling)" '[ ! -e "$G/r6/scripts/AGIS" ] && [[ "$OUT" == *"A.G.I.S. needs Virtual Atelier, which is not here"* ]] && [[ "$OUT" == *"Virtual Atelier: https://www.nexusmods.com/cyberpunk2077/mods/2987?tab=files"* ]]' "$OUT"
+expect "Drive an Aerial Vehicle without Native Settings UI is left out" '[ ! -e "$G/bin/x64/plugins/cyber_engine_tweaks/mods/DriveAerialVehicle" ] && [[ "$OUT" == *"Drive an Aerial Vehicle needs Native Settings UI, which is not here"* ]]' "$OUT"
+expect "Cyber Drift's other file is used when the Light one is not there, with a warning" '[ -f "$G/bin/x64/plugins/cyber_engine_tweaks/mods/CyberDrift/init.lua" ] && [[ "$OUT" == *"does not look like the light file of Cyber Drift; using it anyway"* ]]' "$OUT"
+cp "$NX/Virtual Atelier 2987 1.6.4 2026-10-25T17-42Z HncQn22j7.zip" "$D/Virtual_Atelier_2987_1.6.4_2026-10-25T17-42Z_HncQn22j7.zip"   # saved with underscores
 PATH="$T/xdg-fr:$PATH" run update --yes
-expect "a Virtual Atelier file that names no edition is used, with a warning, and the store follows" '[ $RC = 0 ] && [ -f "$G/r6/scripts/VirtualAtelier/Basic.reds" ] && [[ "$OUT" == *"does not look like the basic file of Virtual Atelier; using it anyway"* ]] && [ -f "$G/r6/scripts/AGIS/agis.reds" ]' "$OUT"
+expect "a download saved with underscores for spaces is recognised, and the store follows" '[ $RC = 0 ] && [ -f "$G/r6/scripts/virtual-atelier-full/Config.reds" ] && [ -f "$G/r6/scripts/AGIS/agis.reds" ]' "$OUT"
 newworld mods7z native; OSR="$T/os-arch"; D="$H/Downloads"; mkdir -p "$D" "$T/niv7z"
-python3 -I -m zipfile -e "$FIX/nexus/No Intro Videos-533-1-0-1600000000.zip" "$T/niv7z"
+python3 -I -m zipfile -e "$FIX/nexus/No Intro Videos-533-0-5-1721546294.zip" "$T/niv7z"
 if command -v bsdtar >/dev/null 2>&1; then   # Arch, CachyOS and SteamOS have it (pacman needs libarchive)
     ln -s /etc/hostname "$T/niv7z/archive/pc/mod/elsewhere"
-    bsdtar --format 7zip -cf "$D/No Intro Videos-533-1-0-1600000000.7z" -C "$T/niv7z" archive
+    bsdtar --format 7zip -cf "$D/No Intro Videos-533-0-5-1721546294.7z" -C "$T/niv7z" archive
     run install --yes --with-mods
     expect "a 7z download is unpacked with bsdtar, without the links in it (nor what they point to)" '[ $RC = 0 ] && [ -f "$G/archive/pc/mod/NoIntroVideos.archive" ] && [ ! -e "$G/archive/pc/mod/elsewhere" ] && [ ! -L "$G/archive/pc/mod/elsewhere" ]' "$OUT"
 else
-    printf '7z\274\257\047\034' > "$D/No Intro Videos-533-1-0-1600000000.7z"
+    printf '7z\274\257\047\034' > "$D/No Intro Videos-533-0-5-1721546294.7z"
     run install --yes --with-mods
     expect "without bsdtar, a 7z download is left out, saying why, and the rest installs" '[ $RC = 0 ] && [[ "$OUT" == *"a .7z archive needs bsdtar (from libarchive) to unpack"* ]] && [[ "$OUT" == *"No Intro Videos is left out"* ]] && [ ! -e "$G/archive/pc/mod/NoIntroVideos.archive" ] && [ -f "$G/bin/x64/plugins/cyber_engine_tweaks.asi" ]' "$OUT"
 fi
