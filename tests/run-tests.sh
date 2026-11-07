@@ -325,6 +325,7 @@ newworld mods native; OSR="$T/os-arch"
 D="$H/Downloads"; mkdir -p "$D"; NX="$FIX/nexus"
 P="$G/red4ext/Plugins"; CETM="$G/bin/x64/plugins/cyber_engine_tweaks/mods"; PRISTINE_MODS="$(snapshot "$G")"
 cp "$NX/Virtual Atelier - Basic-2987-1-6-4-1730000000.zip" "$NX/Virtual Atelier - Full-2987-1-6-4-1730000001.zip" "$NX/No Intro Videos-533-1-0-1600000000.zip" "$D/"
+cp "$NX/Virtual Atelier - Full-2987-1-6-4-1730000001.zip" "$D/Virtual Atelier-2987-1-6-5-1730000009.zip"   # newer, and says no edition
 # xdg-user-dir names the home folder when no Downloads folder is set; ~/Downloads is used then
 mkdir -p "$T/xdg-unset" "$T/xdg-fr"
 printf '#!/bin/sh\necho "$HOME"\n' > "$T/xdg-unset/xdg-user-dir"; printf '#!/bin/sh\necho "$HOME/T\303\251l\303\251chargements"\n' > "$T/xdg-fr/xdg-user-dir"
@@ -332,7 +333,7 @@ chmod +x "$T/xdg-unset/xdg-user-dir" "$T/xdg-fr/xdg-user-dir"
 PATH="$T/xdg-unset:$PATH" run install --yes --with-mods
 expect "the frameworks come from GitHub" '[ $RC = 0 ] && [ "$(fver "$G/bin/x64/plugins/cyber_engine_tweaks.asi")" = 1.38.1 ] && [ -f "$G/bin/x64/version.dll" ] && [ "$(fver "$P/Codeware/Codeware.dll")" = 1.21.2 ] && [ -f "$P/TweakXL/TweakXL.dll" ] && [ -f "$P/ArchiveXL/ArchiveXL.dll" ] && grep -q "redscript lib 0.5.32" "$G/engine/tools/scc_lib.dll"' "$OUT"
 expect "Cyber Engine Tweaks loads from the first run: its override is set" '[ "$(hp reg-get "$PFX/user.reg" "$REG_KEY" version)" = native,builtin ] && [[ "$(launch_opts)" == *"winmm,version=n,b"* ]]' "$(launch_opts)"
-expect "the Basic file of Virtual Atelier is chosen over the Full one" '[ -f "$G/r6/scripts/VirtualAtelier/Basic.reds" ] && [ ! -e "$G/r6/scripts/VirtualAtelier/Full.reds" ] && [ ! -e "$CETM/VirtualAtelier" ]' "$OUT"
+expect "the Basic file of Virtual Atelier is chosen over the Full one and a newer one that names no edition" '[ -f "$G/r6/scripts/VirtualAtelier/Basic.reds" ] && [ ! -e "$G/r6/scripts/VirtualAtelier/Full.reds" ] && [ ! -e "$CETM/VirtualAtelier" ] && [[ "$OUT" != *"does not look like the basic file"* ]]' "$OUT"
 expect "No Intro Videos installed" '[ -f "$G/archive/pc/mod/NoIntroVideos.archive" ]' "$OUT"
 expect "what is not downloaded yet is listed with its Nexus page" '[[ "$OUT" == *"A.G.I.S.: https://www.nexusmods.com/cyberpunk2077/mods/10909?tab=files"* ]] && [[ "$OUT" == *"Night City Marketplace: https://www.nexusmods.com/cyberpunk2077/mods/4433?tab=files"* ]] && [[ "$OUT" == *"Quick Stash: https://www.nexusmods.com/cyberpunk2077/mods/30016?tab=files"* ]]' "$OUT"
 expect "check lists the mods and what is missing" '[[ "$OUT" == *"Mods:"*"Virtual Atelier 1.6.4, No Intro Videos 1.0, with redscript 0.5.32, ArchiveXL 1.28.6, TweakXL 1.12.0, Codeware 1.21.2, Cyber Engine Tweaks 1.38.1 (kept up to date by this script)"* ]] && [[ "$OUT" == *"missing: A.G.I.S., Night City Marketplace, Quick Stash"* ]]' "$OUT"
@@ -347,7 +348,7 @@ run update --yes
 expect "with everything downloaded and in place, a rerun changes nothing" '[ $RC = 0 ] && [[ "$OUT" == *"everything is up to date; nothing to do"* ]] && [ "$(newest_backup)" = "$B1" ]' "$OUT"
 cp "$FIX/nexus-bad/No Intro Videos-533-1-1-1700000000.zip" "$D/"
 run update --yes
-expect "a newer download without game folders is passed over for the copy that works" '[ $RC = 0 ] && [[ "$OUT" == *"No Intro Videos-533-1-1-1700000000.zip has no game folders"* ]] && [[ "$OUT" == *"everything is up to date; nothing to do"* ]] && [ -f "$G/archive/pc/mod/NoIntroVideos.archive" ]' "$OUT"
+expect "a newer download without game folders is passed over for the copy that works" '[ $RC = 0 ] && [[ "$OUT" == *"No Intro Videos-533-1-1-1700000000.zip has no game folders"* ]] && [[ "$OUT" != *"none of its downloads can be used"* ]] && [[ "$OUT" == *"everything is up to date; nothing to do"* ]] && [ -f "$G/archive/pc/mod/NoIntroVideos.archive" ]' "$OUT"
 rm "$H/.cache/nightcoop-linux/mods/No Intro Videos-533-1-0-1600000000.zip" "$D/No Intro Videos-533-1-0-1600000000.zip"   # no good copy left
 printf 'not a zip' > "$D/No Intro Videos-533-1-2-1700000002.zip"
 run update --yes
@@ -367,13 +368,16 @@ cp "$FIX/nexus/A.G.I.S. - All Game Items Store-10909-2-1-1720000000.zip" "$FIX/n
 PATH="$T/xdg-fr:$PATH" run install --yes --with-mods
 expect "Virtual Atelier's Full file alone is not installed (it needs Mod Settings, which clashes with NightCoop)" '[ $RC = 0 ] && [ ! -e "$G/r6/scripts/VirtualAtelier" ] && [[ "$OUT" == *"is the Full file of Virtual Atelier, which needs mods that conflict with NightCoop"* ]]' "$OUT"
 expect "a store without Virtual Atelier is left out (it would stop every script compiling)" '[ ! -e "$G/r6/scripts/AGIS" ] && [[ "$OUT" == *"A.G.I.S. needs Virtual Atelier, which is not here"* ]] && [[ "$OUT" == *"Virtual Atelier (the Basic file): https://www.nexusmods.com/cyberpunk2077/mods/2987?tab=files"* ]]' "$OUT"
+cp "$FIX/nexus/Virtual Atelier - Basic-2987-1-6-4-1730000000.zip" "$D/Virtual Atelier-2987-1-6-4-1730000005.zip"   # a file that names no edition
+PATH="$T/xdg-fr:$PATH" run update --yes
+expect "a Virtual Atelier file that names no edition is used, with a warning, and the store follows" '[ $RC = 0 ] && [ -f "$G/r6/scripts/VirtualAtelier/Basic.reds" ] && [[ "$OUT" == *"does not look like the basic file of Virtual Atelier; using it anyway"* ]] && [ -f "$G/r6/scripts/AGIS/agis.reds" ]' "$OUT"
 newworld mods7z native; OSR="$T/os-arch"; D="$H/Downloads"; mkdir -p "$D" "$T/niv7z"
 python3 -I -m zipfile -e "$FIX/nexus/No Intro Videos-533-1-0-1600000000.zip" "$T/niv7z"
 if command -v bsdtar >/dev/null 2>&1; then   # Arch, CachyOS and SteamOS have it (pacman needs libarchive)
     ln -s /etc/hostname "$T/niv7z/archive/pc/mod/elsewhere"
     bsdtar --format 7zip -cf "$D/No Intro Videos-533-1-0-1600000000.7z" -C "$T/niv7z" archive
     run install --yes --with-mods
-    expect "a 7z download is unpacked with bsdtar, without the links in it" '[ $RC = 0 ] && [ -f "$G/archive/pc/mod/NoIntroVideos.archive" ] && [ ! -L "$G/archive/pc/mod/elsewhere" ]' "$OUT"
+    expect "a 7z download is unpacked with bsdtar, without the links in it (nor what they point to)" '[ $RC = 0 ] && [ -f "$G/archive/pc/mod/NoIntroVideos.archive" ] && [ ! -e "$G/archive/pc/mod/elsewhere" ] && [ ! -L "$G/archive/pc/mod/elsewhere" ]' "$OUT"
 else
     printf '7z\274\257\047\034' > "$D/No Intro Videos-533-1-0-1600000000.7z"
     run install --yes --with-mods

@@ -227,9 +227,11 @@ each user's key), so you download those five yourself:
 Each archive's game folders (`archive`, `bin`, `engine`, `mods`, `r6`, `red4ext`) are
 installed, without read-me files or installer data, also when an archive wraps them in a
 folder of its own. Zip archives need nothing extra; 7z and RAR archives are unpacked with
-`bsdtar` from libarchive. A mod whose requirement is missing is left out with a warning;
-for example, a store without Virtual Atelier would stop redscript from compiling every
-script, NightCoop's included.
+`bsdtar` from libarchive, which SteamOS, CachyOS and Arch include. A download the script
+cannot use (damaged, without game folders, or a 7z or RAR archive with no `bsdtar`) is
+reported and passed over for an older copy, if there is one. A mod whose requirement is
+missing is left out with a warning; for example, a store without Virtual Atelier would
+stop redscript from compiling every script, NightCoop's included.
 
 **How the set stays compatible with NightCoop:**
 
@@ -353,8 +355,8 @@ game.
 The full install ran online as a normal user on CachyOS, for game 2.5, with Let There Be
 Flight. A launch through Proton afterwards started RED4ext both with and without the
 launch options. Adding the mod set then installed its frameworks, gave Cyber Engine
-Tweaks' loader its override and listed the Nexus downloads. The test suite passes on all
-three systems.
+Tweaks' loader its override and listed the Nexus downloads, and a rerun changed nothing.
+The test suite passes on all three systems.
 
 **Not covered:**
 

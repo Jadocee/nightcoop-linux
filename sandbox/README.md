@@ -68,8 +68,8 @@ build chosen. It then:
    the launch options, as when Steam is closed;
 5. adds `--with-mods`, which must install the mod set's frameworks from GitHub, give
    Cyber Engine Tweaks' loader the same override, and list the Nexus-only mods with their
-   pages (they cannot be downloaded by a script). This comes after the launches, because
-   Cyber Engine Tweaks would load into the stand-in.
+   pages (they cannot be downloaded by a script), and a rerun must then change nothing.
+   This comes after the launches, because Cyber Engine Tweaks would load into the stand-in.
 
 The versions it expects are read from the installer's `ADDON_SETS` table. `PATCHES` names
 the patches to run; a new patch needs its stand-in first (see *Keeping it current*).

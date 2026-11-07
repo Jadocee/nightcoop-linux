@@ -112,7 +112,7 @@ Let_There_Be_Flight    2.5 flight      mod  game  red4ext/plugins/let_there_be_f
 Codeware               2.5 mods        lib  minor red4ext/plugins/Codeware/Codeware.dll                       1.21.2 https://github.com/psiberx/cp2077-codeware/releases/download/v1.21.2/Codeware-1.21.2.zip 269b65b8b97d26ea85d4516f5eb34c01a19dc85e299be57fb4f764e16c164dd2
 Cyber_Engine_Tweaks    2.5 mods        lib  minor bin/x64/plugins/cyber_engine_tweaks.asi                     1.38.1 https://github.com/maximegmd/CyberEngineTweaks/releases/download/v1.38.1/cet_1_38_1.zip 2e52be4ed431fad787e64ecbf75db346b4224577d2b89894912bc3f159020e73
 Virtual_Atelier        2.5 mods        mod  -     -                                                           -      nexus:2987:basic:full
-A.G.I.S.              2.5 mods        mod  -     -                                                           -      nexus:10909
+A.G.I.S.               2.5 mods        mod  -     -                                                           -      nexus:10909
 Night_City_Marketplace 2.5 mods        mod  -     -                                                           -      nexus:4433
 Quick_Stash            2.5 mods        mod  -     -                                                           -      nexus:30016
 No_Intro_Videos        2.5 mods        mod  -     -                                                           -      nexus:533
@@ -2372,8 +2372,8 @@ plan_files() {   # PLAN_*: what copying the staged files would change in the gam
     PLAN_STALE=()
     while IFS=$'\x1f' read -r _ line; do [ -z "$line" ] || PLAN_STALE+=("$line"); done < <(tail -n +2 <<<"$plan")
     FILES_CHANGE=0; [ $((PLAN_ADDED + PLAN_REPLACED + PLAN_REMOVED)) = 0 ] || FILES_CHANGE=1
-    # dropping the flight set always writes a manifest without it: otherwise the next run would
-    # read the mods left in place as leftovers of the previous install and remove them
+    # dropping a set always writes a manifest without its mods: otherwise the next run would
+    # read the frameworks left in place as leftovers of the previous install and remove them
     [ "${#ADDON_DROP[@]}" = 0 ] || FILES_CHANGE=1
     PREFIX_CHANGE=0; { [ "$NEED_RT" = 1 ] || [ "$REG_STATE" = missing ]; } && PREFIX_CHANGE=1
     STEAM_CHANGE=0; { [ "$LO_STATE" = missing ] || [ "$LO_STATE" = broken ] || [ "$TOOL_STATE" = pending ]; } && STEAM_CHANGE=1

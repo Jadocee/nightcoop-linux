@@ -10,7 +10,8 @@
 #   3. runs it again as `update`, which must find everything current and change nothing;
 #   4. starts the stand-in game through Proton with the registry override alone (Steam open)
 #      and with the launch options as Steam applies them (Steam closed);
-#   5. adds --with-mods: the frameworks from GitHub, the Nexus-only mods listed to download.
+#   5. adds --with-mods: the frameworks from GitHub, the Nexus-only mods listed to download;
+#      a rerun must then change nothing.
 # Exits 1 if any step fails.
 #
 #   docker compose -f sandbox/compose.yaml run --rm install-and-launch
@@ -103,6 +104,12 @@ for patch in $PATCHES; do
         check_line "$WORK/mods-$patch.log" "Cyber Engine Tweaks' loader gets the override too" "^  DLL override: +winmm,version = native,builtin"
         check_line "$WORK/mods-$patch.log" "the Nexus-only mods listed with their pages" \
             "Virtual Atelier \\(the Basic file\\): https://www\\.nexusmods\\.com/cyberpunk2077/mods/2987"
+        if HOME="$home" bash "$NI" update --yes > "$WORK/mods-again-$patch.log" 2>&1; then
+            check_line "$WORK/mods-again-$patch.log" "with the frameworks in place, a rerun changes nothing" "everything is up to date; nothing to do"
+        else
+            say "    FAIL: the rerun with the mod set exited with an error:"; tail -n 15 "$WORK/mods-again-$patch.log" | sed 's/^/        /'
+            fails=$((fails + 1))
+        fi
     else
         say "    FAIL: --with-mods exited with an error:"; tail -n 15 "$WORK/mods-$patch.log" | sed 's/^/        /'
         fails=$((fails + 1))
