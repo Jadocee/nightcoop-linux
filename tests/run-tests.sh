@@ -30,7 +30,11 @@ NI="$T/nightcoop-install.sh"
 sed -e "s#^NIGHTCOOP_SITE=.*#NIGHTCOOP_SITE=\"file://$FIX/site\"#" \
     -e "s#^RED4EXT_URL=.*#RED4EXT_URL=\"file://$FIX/red4ext-1.31.0.zip\"#" \
     -e "s#^RED4EXT_SHA=.*#RED4EXT_SHA=\"$(cat "$FIX/red4ext.sha256")\"#" \
-    -e "s#^VCREDIST_URLS=.*#VCREDIST_URLS=(\"file://$FIX/site/vc_redist.x64.exe\")#" "$SCRIPT" > "$NI"
+    -e "s#^VCREDIST_URLS=.*#VCREDIST_URLS=(\"file://$FIX/site/vc_redist.x64.exe\")#" "$SCRIPT" |
+    awk -v table="$FIX/flight-set.txt" '   # the flight set from the fixtures
+        /^# >>> flight set/ { print; print "FLIGHT_SET=\""; while ((getline line < table) > 0) print line; print "\""; skip = 1; next }
+        /^# <<< flight set/ { skip = 0 }
+        !skip' > "$NI"
 chmod +x "$NI"
 for os in steamos:SteamOS cachyos:CachyOS arch:Arch; do
     printf 'NAME="%s"\nPRETTY_NAME="%s"\nID=%s\nID_LIKE=arch\n' "${os#*:}" "${os#*:}" "${os%%:*}" > "$T/os-${os%%:*}"
@@ -275,6 +279,48 @@ expect "an interrupted backup is passed over" '[ $RC = 0 ] && [[ "$OUT" != *"209
 run restore --yes
 run check
 expect "after undoing the repair, the hand-copied DLL is told apart again" '[[ "$OUT" == *"NightCoop:"*"0.2.1.0"*"changed since this script installed 0.2.0-beta"* ]]' "$OUT"
+
+# ------------------------------------------------- Let There Be Flight ----
+section "Let There Be Flight (--with-flight)"
+newworld fly native; OSR="$T/os-arch"
+P="$G/red4ext/Plugins"; PRISTINE_FLY="$(snapshot "$G")"
+fver() { hp pever "$1" | cut -d. -f1-3; }
+run install --yes
+expect "without the option, the set is only suggested" '[ $RC = 0 ] && [[ "$OUT" == *"Let There Be Flight:"*"not installed; NightCoop supports it in co-op (add --with-flight)"* ]] && [[ "$OUT" == *"Add --with-flight"* ]] && [ ! -e "$P/let_there_be_flight" ]' "$OUT"
+BEFORE="$(snapshot "$H")"
+run install --dry-run --with-flight
+expect "a dry run with the set changes nothing, not even the cache" '[ $RC = 0 ] && [[ "$OUT" == *"dry run finished"* ]] && [ "$BEFORE" = "$(snapshot "$H")" ]' "$OUT"
+run install --yes --with-flight
+expect "--with-flight installs the set paired with game 2.5" '[ $RC = 0 ] && [ "$(fver "$P/let_there_be_flight/let_there_be_flight.dll")" = 0.3.20 ] && [ "$(fver "$P/ArchiveXL/ArchiveXL.dll")" = 1.28.6 ] && [ "$(fver "$P/TweakXL/TweakXL.dll")" = 1.12.0 ] && [ "$(fver "$P/input_loader/input_loader.dll")" = 0.2.6 ] && grep -q "redscript lib 0.5.32" "$G/engine/tools/scc_lib.dll"' "$OUT"
+expect "the plan lists the set" '[[ "$OUT" == *"flight set      redscript 0.5.32, ArchiveXL 1.28.6, TweakXL 1.12.0, Input Loader 0.2.6, Let There Be Flight 0.3.20 (for game 2.5)"* ]]' "$OUT"
+expect "game files the set replaces are backed up" '[ "$(cat "$(newest_backup)game/engine/tools/scc.exe")" = "the game'"'"'s own script compiler" ] && [ -f "$(newest_backup)game/r6/cache/inputContexts.xml" ]' "$OUT"
+expect "check lists the set" '[[ "$OUT" == *"Let There Be Flight:"*"0.3.20, with redscript, ArchiveXL 1.28.6, TweakXL 1.12.0, Input Loader 0.2.6 (kept up to date by this script)"* ]]' "$OUT"
+B1="$(newest_backup)"
+run update --yes
+expect "the choice is remembered; a rerun changes and downloads nothing" '[ $RC = 0 ] && [[ "$OUT" == *"everything is up to date; nothing to do"* ]] && [ "$(newest_backup)" = "$B1" ] && [[ "$OUT" != *"downloading"* ]]' "$OUT"
+cp "$FIX/pe/axl-1.28.7/ArchiveXL.dll" "$P/ArchiveXL/ArchiveXL.dll"
+run update --yes
+expect "a newer ArchiveXL for the same patch, installed by hand, is kept" '[ $RC = 0 ] && [[ "$OUT" == *"keeping the installed ArchiveXL 1.28.7"* ]] && [ "$(fver "$P/ArchiveXL/ArchiveXL.dll")" = 1.28.7 ] && [ -f "$P/ArchiveXL/Scripts/ArchiveXL.reds" ]' "$OUT"
+cp "$FIX/pe/Cyberpunk2077-2.31.exe" "$G/bin/x64/Cyberpunk2077.exe"   # the game goes back to patch 2.31
+run update --yes
+expect "the set follows the game patch: the 2.31 builds" '[ $RC = 0 ] && [ "$(fver "$P/let_there_be_flight/let_there_be_flight.dll")" = 0.3.18 ] && [ "$(fver "$P/ArchiveXL/ArchiveXL.dll")" = 1.27.5 ] && [ "$(fver "$P/input_loader/input_loader.dll")" = 0.2.3 ] && grep -q "redscript lib 0.5.31" "$G/engine/tools/scc_lib.dll" && [ "$(hp pever "$G/red4ext/RED4ext.dll" product)" = 1.30.0 ]' "$OUT"
+expect "files only the 2.5 builds had are removed, the 2.31 ones added" '[ ! -e "$P/let_there_be_flight_uninstall.bat" ] && [ -f "$P/ArchiveXL/Scripts/Legacy.reds" ]' "$OUT"
+run update --yes --without-flight
+expect "--without-flight removes Let There Be Flight, folder and all" '[ $RC = 0 ] && [ ! -e "$P/let_there_be_flight" ]' "$OUT"
+expect "the mods it needed stay" '[ -f "$P/ArchiveXL/ArchiveXL.dll" ] && [ -f "$P/TweakXL/TweakXL.dll" ] && [ -f "$P/input_loader/input_loader.dll" ] && [ -f "$G/engine/tools/scc_lib.dll" ]' "$OUT"
+run update --yes
+expect "and stay on the next run too" '[ $RC = 0 ] && [ -f "$P/ArchiveXL/ArchiveXL.dll" ] && [ -f "$G/engine/tools/scc_lib.dll" ]' "$OUT"
+run check
+expect "check shows Let There Be Flight off again" '[[ "$OUT" == *"Let There Be Flight:"*"not installed; NightCoop supports it in co-op"* ]]' "$OUT"
+cp "$FIX/pe/Cyberpunk2077-2.5.exe" "$G/bin/x64/Cyberpunk2077.exe"
+run uninstall --yes
+expect "uninstall puts the game folder back exactly, the game's own files included" '[ $RC = 0 ] && [ "$PRISTINE_FLY" = "$(snapshot "$G")" ]' "$(diff <(echo "$PRISTINE_FLY") <(snapshot "$G"))"
+newworld flybad native; OSR="$T/os-arch"
+Z="$FIX/gh/TweakXL-1.12.0.zip"; cp "$Z" "$T/good.zip"; printf 'x' >> "$Z"
+BEFORE="$(snapshot "$G")"
+run install --yes --with-flight
+cp "$T/good.zip" "$Z"
+expect "an archive that does not match its SHA-256 is refused before anything changes" '[ $RC != 0 ] && [[ "$OUT" == *"SHA-256 mismatch for TweakXL-1.12.0.zip"* ]] && [ "$BEFORE" = "$(snapshot "$G")" ]' "$OUT"
 
 # ------------------------------------------------- Cyber Engine Tweaks ----
 section "Cyber Engine Tweaks installed alongside"

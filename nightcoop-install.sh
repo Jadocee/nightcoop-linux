@@ -40,6 +40,9 @@
 #   --red4ext-zip FILE    use a downloaded RED4ext release archive
 #   --vcredist FILE       use a downloaded VC_redist.x64.exe
 #   --steam-root DIR      use this Steam installation instead of detecting one
+#   --with-flight         also install Let There Be Flight (flying cars), which NightCoop
+#                         supports in co-op, with what it needs; kept up to date afterwards
+#   --without-flight      remove Let There Be Flight again (the mods it needed stay)
 #   --force               reinstall every mod file, even those that already match
 #   --backup-saves        copy the save games first (the default on a first install)
 #   --no-save-backup      do not copy them (the default when updating an earlier install)
@@ -71,6 +74,29 @@ RUNTIME_FLOOR="14.40"
 RED4EXT_COMPAT="1.31.0:3.0.88.46235 1.30.0:3.0.80.51928"
 REG_KEY='Software\Wine\AppDefaults\Cyberpunk2077.exe\DllOverrides'
 RED4EXT_CORE=("red4ext/RED4ext.dll" "bin/x64/winmm.dll" "red4ext/LICENSE.txt" "red4ext/THIRD_PARTY_LICENSES.txt")
+# Let There Be Flight and what it needs, per game patch (--with-flight). NightCoop supports
+# it in co-op: its archive ships the port (r6/scripts/NightCoopFlight), which compiles to
+# nothing without these. The pairings come from each project's README and release notes at
+# the tag, and from the "Built for" game version in the plugins' own DLLs.
+# A copy installed by hand stays when it is newer and for the same patch, as the rule says:
+# "game" compares the patch the DLL names (ProductVersion), "minor" the major.minor release
+# line; "-" has no readable version and is always the one below.
+#   component        patch version rule  version DLL  archive  SHA-256
+# >>> flight set
+FLIGHT_SET="
+redscript          2.31 0.5.31 -     -                                                   https://github.com/jac3km4/redscript/releases/download/v0.5.31/redscript-v0.5.31-windows.zip 799bbd88863f6728616f8d723c941ea15dff71ed5bbfd50c525f0d39ea0bf46b
+redscript          2.5  0.5.32 -     -                                                   https://github.com/jac3km4/redscript/releases/download/v0.5.32/redscript-v0.5.32-windows.zip 882c57a80b07e453bc8a34cd8430f460aceed789581de8743638e19dcfb7936f
+ArchiveXL          2.31 1.27.5 minor red4ext/plugins/ArchiveXL/ArchiveXL.dll             https://github.com/psiberx/cp2077-archive-xl/releases/download/v1.27.5/ArchiveXL-1.27.5.zip ce10bb94ca20367975f2362c6a1d47e1e5dd14cd4380f456628f0a96ce1d0913
+ArchiveXL          2.5  1.28.6 minor red4ext/plugins/ArchiveXL/ArchiveXL.dll             https://github.com/psiberx/cp2077-archive-xl/releases/download/v1.28.6/ArchiveXL-1.28.6.zip 25d0493a1b3e8ec4c26b7144a4d8f1a1def4d6dc840fff94b4c91c908583da09
+TweakXL            2.31 1.11.5 minor red4ext/plugins/TweakXL/TweakXL.dll                 https://github.com/psiberx/cp2077-tweak-xl/releases/download/v1.11.5/TweakXL-1.11.5.zip a6e75e16bdb454d2025f8ec4f85e6eebfca56aa90db9e54f5681574f5b03f49f
+TweakXL            2.5  1.12.0 minor red4ext/plugins/TweakXL/TweakXL.dll                 https://github.com/psiberx/cp2077-tweak-xl/releases/download/v1.12.0/TweakXL-1.12.0.zip a7c39b769e6c51d9f27412a101fb87e6a1fb8452f0e37ee0d1d1f3f44e656fa8
+Input_Loader       2.31 0.2.3  game  red4ext/plugins/input_loader/input_loader.dll       https://github.com/jackhumbert/cyberpunk2077-input-loader/releases/download/v0.2.3/input_loader_v0.2.3.zip 6011515264bfb582591bf2ce66e956ac9c7993dfb5046590ba3ee7625af603ee
+Input_Loader       2.5  0.2.6  game  red4ext/plugins/input_loader/input_loader.dll       https://github.com/jackhumbert/cyberpunk2077-input-loader/releases/download/v0.2.6/input_loader_v0.2.6.zip 6b420ba1e27b2e13c275a576a37a17d48771a0d35e52731f08e3584444a3e2b9
+Let_There_Be_Flight 2.31 0.3.18 game red4ext/plugins/let_there_be_flight/let_there_be_flight.dll https://github.com/jackhumbert/let_there_be_flight/releases/download/v0.3.18/let_there_be_flight_v0.3.18.zip 000fa50647f9536f90a9db53a454f4b4911f1e3d62dd60f071e49bc7f0f24207
+Let_There_Be_Flight 2.5  0.3.20 game red4ext/plugins/let_there_be_flight/let_there_be_flight.dll https://github.com/jackhumbert/let_there_be_flight/releases/download/v0.3.20/let_there_be_flight_v0.3.20.zip b265d3c6a711f0647d34835374652f5a84b7f3110df944e6d9059aaa7cbfa243
+"
+# <<< flight set
+FLIGHT_MOD="Let_There_Be_Flight"   # the mod --without-flight removes; the others stay for other mods
 
 DATA_DIR="${XDG_DATA_HOME:-$HOME/.local/share}/nightcoop-linux"
 CACHE_DIR="${XDG_CACHE_HOME:-$HOME/.cache}/nightcoop-linux"
@@ -85,6 +111,7 @@ CLOSE_STEAM=0
 PROTON_WANT="auto"
 GAME_ARGS="--launcher-skip"
 SAVE_BACKUP=""   # 1 or 0; empty: copy the saves on the first install only
+FLIGHT_WANT=""   # 1 (--with-flight) or 0 (--without-flight); empty: as the last install left it
 FORCE=0
 DRY_RUN=0
 ASSUME_YES=0
@@ -1106,13 +1133,16 @@ PLUGIN_KEEP_DIRS = ('logs',)
 def tree_stale(mapping, game, prev, protect, refresh=''):
     """Files to remove: those the previous install put in place that the new archive no
     longer has, and everything else in the plugin folder (refresh) apart from the user's
-    servers.txt, hub.txt and logs, so that no file of an older build stays behind."""
-    current = {rel.lower() for _, rel in mapping} | {p.lower() for p in protect}
+    servers.txt, hub.txt and logs, so that no file of an older build stays behind.
+    A protected path ending in "/" protects everything below it."""
+    current = {rel.lower() for _, rel in mapping} | {p.lower() for p in protect if not p.endswith('/')}
+    folders = tuple(p.lower() for p in protect if p.endswith('/'))
     stale = []
 
     def add(p):
         r = os.path.relpath(p, game).replace(os.sep, '/')
-        if (os.path.isfile(p) or os.path.islink(p)) and r.lower() not in current and r not in stale:
+        if (os.path.isfile(p) or os.path.islink(p)) and r.lower() not in current \
+                and not r.lower().startswith(folders) and r not in stale:
             stale.append(r)
 
     for st, rel in read_manifest(prev):
@@ -1194,6 +1224,13 @@ def cmd_tree_apply(stage, game, bgame, manifest, prev, refresh, force, *protect)
     for st, rel in ents:
         if st == 'removed':
             os.remove(os.path.join(game, rel))
+            d = os.path.dirname(rel)
+            while d:   # folders the removal left empty go too; restore makes them again
+                try:
+                    os.rmdir(os.path.join(game, d))
+                except OSError:
+                    break
+                d = os.path.dirname(d)
     out(*[sum(1 for e in ents if e[0] == s) for s in STATES])
 
 
@@ -1226,7 +1263,22 @@ def cmd_tree_restore(manifest, bgame, game):
     out(missing, ' '.join(sorted(left)))
 
 
+def cmd_roots(top):
+    """What a mod archive owns in the game folder: its folder under red4ext/plugins, and
+    each file it puts anywhere else."""
+    roots = []
+    for _, rel in tree_map(top, top):
+        parts = rel.split('/')
+        r = '/'.join(parts[:3]) + '/' if len(parts) > 3 and parts[0].lower() == 'red4ext' \
+            and parts[1].lower() == 'plugins' else rel
+        if r not in roots:
+            roots.append(r)
+    for r in roots:
+        out(r)
+
+
 CMDS = {
+    'roots': cmd_roots,
     'pever': cmd_pever, 'gamever': cmd_gamever, 'r4ok': cmd_r4ok, 'pestr': cmd_pestr, 'vge': cmd_vge, 'builtin': cmd_builtin, 'pecrt': cmd_pecrt,
     'libs': cmd_libs, 'proton': cmd_proton, 'slr': cmd_slr,
     'ct-get': cmd_ct_get, 'ct-list': cmd_ct_list, 'ct-pick': cmd_ct_pick, 'ct-set': cmd_ct_set,
@@ -1296,6 +1348,8 @@ while [ $# -gt 0 ]; do
         --no-launcher-skip) GAME_ARGS=""; shift ;;
         --no-save-backup) SAVE_BACKUP=0; shift ;;
         --backup-saves)   SAVE_BACKUP=1; shift ;;
+        --with-flight)    FLIGHT_WANT=1; shift ;;
+        --without-flight) FLIGHT_WANT=0; shift ;;
         --force)          FORCE=1; shift ;;
         --dry-run)        DRY_RUN=1; shift ;;
         -y|--yes)         ASSUME_YES=1; shift ;;
@@ -1540,37 +1594,50 @@ nc_dll() {   # the NightCoop.dll in the game folder, if any
     [ -n "$plugins" ] || return 0
     find "$plugins" -maxdepth 2 -type f -iname nightcoop.dll 2>/dev/null | head -n1 || true
 }
-read_installed() {   # NC_RECORDED: the release on record; NC_INSTALLED: the same, while NightCoop.dll still matches
+read_installed() {   # NC_RECORDED: the release on record; NC_INSTALLED: the same, while NightCoop.dll still matches;
+                     # FLIGHT_RECORDED and FLIGHT_ROOTS_REC: the flight set on record and what it owns
     local f="$DATA_DIR/installed.tsv" gd sha dll
-    NC_RECORDED="" NC_INSTALLED=""
+    NC_RECORDED="" NC_INSTALLED="" FLIGHT_RECORDED=0 FLIGHT_ROOTS_REC=()
     [ -r "$f" ] || return 0
     NC_RECORDED="$(sed -n 's/^version\t//p' "$f")"
     gd="$(sed -n 's/^game_dir\t//p' "$f")"; sha="$(sed -n 's/^dll_sha256\t//p' "$f")"
     [ -z "$gd" ] || [ "$gd" = "$GAME_DIR" ] || return 0
+    if grep -qx $'flight\t1' "$f"; then FLIGHT_RECORDED=1; fi
+    mapfile -t FLIGHT_ROOTS_REC < <(sed -n 's/^flight_root\t//p' "$f")
     if [ -n "$sha" ]; then   # records from 2.1.0 have no hash and are taken as they are
         dll="$(nc_dll)"
         [ -n "$dll" ] && [ "$(sha256sum "$dll" | cut -d' ' -f1)" = "$sha" ] || return 0
     fi
     NC_INSTALLED="$NC_RECORDED"
 }
-write_record() {   # write_record <version> <protocol> <games> <red4ext> <backup> <dll sha256>
+flight_lines() {   # the flight set as this run leaves it, in the record's format
+    [ "$FLIGHT_ON" = 1 ] || return 0
+    printf 'flight\t1\n'
+    if [ "${#FLIGHT_ROOTS[@]}" -gt 0 ]; then printf 'flight_root\t%s\n' "${FLIGHT_ROOTS[@]}"; fi
+}
+write_record() {   # write_record <version> <protocol> <games> <red4ext> <backup> <dll sha256> <flight lines>
     mkdir -p "$DATA_DIR"
-    printf 'version\t%s\nprotocol\t%s\ngame\t%s\nred4ext\t%s\ninstalled\t%s\nbackup\t%s\ngame_dir\t%s\ndll_sha256\t%s\n' \
-        "${1:-unknown}" "$2" "$3" "$4" "$(date -Is)" "$5" "$GAME_DIR" "$6" > "$DATA_DIR/installed.tsv"
+    { printf 'version\t%s\nprotocol\t%s\ngame\t%s\nred4ext\t%s\ninstalled\t%s\nbackup\t%s\ngame_dir\t%s\ndll_sha256\t%s\n' \
+          "${1:-unknown}" "$2" "$3" "$4" "$(date -Is)" "$5" "$GAME_DIR" "$6"
+      if [ -n "$7" ]; then printf '%s\n' "$7"; fi
+    } > "$DATA_DIR/installed.tsv"
 }
 record_install() {   # record_install <version> <protocol> <games> <red4ext> <backup or "">: what is in place now
-    local dll sha=""
+    local dll sha="" fl
     dll="$(nc_dll)"; [ -z "$dll" ] || sha="$(sha256sum "$dll" | cut -d' ' -f1)"
-    write_record "$1" "$2" "$3" "$4" "$5" "$sha"
+    fl="$(flight_lines)"
+    write_record "$1" "$2" "$3" "$4" "$5" "$sha" "$fl"
     # the backup keeps it too, for the record to go back to when a later install is undone
-    if [ -n "$5" ] && [ -f "$5/info.tsv" ]; then printf 'dll_sha256\t%s\n' "$sha" >> "$5/info.tsv"; fi
-    NC_RECORDED="${1:-unknown}" NC_INSTALLED="${1:-unknown}"
+    if [ -n "$5" ] && [ -f "$5/info.tsv" ]; then
+        { printf 'dll_sha256\t%s\n' "$sha"; if [ -n "$fl" ]; then printf '%s\n' "$fl"; fi; } >> "$5/info.tsv"
+    fi
+    NC_RECORDED="${1:-unknown}" NC_INSTALLED="${1:-unknown}" FLIGHT_RECORDED="$FLIGHT_ON"
 }
 rerecord() {   # after a restore: the record describes the newest install still in place, if any
     local b; b="$(latest_backup)"
     if [ -n "$b" ] && [ -f "$b/info.tsv" ]; then
         write_record "$(sed -n 's/^nightcoop\t//p' "$b/info.tsv")" "" "" "$(sed -n 's/^red4ext\t//p' "$b/info.tsv")" "$b" \
-            "$(sed -n 's/^dll_sha256\t//p' "$b/info.tsv" | tail -n1)"
+            "$(sed -n 's/^dll_sha256\t//p' "$b/info.tsv" | tail -n1)" "$(grep -E $'^flight(_root)?\t' "$b/info.tsv" || true)"
     else
         rm -f "$DATA_DIR/installed.tsv"
     fi
@@ -1612,6 +1679,7 @@ do_check() {
         none) row "NightCoop update" "the site lists no builds" ;;
         *) row "NightCoop update" "unknown (could not reach $NIGHTCOOP_SITE)" ;;
     esac
+    flight_row
     IFS=$'\x1f' read -r app def < <(py ct-get "$STEAM_ROOT" "$APPID") || true
     if [ -n "$app" ]; then row "Proton for the game" "$app (chosen in Steam)"
     else row "Proton for the game" "not chosen; Steam uses ${def:-its default}"; fi
@@ -1726,6 +1794,7 @@ do_uninstall() {
 # ---------------------------------------------------------------- install ----
 NC_STATUS="" NC_VER="" NC_URL="" NC_SHA="" NC_GAMES="" NC_PROTO="" NC_R4="" NC_MATCHED="" NC_YANKED="" NC_PRESENT=""
 PLAN_ADDED=0 PLAN_REPLACED=0 PLAN_REMOVED=0 PLAN_SAME=0 PLAN_STALE=() FILES_CHANGE=0 PREFIX_CHANGE=0 STEAM_CHANGE=0 SAVE_AUTO=""
+FLIGHT_ON=0 FLIGHT_ROOTS=() FLIGHT_PLAN=() FLIGHT_KEEP=() FLIGHT_DROP="" PROTECT=()
 NC_ROOT="" NC_DLL_REL="" NC_PLUGIN_DIR="" R4_CHOICE="" R4_FINAL="" RT_WANT="" RT_TARGET="" RV="" RK="" NEED_RT=0
 VCREDIST_VER="" REG_STATE="" LO_STATE="" LO_VALUE="" LO_WINMM="" RESTART_STEAM=0 DLLS="winmm"
 TOOL_NAME="" TOOL_DIR="" TOOL_REASON="" TOOL_LABEL="" TOOL_STATE="none"
@@ -1853,6 +1922,101 @@ step_red4ext() {
     esac
 }
 
+flight_set_for() {   # the flight set's lines for the installed game patch, if it has one
+    local comp patch rest
+    while read -r comp patch rest; do
+        if [ -n "$comp" ] && { [ "$patch" = "$GAME_VER" ] || [ "$patch" = "$GAME_VER_ALT" ]; }; then echo "$comp $patch $rest"; fi
+    done <<<"$FLIGHT_SET"
+}
+flight_parts() {   # each component once: name, rule and version DLL
+    local comp patch ver rule probe rest seen=" "
+    while read -r comp patch ver rule probe rest; do
+        if [ -n "$comp" ] && [[ "$seen" != *" $comp "* ]]; then seen+="$comp "; echo "$comp $rule $probe"; fi
+    done <<<"$FLIGHT_SET"
+}
+listing() { local IFS=,; local s="$*"; echo "${s//,/, }"; }   # listing <items...>: "a, b, c"
+newer_same_line() {   # newer_same_line <installed DLL> <our DLL> <rule>: the installed copy is newer and for this patch
+    local a b
+    a="$(pever "$1")"; b="$(pever "$2")"
+    { [ -n "$a" ] && [ -n "$b" ] && ver_ge "$a" "$b" && ! ver_ge "$b" "$a"; } || return 1
+    case "$3" in
+        game) [ "$(py pestr "$1" ProductVersion)" = "$(py pestr "$2" ProductVersion)" ] ;;
+        minor) [ "$(cut -d. -f1,2 <<<"$a")" = "$(cut -d. -f1,2 <<<"$b")" ] ;;
+        *) return 1 ;;
+    esac
+}
+step_flight() {   # Let There Be Flight and what it needs (--with-flight), paired with the game patch
+    local lines comp patch ver rule probe url sha name src dir inst ours r used=" "
+    FLIGHT_ON="${FLIGHT_WANT:-$FLIGHT_RECORDED}"
+    if [ "$FLIGHT_ON" != 1 ]; then
+        if [ "$FLIGHT_RECORDED" = 1 ]; then   # --without-flight: the mod goes, the mods it needed stay
+            bold "Let There Be Flight"
+            for r in "${FLIGHT_ROOTS_REC[@]}"; do [ "${r%%$'\t'*}" = "$FLIGHT_MOD" ] || PROTECT+=("${r#*$'\t'}"); done
+            FLIGHT_DROP=1
+            ok "--without-flight: Let There Be Flight will be removed; ArchiveXL, TweakXL, Input Loader and redscript stay, since other mods use them"
+        fi
+        return 0
+    fi
+    bold "Let There Be Flight"
+    lines="$(flight_set_for)"
+    if [ -z "$lines" ]; then
+        warn "no Let There Be Flight set is known for game ${GAME_VER:-?}; what is installed is left as it is"
+        for r in "${FLIGHT_ROOTS_REC[@]}"; do PROTECT+=("${r#*$'\t'}"); done
+        FLIGHT_ROOTS=("${FLIGHT_ROOTS_REC[@]}")
+        return 0
+    fi
+    mkdir -p "$TMP/flight"
+    while read -r comp patch ver rule probe url sha; do
+        name="$(basename "${url%%\?*}")"; src="$CACHE_DIR/mods/$name"; used+="$name "
+        if ! { [ -f "$src" ] && sha_check "$src" "$sha"; }; then
+            src="$TMP/flight/$name"
+            download "$url" "$src" || fail "download failed: $url"
+            sha_check "$src" "$sha" || fail "SHA-256 mismatch for $name (expected $sha)"
+            if [ "$DRY_RUN" != 1 ] && mkdir -p "$CACHE_DIR/mods"; then cp "$src" "$CACHE_DIR/mods/$name" 2>/dev/null || true; fi
+        fi
+        dir="$TMP/flight/$comp"; mkdir -p "$dir"
+        py unzip "$src" "$dir" || fail "could not unpack $name"
+        while IFS= read -r r; do FLIGHT_ROOTS+=("$comp"$'\t'"$r"); done < <(py roots "$dir")
+        inst="" ours=""
+        if [ "$probe" != - ]; then
+            inst="$(findci "$GAME_DIR" "$probe" 2>/dev/null || true)"; ours="$(findci "$dir" "$probe" 2>/dev/null || true)"
+        fi
+        if [ -n "$inst" ] && [ -n "$ours" ] && newer_same_line "$inst" "$ours" "$rule"; then   # a newer copy for this patch stays
+            while IFS= read -r r; do PROTECT+=("$r"); done < <(py roots "$dir")
+            FLIGHT_KEEP+=("${comp//_/ } $(pever "$inst" | cut -d. -f1-3)")
+            ok "keeping the installed ${comp//_/ } $(pever "$inst" | cut -d. -f1-3), which is newer than $ver and for the same patch"
+            continue
+        fi
+        py merge "$dir" "$TMP/stage"
+        FLIGHT_PLAN+=("${comp//_/ } $ver")
+    done <<<"$lines"
+    if [ "${#FLIGHT_PLAN[@]}" -gt 0 ]; then ok "for game ${GAME_VER:-?}: $(listing "${FLIGHT_PLAN[@]}") (SHA-256 verified)"; fi
+    if [ "$DRY_RUN" != 1 ] && [ -d "$CACHE_DIR/mods" ]; then   # the cache keeps this set only
+        for src in "$CACHE_DIR/mods"/*; do [[ "$used" == *" $(basename "$src") "* ]] || rm -f "$src"; done
+    fi
+    return 0
+}
+
+flight_row() {   # check: Let There Be Flight and what it needs
+    local comp rule probe d parts=() mod="" missing=()
+    while read -r comp rule probe; do
+        if [ "$probe" = - ]; then d="$(findci "$GAME_DIR" engine/tools/scc_lib.dll 2>/dev/null || true)"
+        else d="$(findci "$GAME_DIR" "$probe" 2>/dev/null || true)"; fi
+        if [ -z "$d" ]; then missing+=("${comp//_/ }"); continue; fi
+        if [ "$comp" = "$FLIGHT_MOD" ]; then mod="$(pever "$d" | cut -d. -f1-3)"
+        elif [ "$probe" = - ]; then parts+=("${comp//_/ }")
+        else parts+=("${comp//_/ } $(pever "$d" | cut -d. -f1-3)"); fi
+    done < <(flight_parts)
+    if [ "$FLIGHT_RECORDED" = 1 ]; then
+        row "Let There Be Flight" "${mod:-missing}, with $(listing "${parts[@]:-nothing}") (kept up to date by this script)"
+        if [ "${#missing[@]}" -gt 0 ]; then warn "missing: $(listing "${missing[@]}"); run '$0 update' to put them back"; fi
+    elif [ -n "$mod" ]; then
+        row "Let There Be Flight" "$mod (installed by hand; --with-flight keeps it and what it needs up to date)"
+    else
+        row "Let There Be Flight" "not installed; NightCoop supports it in co-op (add --with-flight)"
+    fi
+}
+
 pick_vcredist() {   # sets VCREDIST and VCREDIST_VER to the newest installer at hand
     local c v best="" bestv="" lib cache="$CACHE_DIR/vc_redist.x64.exe" url
     vc_ok() { [[ "$(py pestr "$1" FileDescription)$(py pestr "$1" ProductName)" == *"Visual C++"* ]] && ver_ge "$(pever "$1")" 14.0; }
@@ -1971,12 +2135,15 @@ step_proton_tool() {
 
 plan_files() {   # PLAN_*: what copying the staged files would change in the game folder
     local plan line
-    plan="$(py tree-plan "$TMP/stage" "$GAME_DIR" "${PREV_BACKUP:+$PREV_BACKUP/manifest.tsv}" "$NC_PLUGIN_DIR" "$FORCE" "${RED4EXT_CORE[@]}")" \
+    plan="$(py tree-plan "$TMP/stage" "$GAME_DIR" "${PREV_BACKUP:+$PREV_BACKUP/manifest.tsv}" "$NC_PLUGIN_DIR" "$FORCE" "${PROTECT[@]}")" \
         || fail "the game folder cannot take the new files (see above)"
     IFS=$'\x1f' read -r PLAN_ADDED PLAN_REPLACED PLAN_REMOVED PLAN_SAME <<<"${plan%%$'\n'*}"
     PLAN_STALE=()
     while IFS=$'\x1f' read -r _ line; do [ -z "$line" ] || PLAN_STALE+=("$line"); done < <(tail -n +2 <<<"$plan")
     FILES_CHANGE=0; [ $((PLAN_ADDED + PLAN_REPLACED + PLAN_REMOVED)) = 0 ] || FILES_CHANGE=1
+    # dropping the flight set always writes a manifest without it: otherwise the next run would
+    # read the mods left in place as leftovers of the previous install and remove them
+    [ -z "$FLIGHT_DROP" ] || FILES_CHANGE=1
     PREFIX_CHANGE=0; { [ "$NEED_RT" = 1 ] || [ "$REG_STATE" = missing ]; } && PREFIX_CHANGE=1
     STEAM_CHANGE=0; { [ "$LO_STATE" = missing ] || [ "$LO_STATE" = broken ] || [ "$TOOL_STATE" = pending ]; } && STEAM_CHANGE=1
     return 0
@@ -2001,9 +2168,12 @@ print_plan() {
             info "update          NightCoop ${from:-(a build this script did not install)} -> ${NC_VER:-?}"
         fi
         [ "$PLAN_SAME" = 0 ] || same=", $PLAN_SAME already up to date"
-        info "install         NightCoop ${NC_VER:-?}: $PLAN_ADDED new, $PLAN_REPLACED replaced file(s) in the game folder$same"
+        info "install         NightCoop ${NC_VER:-?}${FLIGHT_PLAN:+ and the flight set}: $PLAN_ADDED new, $PLAN_REPLACED replaced file(s) in the game folder$same"
         [ "$PLAN_REMOVED" = 0 ] || info "remove          $PLAN_REMOVED file(s) of the previous build: ${PLAN_STALE[*]}"
         info "RED4ext         $R4_FINAL ($R4_CHOICE)"
+        if [ "${#FLIGHT_PLAN[@]}" -gt 0 ]; then info "flight set      $(listing "${FLIGHT_PLAN[@]}") (for game ${GAME_VER:-?})"; fi
+        if [ "${#FLIGHT_KEEP[@]}" -gt 0 ]; then info "keep            $(listing "${FLIGHT_KEEP[@]}") (installed, newer)"; fi
+        if [ -n "$FLIGHT_DROP" ]; then info "remove          Let There Be Flight (--without-flight); the mods it needed stay"; fi
     fi
     [ "$NEED_RT" = 1 ] && info "run             VC_redist.x64.exe ${VCREDIST_VER} quietly in the game's Proton prefix"
     [ "$REG_STATE" = missing ] && info "registry        $DLLS = native,builtin for Cyberpunk2077.exe"
@@ -2140,18 +2310,21 @@ do_install() {
     fi
     [ -n "$PREV_BACKUP" ] && [ ! -f "$PREV_BACKUP/manifest.tsv" ] && PREV_BACKUP=""
     NC_PRESENT="$(nc_dll)"
+    PROTECT=("${RED4EXT_CORE[@]}")
 
     step_nightcoop
     step_stage
     step_red4ext
+    step_flight
     step_runtime
     step_override
     step_proton_tool
     plan_files
     if [ "$FILES_CHANGE" = 0 ] && [ "$PREFIX_CHANGE" = 0 ]; then   # an update with nothing new
         echo
-        ok "all $PLAN_SAME files of NightCoop ${NC_VER:-?} (with RED4ext $R4_FINAL) are already in place; nothing to replace (--force reinstalls them)"
-        if [ "$DRY_RUN" != 1 ] && { [ "${NC_INSTALLED:-}" != "${NC_VER:-}" ] || ! grep -q '^dll_sha256' "$DATA_DIR/installed.tsv" 2>/dev/null; }; then
+        ok "all $PLAN_SAME files of NightCoop ${NC_VER:-?} (with RED4ext $R4_FINAL${FLIGHT_PLAN:+ and the flight set}) are already in place; nothing to replace (--force reinstalls them)"
+        if [ "$DRY_RUN" != 1 ] && { [ "${NC_INSTALLED:-}" != "${NC_VER:-}" ] || [ "$FLIGHT_ON" != "$FLIGHT_RECORDED" ] \
+                || ! grep -q '^dll_sha256' "$DATA_DIR/installed.tsv" 2>/dev/null; }; then
             record_install "${NC_VER:-}" "${NC_PROTO:-}" "${NC_GAMES:-}" "$R4_FINAL" ""
             info "recorded as the installed build, for later update checks"
         fi
@@ -2189,7 +2362,7 @@ do_install() {
         if [ "$FILES_CHANGE" = 1 ]; then bold "Installing NightCoop and RED4ext"; else bold "Game folder (no file changes)"; fi
         local added replaced removed same
         IFS=$'\x1f' read -r added replaced removed same < <(py tree-apply "$TMP/stage" "$GAME_DIR" "$BACKUP/game" \
-            "$BACKUP/manifest.tsv" "${PREV_BACKUP:+$PREV_BACKUP/manifest.tsv}" "$NC_PLUGIN_DIR" "$FORCE" "${RED4EXT_CORE[@]}") \
+            "$BACKUP/manifest.tsv" "${PREV_BACKUP:+$PREV_BACKUP/manifest.tsv}" "$NC_PLUGIN_DIR" "$FORCE" "${PROTECT[@]}") \
             || fail "copying into the game folder failed; undo with: $0 restore \"$BACKUP\""
         ok "$added added, $replaced replaced, $removed stale removed, $same unchanged; backup: $BACKUP"
         local r4; r4="$(red4ext_core_version "$GAME_DIR")"
@@ -2220,6 +2393,10 @@ do_install() {
     do_check
     echo
     print_followups
+    if [ "$FLIGHT_ON" != 1 ] && [ -z "$FLIGHT_DROP" ]; then
+        info "Optional: NightCoop supports flying cars in co-op with Let There Be Flight. Add --with-flight"
+        info "to install it with what it needs; every player in a session should have it."
+    fi
     echo
     if [ "$OS_FAMILY" = steamos ]; then
         info "Return to Game Mode (or stay in Desktop Mode) and launch Cyberpunk 2077 from Steam."
@@ -2259,5 +2436,5 @@ main() {
         install)   do_install ;;
     esac
 }
-NC_INSTALLED="" NC_RECORDED="" LATEST_STATUS="" LATEST_VER=""
+NC_INSTALLED="" NC_RECORDED="" LATEST_STATUS="" LATEST_VER="" FLIGHT_RECORDED=0 FLIGHT_ROOTS_REC=()
 main

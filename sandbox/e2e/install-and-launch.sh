@@ -4,7 +4,8 @@
 # install-and-launch.sh: the whole user journey, online, as a normal user. For each game
 # patch it builds a Steam home as it looks after the game's first launch: a Proton prefix
 # holding Steam's VS 2019 runtime, no overrides, no Proton build chosen. Then it:
-#   1. runs the repository's nightcoop-install.sh (live nightcoop.net, GitHub, Microsoft);
+#   1. runs the repository's nightcoop-install.sh with --with-flight (live nightcoop.net,
+#      GitHub, Microsoft);
 #   2. checks what `nightcoop-install.sh check` reports;
 #   3. runs it again as `update`, which must find everything current and change nothing;
 #   4. starts the stand-in game through Proton with the registry override alone (Steam open)
@@ -57,7 +58,7 @@ for patch in $PATCHES; do
     say "    Steam's first launch: VS 2019 runtime"
     STEAM_CLIENT="$st" install_vc "$compat" "$vc2019"
     say "    running nightcoop-install.sh (log: $WORK/install-$patch.log)"
-    if ! HOME="$home" bash "$NI" install --yes > "$WORK/install-$patch.log" 2>&1; then
+    if ! HOME="$home" bash "$NI" install --yes --with-flight > "$WORK/install-$patch.log" 2>&1; then
         say "    FAIL: the installer exited with an error:"; tail -n 15 "$WORK/install-$patch.log" | sed 's/^/        /'
         fails=$((fails + 1)); continue
     fi
@@ -69,6 +70,9 @@ for patch in $PATCHES; do
     check_line "$WORK/check-$patch.log" "a Proton build chosen for the game" "^  Proton for the game: .*\(chosen in Steam\)"
     check_line "$WORK/check-$patch.log" "launch options written" "^  launch options: +WINEDLLOVERRIDES=.*%command% --launcher-skip"
     check_line "$WORK/check-$patch.log" "no newer NightCoop build" "^  NightCoop update: +none; "
+    case "$patch" in 2.5) ltbf=0.3.20 ;; *) ltbf=0.3.18 ;; esac   # the build each patch is paired with
+    check_line "$WORK/check-$patch.log" "Let There Be Flight $ltbf and what it needs" \
+        "^  Let There Be Flight: +${ltbf//./\\.}, with redscript, ArchiveXL [0-9.]+, TweakXL [0-9.]+, Input Loader [0-9.]+ \(kept up to date"
     if HOME="$home" bash "$NI" update --yes > "$WORK/update-$patch.log" 2>&1; then
         check_line "$WORK/update-$patch.log" "a second run changes nothing" "everything is up to date; nothing to do"
     else

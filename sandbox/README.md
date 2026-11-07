@@ -62,9 +62,10 @@ longer holds, for example a Proton update that changes how Wine picks DLLs.
 first launch: a Proton prefix with Steam's VS 2019 runtime, no overrides and no Proton
 build chosen. It then:
 
-1. runs `nightcoop-install.sh install --yes` as an ordinary user, against the live
-   nightcoop.net, GitHub and Microsoft;
-2. checks what `check` reports;
+1. runs `nightcoop-install.sh install --yes --with-flight` as an ordinary user, against
+   the live nightcoop.net, GitHub and Microsoft;
+2. checks what `check` reports, including the Let There Be Flight build paired with the
+   patch and the mods it needs;
 3. runs it again as `update`, which must find everything current and change nothing;
 4. starts the stand-in with the registry override alone, as when Steam is open, and with
    the launch options, as when Steam is closed.
@@ -72,8 +73,10 @@ build chosen. It then:
 Use `PATCHES=2.31` to run a single patch.
 
 Both services download NightCoop from nightcoop.net (the build listed for each patch in
-`releases.json`) and the runtime installers from Microsoft. The downloads are cached in
-the `downloads` volume between runs.
+`releases.json`) and the runtime installers from Microsoft; `install-and-launch` also
+downloads the flight set from GitHub. The weekly run therefore notices when a pinned
+release changes or disappears. The downloads are cached in the `downloads` volume between
+runs.
 
 **Not covered:** rendering, the real game, the NightCoop plugin itself (RED4ext loads
 plugins only after hooking the game) and Valve's own Proton builds, which are only
@@ -115,7 +118,13 @@ cannot hold more than 128 KiB, so a full system CA bundle will not fit.
   [`e2e/stub/build.sh`](e2e/stub/build.sh), and the RED4ext release that targets it to
   `RED4EXT_COMPAT` in the installer. The version constants are
   `RED4EXT_V1_RUNTIME_VERSION_*` in RED4ext.SDK's `include/RED4ext/Api/v1/Runtime.hpp`.
-  Then add the patch to the scripts' patch lists.
+  Then add the patch to the scripts' patch lists, and its flight set to `FLIGHT_SET` in
+  the installer (next bullet).
+- **A new Let There Be Flight, ArchiveXL, TweakXL, Input Loader or redscript release:**
+  update its line in `FLIGHT_SET`: the version, the archive's URL and its SHA-256. The game
+  patch a release supports is in the project's README at that tag. For Let There Be Flight
+  and Input Loader, it is also the "Built for" version in the DLL
+  (`nightcoop-install __py pestr <dll> Comments`).
 - **A new SteamOS release:** set `STEAMOS_BRANCH`; the image uses whichever of Valve's
   repositories exist for it.
 - **A new Proton or NightCoop build:** rebuild with `--build`; the images take the current

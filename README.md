@@ -147,10 +147,57 @@ prefix to another Proton version, it replaces only Wine's own files.
 | `--red4ext-zip FILE` | Use a RED4ext release archive, for example a newer one than the script pins. |
 | `--vcredist FILE` | Use a `VC_redist.x64.exe` you downloaded yourself. |
 | `--steam-root DIR` | Use this Steam installation instead of detecting one. |
+| `--with-flight` | Also install Let There Be Flight and the mods it needs (see below). Later runs keep them up to date. |
+| `--without-flight` | Remove Let There Be Flight again. The mods it needed stay, because other mods use them too. |
 
 When Steam is running, its two settings are not written, but the registry override alone
 lets the mod load. The script then prints the launch options and the Proton choice for you
 to set under Properties. Alternatively, rerun it with Steam closed or with `--close-steam`.
+
+## Other mods, and Let There Be Flight
+
+NightCoop needs only RED4ext, which comes with it; it does not need Cyber Engine Tweaks.
+The script leaves other mods alone: it writes only RED4ext, NightCoop's own folders and
+what you ask for below, and `uninstall` keeps everything else. Mods built for NightCoop's
+SDK work in co-op with partners who have them too. Other mods are not synced, so it is
+safest for everyone in a session to use the same ones.
+
+The one mod NightCoop supports out of the box is **Let There Be Flight** (flying cars, by
+Jack Humbert). NightCoop's archive already holds its co-op port, which the script installs.
+The port shows your flight on your partners' screens, and does nothing until Let There Be
+Flight is installed. Add `--with-flight` once to install it with everything it needs:
+
+```bash
+nightcoop-install --with-flight
+```
+
+| Mod | Game 2.5 | Game 2.31 | Why it is needed |
+| --- | --- | --- | --- |
+| Let There Be Flight | 0.3.20 | 0.3.18 | The flight itself |
+| ArchiveXL | 1.28.6 | 1.27.5 | Loads its game assets |
+| TweakXL | 1.12.0 | 1.11.5 | Loads its game data changes |
+| Input Loader | 0.2.6 | 0.2.3 | Adds its key bindings |
+| redscript | 0.5.32 | 0.5.31 | Compiles its scripts, and NightCoop's port |
+
+- **Matched to your game patch:** each project's own README and release notes give the
+  pairings, as does the game version its DLLs are built for. The archives come from the
+  projects' GitHub releases and are checked against SHA-256 values pinned in the script.
+- **Kept up to date:** later runs keep the set current, and switch to the other builds
+  when the game patch changes.
+- **Copies you installed yourself:** a copy that is newer and built for the same patch is
+  kept. Any other copy is replaced, and backed up like every file the script replaces.
+  redscript has no readable version, so it is always the paired build.
+- **Every player** who wants to see the flight properly needs Let There Be Flight. NightCoop
+  names the partners who lack it. Without it, a partner sees your car flying without
+  wheels.
+- **Removing it:** `--without-flight` removes Let There Be Flight. ArchiveXL, TweakXL, Input
+  Loader and redscript stay, because many other mods need them. `uninstall` removes
+  everything the script installed and puts back the game files it replaced: the
+  game's script compiler, which redscript replaces, and the input files Input Loader
+  changes.
+- **Settings:** the key bindings are in
+  `red4ext/plugins/let_there_be_flight/inputs.xml`. The optional Mod Settings menu is not
+  installed.
 
 ## Updating and undoing
 
@@ -256,6 +303,11 @@ installation. It covers:
 - a hand-copied old NightCoop build;
 - updates in place: nothing changed when current, only differing files replaced, saves
   copied once, `--force` and `--backup-saves`;
+- the flight set:
+  - paired with the game patch, and following a patch change;
+  - a newer copy installed by hand kept;
+  - `--without-flight` removing only Let There Be Flight;
+  - an archive with the wrong SHA-256 refused;
 - install, update, restore and uninstall back to a byte-identical game folder.
 
 `tests/mkfixtures.py` generates the PE files, archives (shaped like nightcoop.net's) and
