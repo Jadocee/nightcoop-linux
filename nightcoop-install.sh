@@ -43,12 +43,12 @@
 #   --with-flight         also install Let There Be Flight (flying cars), which NightCoop
 #                         supports in co-op, with what it needs; kept up to date afterwards
 #   --without-flight      remove Let There Be Flight again (the mods it needed stay)
-#   --with-mods           also install Virtual Atelier with two stores of the game's own items,
-#                         Virtual Car Dealer, Drive an Aerial Vehicle, Cyber Drift, Quick Stash
-#                         and No Intro Videos (download them from Nexus Mods; the installer
-#                         lists them), with the frameworks they need (Cyber Engine Tweaks,
-#                         Codeware, TweakXL, ArchiveXL, redscript, Mod Settings, Audioware,
-#                         Native Settings UI); kept up to date afterwards
+#   --with-mods           also install Virtual Atelier with clothing and item stores and seven
+#                         Zenitex outfits, Virtual Car Dealer with car and bike packs, Drive an
+#                         Aerial Vehicle, Vehicle Customizer, Cyber Drift, Quick Stash and No
+#                         Intro Videos (download them from Nexus Mods; the installer lists them),
+#                         with the frameworks they need (Cyber Engine Tweaks, Codeware, TweakXL,
+#                         ArchiveXL, redscript, Mod Settings, Audioware and more); kept up to date
 #   --without-mods        remove those mods again (the frameworks stay)
 #   --mods-from DIR       where the Nexus downloads are (default: your Downloads folder)
 #   --force               reinstall every mod file, even those that already match
@@ -64,7 +64,7 @@
 # SPDX-License-Identifier: MIT
 set -euo pipefail
 
-SCRIPT_VERSION="3.1.0"
+SCRIPT_VERSION="3.2.0"
 APPID=1091500
 GAME_EXE_REL="bin/x64/Cyberpunk2077.exe"
 RED4EXT_VER="1.31.0"
@@ -88,43 +88,67 @@ MIN_GAME_FILEVER="3.0.88.46235" MIN_GAME_PATCH="2.5"
 #   flight (--with-flight)  Let There Be Flight, which NightCoop supports in co-op: its
 #                           archive ships the port (r6/scripts/NightCoopFlight), which
 #                           compiles to nothing without it.
-#   mods (--with-mods)      Virtual Atelier with two stores of the game's own items, Virtual Car
-#                           Dealer, Drive an Aerial Vehicle, Cyber Drift (Light), Quick Stash and
-#                           No Intro Videos, and the frameworks they need.
+#   mods (--with-mods)      Virtual Atelier with stores of the game's own items and the Zenitex
+#                           store with seven of its outfits, Virtual Car Dealer with car and bike
+#                           packs, Drive an Aerial Vehicle, Vehicle Customizer, Cyber Drift (Light),
+#                           Quick Stash and No Intro Videos, and the frameworks they need.
 # A component in both sets is installed once. When its sets are dropped (--without-...), a
 # "mod" is removed and a "lib" stays, since other mods use it too.
 # Source: a GitHub release (archive and pinned SHA-256), or nexus:<mod id>[:<prefer>[:<avoid>,...]]
 # for a mod published only on Nexus Mods, which blocks scripted downloads: you download it,
 # and the installer takes it from your Downloads folder (--mods-from DIR). For those, version is
 # the oldest release known to work with the patch. Of several files of such a mod, one with
-# <prefer> in its name wins; one with an <avoid> word in its name is never installed (see
-# nexus_avoided below).
+# <prefer> in its name wins ("+word": only such files, for a mod whose files go together, each
+# its own component); one with an <avoid> word in its name is never installed (see
+# nexus_avoided below; "~word": silently, as another component takes it). "_" in a word stands
+# for a space.
 # The pairings come from each project's README and release notes at the tag, and from the
 # "Built for" game version in the plugins' DLLs.
 # rule: a copy installed by hand stays when it is newer and "game": its DLL names the same
 # patch (ProductVersion); "minor": the same major.minor release line; "-": never. The version
 # file also identifies, by SHA-256, the release this script installed.
-#   component             patch sets        kind rule  version file  version  source  SHA-256
+#   component                   patch sets        kind rule  version file  version  source  SHA-256
 # >>> add-on sets
 ADDON_SETS="
-redscript               2.5 flight,mods lib  -     engine/tools/scc_lib.dll                                    0.5.32 https://github.com/jac3km4/redscript/releases/download/v0.5.32/redscript-v0.5.32-windows.zip 882c57a80b07e453bc8a34cd8430f460aceed789581de8743638e19dcfb7936f
-ArchiveXL               2.5 flight,mods lib  minor red4ext/plugins/ArchiveXL/ArchiveXL.dll                     1.28.6 https://github.com/psiberx/cp2077-archive-xl/releases/download/v1.28.6/ArchiveXL-1.28.6.zip 25d0493a1b3e8ec4c26b7144a4d8f1a1def4d6dc840fff94b4c91c908583da09
-TweakXL                 2.5 flight,mods lib  minor red4ext/plugins/TweakXL/TweakXL.dll                         1.12.0 https://github.com/psiberx/cp2077-tweak-xl/releases/download/v1.12.0/TweakXL-1.12.0.zip a7c39b769e6c51d9f27412a101fb87e6a1fb8452f0e37ee0d1d1f3f44e656fa8
-Input_Loader            2.5 flight      lib  game  red4ext/plugins/input_loader/input_loader.dll               0.2.6  https://github.com/jackhumbert/cyberpunk2077-input-loader/releases/download/v0.2.6/input_loader_v0.2.6.zip 6b420ba1e27b2e13c275a576a37a17d48771a0d35e52731f08e3584444a3e2b9
-Let_There_Be_Flight     2.5 flight      mod  game  red4ext/plugins/let_there_be_flight/let_there_be_flight.dll 0.3.20 https://github.com/jackhumbert/let_there_be_flight/releases/download/v0.3.20/let_there_be_flight_v0.3.20.zip b265d3c6a711f0647d34835374652f5a84b7f3110df944e6d9059aaa7cbfa243
-Codeware                2.5 mods        lib  minor red4ext/plugins/Codeware/Codeware.dll                       1.21.2 https://github.com/psiberx/cp2077-codeware/releases/download/v1.21.2/Codeware-1.21.2.zip 269b65b8b97d26ea85d4516f5eb34c01a19dc85e299be57fb4f764e16c164dd2
-Cyber_Engine_Tweaks     2.5 mods        lib  minor bin/x64/plugins/cyber_engine_tweaks.asi                     1.38.1 https://github.com/maximegmd/CyberEngineTweaks/releases/download/v1.38.1/cet_1_38_1.zip 2e52be4ed431fad787e64ecbf75db346b4224577d2b89894912bc3f159020e73
-Mod_Settings            2.5 mods        lib  game  red4ext/plugins/mod_settings/mod_settings.dll               0.2.28 https://github.com/jackhumbert/mod_settings/releases/download/v0.2.28/mod_settings_v0.2.28.zip b9488daa7da85c0430853df4570dbf94dd768d11c4dabee97d732072746d40e7
-Audioware               2.5 mods        lib  -     red4ext/plugins/audioware/audioware.dll                     1.11.1 https://github.com/cyb3rpsych0s1s/audioware/releases/download/v1.11.1/Audioware-windows-v1.11.1.zip 3831c9f931323a7462d84b8c391dded43288acf98af356a2d4ad4695c0603789
-Native_Settings_UI      2.5 mods        lib  -     -                                                           1.97   nexus:3518
-Virtual_Atelier         2.5 mods        mod  -     -                                                           1.6.4  nexus:2987
-A.G.I.S.                2.5 mods        mod  -     -                                                           1.2.1  nexus:10909:publicnet:legendary,blackwall
-Night_City_Marketplace  2.5 mods        mod  -     -                                                           2.3.0  nexus:4433
-Virtual_Car_Dealer      2.5 mods        mod  -     -                                                           2.3.0  nexus:4454
-Quick_Stash             2.5 mods        mod  -     -                                                           1.1    nexus:30016
-No_Intro_Videos         2.5 mods        mod  -     -                                                           0.5    nexus:533:-:redscript
-Cyber_Drift             2.5 mods        mod  -     -                                                           2.31   nexus:8306:light
-Drive_an_Aerial_Vehicle 2.5 mods        mod  -     -                                                           3.5.0  nexus:13842
+redscript                     2.5 flight,mods lib  -     engine/tools/scc_lib.dll                                    0.5.32 https://github.com/jac3km4/redscript/releases/download/v0.5.32/redscript-v0.5.32-windows.zip 882c57a80b07e453bc8a34cd8430f460aceed789581de8743638e19dcfb7936f
+ArchiveXL                     2.5 flight,mods lib  minor red4ext/plugins/ArchiveXL/ArchiveXL.dll                     1.28.6 https://github.com/psiberx/cp2077-archive-xl/releases/download/v1.28.6/ArchiveXL-1.28.6.zip 25d0493a1b3e8ec4c26b7144a4d8f1a1def4d6dc840fff94b4c91c908583da09
+TweakXL                       2.5 flight,mods lib  minor red4ext/plugins/TweakXL/TweakXL.dll                         1.12.0 https://github.com/psiberx/cp2077-tweak-xl/releases/download/v1.12.0/TweakXL-1.12.0.zip a7c39b769e6c51d9f27412a101fb87e6a1fb8452f0e37ee0d1d1f3f44e656fa8
+Input_Loader                  2.5 flight      lib  game  red4ext/plugins/input_loader/input_loader.dll               0.2.6  https://github.com/jackhumbert/cyberpunk2077-input-loader/releases/download/v0.2.6/input_loader_v0.2.6.zip 6b420ba1e27b2e13c275a576a37a17d48771a0d35e52731f08e3584444a3e2b9
+Let_There_Be_Flight           2.5 flight      mod  game  red4ext/plugins/let_there_be_flight/let_there_be_flight.dll 0.3.20 https://github.com/jackhumbert/let_there_be_flight/releases/download/v0.3.20/let_there_be_flight_v0.3.20.zip b265d3c6a711f0647d34835374652f5a84b7f3110df944e6d9059aaa7cbfa243
+Codeware                      2.5 mods        lib  minor red4ext/plugins/Codeware/Codeware.dll                       1.21.2 https://github.com/psiberx/cp2077-codeware/releases/download/v1.21.2/Codeware-1.21.2.zip 269b65b8b97d26ea85d4516f5eb34c01a19dc85e299be57fb4f764e16c164dd2
+Cyber_Engine_Tweaks           2.5 mods        lib  minor bin/x64/plugins/cyber_engine_tweaks.asi                     1.38.1 https://github.com/maximegmd/CyberEngineTweaks/releases/download/v1.38.1/cet_1_38_1.zip 2e52be4ed431fad787e64ecbf75db346b4224577d2b89894912bc3f159020e73
+Mod_Settings                  2.5 mods        lib  game  red4ext/plugins/mod_settings/mod_settings.dll               0.2.28 https://github.com/jackhumbert/mod_settings/releases/download/v0.2.28/mod_settings_v0.2.28.zip b9488daa7da85c0430853df4570dbf94dd768d11c4dabee97d732072746d40e7
+Audioware                     2.5 mods        lib  -     red4ext/plugins/audioware/audioware.dll                     1.11.1 https://github.com/cyb3rpsych0s1s/audioware/releases/download/v1.11.1/Audioware-windows-v1.11.1.zip 3831c9f931323a7462d84b8c391dded43288acf98af356a2d4ad4695c0603789
+Native_Settings_UI            2.5 mods        lib  -     -                                                           1.97   nexus:3518
+Virtual_Atelier               2.5 mods        mod  -     -                                                           1.6.4  nexus:2987
+A.G.I.S.                      2.5 mods        mod  -     -                                                           1.2.1  nexus:10909:publicnet:legendary,blackwall
+Night_City_Marketplace        2.5 mods        mod  -     -                                                           2.3.0  nexus:4433
+Virtual_Car_Dealer            2.5 mods        mod  -     -                                                           2.3.0  nexus:4454
+Quick_Stash                   2.5 mods        mod  -     -                                                           1.1    nexus:30016
+No_Intro_Videos               2.5 mods        mod  -     -                                                           0.5    nexus:533:-:redscript
+Cyber_Drift                   2.5 mods        mod  -     -                                                           2.31   nexus:8306:light
+Drive_an_Aerial_Vehicle       2.5 mods        mod  -     -                                                           3.5.0  nexus:13842
+All_Vanilla_Clothes           2.5 mods        mod  -     -                                                           1.0    nexus:5544
+Iconic_Shops                  2.5 mods        mod  -     -                                                           3.6.1  nexus:7215
+Zenitex_Virtual_Atelier       2.5 mods        mod  -     -                                                           4.13   nexus:10090
+Zenitex_Ballistic_Mask        2.5 mods        mod  -     -                                                           4.1    nexus:12422:-:alt._colo,_-_gs
+Zenitex_Tactical_Harness      2.5 mods        mod  -     -                                                           4.0    nexus:9774:-:alt._colo,_-_gs
+Zenitex_Combat_Jacket         2.5 mods        mod  -     -                                                           2.0.1  nexus:19119:-:alt._colo,_-_gs
+Zenitex_Armor_Pads            2.5 mods        mod  -     -                                                           4.1    nexus:12044:-:alt._colo,_-_gs
+Zenitex_Panam_Pants           2.5 mods        mod  -     -                                                           4.0    nexus:10842:-:alt._colo,_-_gs
+Zenitex_Combat_Gloves         2.5 mods        mod  -     -                                                           2.0.1  nexus:19432:-:alt._colo,garment_support
+Comfy_Boots                   2.5 mods        mod  -     -                                                           1.1    nexus:11212:-:gymfiend
+Vehicle_Pack_Basic_1          2.5 mods        mod  -     -                                                           1.8.2  nexus:4625:-:~car_pack_2
+Vehicle_Pack_Basic_2          2.5 mods        mod  -     -                                                           1.9.0  nexus:4625:+car_pack_2
+Cyberpunk_Bikes_Edge          2.5 mods        mod  -     -                                                           1.03   nexus:14719
+Vehicle_Exit_Fix              2.5 mods        mod  -     -                                                           1.0    nexus:22786
+Bikes_of_the_Dark_Future      2.5 mods        mod  -     -                                                           1.3    nexus:18736:+bdf_dre_archv4:mirrors,hypervelocity
+Vehicle_Manufacturer_Fix      2.5 mods        mod  -     -                                                           1.0    nexus:28744
+Toyota_Supra_HKS              2.5 mods        mod  -     -                                                           1.0.5  nexus:12652:+hks_widebody
+Material_and_Texture_Override 2.5 mods        lib  -     -                                                           1.2    nexus:5266:-:redmod
+Porsche_911_GT3_RS            2.5 mods        mod  -     -                                                           1.2    nexus:11180:+main_file
+Vehicle_Customizer            2.5 mods        mod  -     -                                                           3.0    nexus:9034:+3dot0
+Vehicle_Customizer_update     2.5 mods        mod  -     -                                                           3.1    nexus:9034:+3dot1
 "
 # <<< add-on sets
 # What a component needs besides RED4ext: without it, it is not installed (a store without
@@ -134,7 +158,15 @@ ADDON_NEEDS="Let_There_Be_Flight:redscript,ArchiveXL,TweakXL,Input_Loader
 Mod_Settings:redscript,ArchiveXL Audioware:redscript,Codeware,TweakXL Native_Settings_UI:Cyber_Engine_Tweaks
 Virtual_Atelier:redscript,Codeware,ArchiveXL,Mod_Settings A.G.I.S.:Virtual_Atelier Night_City_Marketplace:Virtual_Atelier
 Virtual_Car_Dealer:redscript,Codeware,ArchiveXL,TweakXL Quick_Stash:Cyber_Engine_Tweaks Cyber_Drift:Cyber_Engine_Tweaks
-Drive_an_Aerial_Vehicle:redscript,Codeware,TweakXL,Cyber_Engine_Tweaks,Native_Settings_UI"
+Drive_an_Aerial_Vehicle:redscript,Codeware,TweakXL,Cyber_Engine_Tweaks,Native_Settings_UI
+All_Vanilla_Clothes:Virtual_Atelier Iconic_Shops:Virtual_Atelier,TweakXL Zenitex_Virtual_Atelier:Virtual_Atelier
+Zenitex_Ballistic_Mask:ArchiveXL,TweakXL Zenitex_Tactical_Harness:ArchiveXL,TweakXL Zenitex_Combat_Jacket:ArchiveXL,TweakXL
+Zenitex_Armor_Pads:ArchiveXL,TweakXL Zenitex_Panam_Pants:ArchiveXL,TweakXL Zenitex_Combat_Gloves:ArchiveXL,TweakXL
+Comfy_Boots:ArchiveXL,TweakXL Vehicle_Pack_Basic_1:Virtual_Car_Dealer Vehicle_Pack_Basic_2:Virtual_Car_Dealer
+Cyberpunk_Bikes_Edge:ArchiveXL,TweakXL Bikes_of_the_Dark_Future:ArchiveXL,TweakXL,Cyber_Engine_Tweaks,redscript,Vehicle_Exit_Fix
+Toyota_Supra_HKS:ArchiveXL,TweakXL,Cyber_Engine_Tweaks,redscript,Vehicle_Manufacturer_Fix
+Porsche_911_GT3_RS:ArchiveXL,TweakXL,Cyber_Engine_Tweaks,Material_and_Texture_Override,Virtual_Car_Dealer
+Vehicle_Customizer:Cyber_Engine_Tweaks Vehicle_Customizer_update:Vehicle_Customizer"
 # Files a mod writes to while the game runs (its settings, its database, what it has learned):
 # the player's copy stays, and is replaced only when a new release changes the file it ships.
 # "*" is every component; a "*" in a pattern also matches across folders.
@@ -143,6 +175,7 @@ ADDON_STATE="
 *                       bin/x64/plugins/cyber_engine_tweaks/mods/*/db.sqlite3
 Cyber_Drift             bin/x64/plugins/cyber_engine_tweaks/mods/CyberDrift*/custom/*
 Drive_an_Aerial_Vehicle bin/x64/plugins/cyber_engine_tweaks/mods/DriveAerialVehicle/Data/*
+Vehicle_Customizer      bin/x64/plugins/cyber_engine_tweaks/mods/VehicleCustomizerSVE/*
 "
 DATA_DIR="${XDG_DATA_HOME:-$HOME/.local/share}/nightcoop-linux"
 CACHE_DIR="${XDG_CACHE_HOME:-$HOME/.cache}/nightcoop-linux"
@@ -1374,11 +1407,17 @@ def nexus_name(fn, mod_id):
 def cmd_nexus_find(mod_id, prefer, avoid, minver, *dirs):
     """The downloads of a Nexus mod in the given folders (see NEXUS_NAMES), best first, one per
     line: path, version, and "preferred" or "other". A file whose name has <prefer> in it (e.g.
-    "light") comes first, then the newest. A file with one of the comma-separated <avoid> words in
-    its name, or older than <minver>, is never listed: when there is nothing else, the newest such
-    is named, as "avoided" or "old". Each upload is listed once. "-" means no word or version."""
-    prefer = '' if prefer == '-' else prefer.lower()
-    avoid = [] if avoid == '-' else [w for w in avoid.lower().split(',') if w]
+    "light") comes first, then the newest; "+word" means only such files count (a mod with several
+    files that go together, each its own component). A file with one of the comma-separated
+    <avoid> words in its name, or older than <minver>, is never listed: when there is nothing else,
+    the newest such is named, as "avoided" or "old"; "~word" is never named (another component
+    takes it). In the words "_" stands for a space. Each upload is listed once. "-" means no word
+    or version."""
+    need = prefer.startswith('+')
+    prefer = '' if prefer in ('-', '+') else prefer.lstrip('+').lower().replace('_', ' ')
+    avoid = [] if avoid == '-' else [w.replace('_', ' ') for w in avoid.lower().split(',') if w]
+    quiet = [w[1:] for w in avoid if w.startswith('~')]
+    avoid = [w for w in avoid if not w.startswith('~')]
     found, shunned, old = [], [], []
     for d in dirs:
         try:
@@ -1391,7 +1430,9 @@ def cmd_nexus_find(mod_id, prefer, avoid, minver, *dirs):
             if not got or not os.path.isfile(p):
                 continue
             name, ver, t = got
-            low = name.lower()
+            low = name.lower().replace('_', ' ')
+            if (need and prefer not in low) or any(w in low for w in quiet):
+                continue
             key = (t, os.path.getmtime(p), p, ver, low)
             if any(w in low for w in avoid):
                 shunned.append(key)
@@ -2169,13 +2210,24 @@ nexus_file() {   # nexus_file <component>: which file to download, of a mod with
         A.G.I.S.) echo "the main file, PUBLICNET" ;;
         No_Intro_Videos) echo "the archive file" ;;
         Cyber_Drift) echo "the Light file" ;;
+        Zenitex_Virtual_Atelier) ;;
+        Zenitex_*_*) echo "the main file, not Alt. Colors or GS" ;;
+        Comfy_Boots) echo "the Female V and Male V file" ;;
+        Vehicle_Pack_Basic_1) echo "Car Pack 1" ;;
+        Vehicle_Pack_Basic_2) echo "Car Pack 2" ;;
+        Bikes_of_the_Dark_Future) echo "the mandatory main file, BDF_DRe_ArchV4" ;;
+        Toyota_Supra_HKS) echo "the main file, KRNLNIK Toyota Supra MK5 HKS Widebody" ;;
+        Porsche_911_GT3_RS) echo "the Main File" ;;
+        Material_and_Texture_Override) echo "the Legacy file, not REDmod" ;;
+        Vehicle_Customizer) echo "SVE 3dot0, among the main files" ;;
+        Vehicle_Customizer_update) echo "SVE 3dot1, among the update files" ;;
     esac
 }
 nexus_avoided() {   # nexus_avoided <component>: what a file of it that is never installed is
     case "$1" in
         A.G.I.S.) echo "another edition of A.G.I.S. than its main file, PUBLICNET" ;;
         No_Intro_Videos) echo "the redscript file of No Intro Videos, which hooks the game's start-up, where NightCoop skips the intro itself (take the archive file)" ;;
-        *) echo "a file of $(name_of "$1") this script does not use" ;;
+        *) h="$(nexus_file "$1")"; echo "another file of $(name_of "$1") than the one this script takes${h:+ ($h)}" ;;
     esac
 }
 cache_it() {   # cache_it <archive>: kept for later runs (not by a dry run)
@@ -2314,6 +2366,13 @@ step_addons() {   # the add-on sets (--with-flight, --with-mods), matched to the
     if [[ "$ADDON_HAVE" == *" Virtual_Car_Dealer "* ]] || [[ "$ADDON_HAVE" == *" Drive_an_Aerial_Vehicle "* ]]; then
         info "Cars and AVs in co-op: partners see a car of a mod (one Virtual Car Dealer sells, an AV of Drive an"
         info "Aerial Vehicle) only when they have that mod too; otherwise NightCoop shows a game car with as many seats."
+    fi
+    if [[ "$ADDON_HAVE" =~ \ (Zenitex_[A-Za-z]+_[A-Za-z_]+|Comfy_Boots)\  ]]; then
+        info "Outfits of mods in co-op: a partner without the same outfit mod sees a plain game piece for that body"
+        info "part (head, face and accessories stay empty), so share the outfit mods with everyone you play with."
+    fi
+    if [[ "$ADDON_HAVE" == *" Vehicle_Customizer "* ]]; then
+        info "Vehicle Customizer works only with the game's language set to English."
     fi
     if [ "${#ADDON_MISSING[@]}" -gt 0 ]; then
         warn "not found in $(listing "${NEXUS_DIRS[@]}"): these are published only on Nexus Mods, which does not allow"

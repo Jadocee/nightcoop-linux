@@ -134,9 +134,11 @@ cannot hold more than 128 KiB, so a full system CA bundle will not fit.
   with the patch. For a new game patch, check each mod's page and changelog (the Nexus Mods
   API, with a personal key, gives the file names, contents, versions and requirements), and
   add its line for the patch only once it supports it. Which file to take of a mod with
-  several, and which never to take, is in its source (`nexus:<id>:<prefer>:<avoid>,...`),
-  with the reasons in `nexus_file` and `nexus_avoided`. Files a mod rewrites while the game
-  runs go in `ADDON_STATE`.
+  several, and which never to take, is in its source (`nexus:<id>:<prefer>:<avoid>,...`,
+  where `+word` means only files with the word, for a mod whose files go together as
+  components of their own, `~word` skips a file another component takes, and `_` stands for
+  a space), with the reasons in `nexus_file` and `nexus_avoided`. Files a mod rewrites while
+  the game runs go in `ADDON_STATE`.
 - **A new SteamOS release:** set `STEAMOS_BRANCH`; the image uses whichever of Valve's
   repositories exist for it.
 - **A new Proton or NightCoop build:** rebuild with `--build`; the images take the current
