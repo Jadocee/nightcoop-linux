@@ -31,9 +31,9 @@ sed -e "s#^NIGHTCOOP_SITE=.*#NIGHTCOOP_SITE=\"file://$FIX/site\"#" \
     -e "s#^RED4EXT_URL=.*#RED4EXT_URL=\"file://$FIX/red4ext-1.31.0.zip\"#" \
     -e "s#^RED4EXT_SHA=.*#RED4EXT_SHA=\"$(cat "$FIX/red4ext.sha256")\"#" \
     -e "s#^VCREDIST_URLS=.*#VCREDIST_URLS=(\"file://$FIX/site/vc_redist.x64.exe\")#" "$SCRIPT" |
-    awk -v table="$FIX/flight-set.txt" '   # the flight set from the fixtures
-        /^# >>> flight set/ { print; print "FLIGHT_SET=\""; while ((getline line < table) > 0) print line; print "\""; skip = 1; next }
-        /^# <<< flight set/ { skip = 0 }
+    awk -v table="$FIX/addon-sets.txt" '   # the add-on sets from the fixtures
+        /^# >>> add-on sets/ { print; print "ADDON_SETS=\""; while ((getline line < table) > 0) print line; print "\""; skip = 1; next }
+        /^# <<< add-on sets/ { skip = 0 }
         !skip' > "$NI"
 chmod +x "$NI"
 for os in steamos:SteamOS cachyos:CachyOS arch:Arch; do
@@ -93,7 +93,6 @@ R4T="$(sed -n 's/^RED4EXT_COMPAT="\(.*\)"/\1/p' "$SCRIPT")"
 r4() { hp r4ok "$1" "$2" "$R4T"; }
 expect "RED4ext 1.31 runs on 2.5"      'r4 1.31.0 3.0.88.46235'
 expect "RED4ext 1.31 refuses 2.31"     '! r4 1.31.0 3.0.80.51928'
-expect "RED4ext 1.30 runs on 2.31"     'r4 1.30.0 3.0.80.51928'
 expect "RED4ext 1.30 does not run on 2.5" '! r4 1.30.0 3.0.88.46235'
 expect "a newer RED4ext is trusted on 2.5" 'r4 1.32.0 3.0.88.46235'
 
@@ -222,18 +221,14 @@ expect "--proton keep leaves the choice" '[ $RC = 0 ] && [ "$(tool)" = proton_ex
 run install --yes
 expect "an explicit choice is respected" '[ "$(tool)" = proton_experimental ] && [[ "$OUT" == *"already chosen for this game"* ]]' "$OUT"
 
-# ------------------------------------------------------- game patch 2.31 ----
-section "Game patch 2.31"
+# ------------------------------------------------ patches before 2.5 ----
+section "Game patch 2.31: older than 2.5, no longer supported"
 newworld g231 native 2.31; OSR="$T/os-cachyos"
+BEFORE="$(snapshot "$H")"
 run install --yes
-expect "the 2.31 archive was chosen"  '[ $RC = 0 ] && [[ "$OUT" == *"NightCoop 0.2.0-beta (for game 2.31, protocol 164, bundles RED4ext 1.30.0)"* ]]' "$OUT"
-expect "RED4ext 1.30 kept, 1.31 not downloaded" '[ "$(hp pever "$G/red4ext/RED4ext.dll" product)" = 1.30.0 ] && [[ "$OUT" != *"downloading red4ext"* ]]' "$OUT"
-newworld g231fix native 2.31; OSR="$T/os-cachyos"
-cp "$FIX/pe/r4new/RED4ext.dll" "$G/red4ext/RED4ext.dll"; mkdir -p "$G/bin/x64"; cp "$FIX/pe/r4new/winmm.dll" "$G/bin/x64/winmm.dll"
+expect "install refuses a game older than 2.5, changing nothing" '[ $RC != 0 ] && [[ "$OUT" == *"older than patch 2.5, the oldest this installer supports"* ]] && [ "$BEFORE" = "$(snapshot "$H")" ]' "$OUT"
 run check
-expect "check flags RED4ext 1.31 on 2.31" '[[ "$OUT" == *"RED4ext:"*"1.31.0 (DOES NOT support game 2.31; needs 1.30.0"* ]]' "$OUT"
-run install --yes
-expect "the earlier 1.31 overlay is repaired" '[ $RC = 0 ] && [ "$(hp pever "$G/red4ext/RED4ext.dll" product)" = 1.30.0 ] && [[ "$OUT" == *"does not support game 2.31"*"will be replaced"* ]]' "$OUT"
+expect "check says so too" '[ $RC = 0 ] && [[ "$OUT" == *"game 2.31 is older than patch 2.5"* ]]' "$OUT"
 
 # --------------------------------------- old single archive, game 2.5 ----
 section "Old single NightCoop archive (bundles RED4ext 1.30) on game 2.5"
@@ -293,7 +288,7 @@ run install --dry-run --with-flight
 expect "a dry run with the set changes nothing, not even the cache" '[ $RC = 0 ] && [[ "$OUT" == *"dry run finished"* ]] && [ "$BEFORE" = "$(snapshot "$H")" ]' "$OUT"
 run install --yes --with-flight
 expect "--with-flight installs the set paired with game 2.5" '[ $RC = 0 ] && [ "$(fver "$P/let_there_be_flight/let_there_be_flight.dll")" = 0.3.20 ] && [ "$(fver "$P/ArchiveXL/ArchiveXL.dll")" = 1.28.6 ] && [ "$(fver "$P/TweakXL/TweakXL.dll")" = 1.12.0 ] && [ "$(fver "$P/input_loader/input_loader.dll")" = 0.2.6 ] && grep -q "redscript lib 0.5.32" "$G/engine/tools/scc_lib.dll"' "$OUT"
-expect "the plan lists the set" '[[ "$OUT" == *"flight set      redscript 0.5.32, ArchiveXL 1.28.6, TweakXL 1.12.0, Input Loader 0.2.6, Let There Be Flight 0.3.20 (for game 2.5)"* ]]' "$OUT"
+expect "the plan lists the set" '[[ "$OUT" == *"add-ons         redscript 0.5.32, ArchiveXL 1.28.6, TweakXL 1.12.0, Input Loader 0.2.6, Let There Be Flight 0.3.20 (for game 2.5)"* ]]' "$OUT"
 expect "game files the set replaces are backed up" '[ "$(cat "$(newest_backup)game/engine/tools/scc.exe")" = "the game'"'"'s own script compiler" ] && [ -f "$(newest_backup)game/r6/cache/inputContexts.xml" ]' "$OUT"
 expect "check lists the set by release" '[[ "$OUT" == *"Let There Be Flight:"*"0.3.20, with redscript 0.5.32, ArchiveXL 1.28.6, TweakXL 1.12.0, Input Loader 0.2.6 (kept up to date by this script)"* ]]' "$OUT"
 B1="$(newest_backup)"
@@ -302,12 +297,11 @@ expect "the choice is remembered; a rerun changes and downloads nothing" '[ $RC 
 cp "$FIX/pe/axl-1.28.7/ArchiveXL.dll" "$P/ArchiveXL/ArchiveXL.dll"
 run update --yes
 expect "a newer ArchiveXL for the same patch, installed by hand, is kept" '[ $RC = 0 ] && [[ "$OUT" == *"keeping the installed ArchiveXL 1.28.7"* ]] && [ "$(fver "$P/ArchiveXL/ArchiveXL.dll")" = 1.28.7 ] && [ -f "$P/ArchiveXL/Scripts/ArchiveXL.reds" ]' "$OUT"
-cp "$FIX/pe/Cyberpunk2077-2.31.exe" "$G/bin/x64/Cyberpunk2077.exe"   # the game goes back to patch 2.31
+cp "$FIX/pe/Cyberpunk2077-2.6.exe" "$G/bin/x64/Cyberpunk2077.exe"   # a patch newer than the tables
+FLY_ADDONS="$(cd "$G" && find red4ext/Plugins/let_there_be_flight red4ext/Plugins/ArchiveXL engine/tools -type f | sort | xargs sha256sum)"
 run update --yes
-expect "the set follows the game patch: the 2.31 builds" '[ $RC = 0 ] && [ "$(fver "$P/let_there_be_flight/let_there_be_flight.dll")" = 0.3.18 ] && [ "$(fver "$P/ArchiveXL/ArchiveXL.dll")" = 1.27.5 ] && [ "$(hp pestr "$P/input_loader/input_loader.dll" ProductVersion)" = 2.30 ] && grep -q "redscript lib 0.5.31" "$G/engine/tools/scc_lib.dll" && [ "$(hp pever "$G/red4ext/RED4ext.dll" product)" = 1.30.0 ]' "$OUT"
-expect "files only the 2.5 builds had are removed, the 2.31 ones added" '[ ! -e "$P/let_there_be_flight_uninstall.bat" ] && [ -f "$P/ArchiveXL/Scripts/Legacy.reds" ]' "$OUT"
-run check
-expect "check names each release, not what its DLL says (Input Loader 0.2.3 reports 0.1.1)" '[[ "$OUT" == *"Let There Be Flight:"*"0.3.18, with redscript 0.5.31, ArchiveXL 1.27.5, TweakXL 1.11.5, Input Loader 0.2.3 (kept"* ]]' "$OUT"
+expect "on a patch the tables do not know, the set is left as it is" '[ $RC = 0 ] && [[ "$OUT" == *"no add-on builds are known for game 2.6; what is installed is left as it is"* ]] && [ "$FLY_ADDONS" = "$(cd "$G" && find red4ext/Plugins/let_there_be_flight red4ext/Plugins/ArchiveXL engine/tools -type f | sort | xargs sha256sum)" ]' "$OUT"
+cp "$FIX/pe/Cyberpunk2077-2.5.exe" "$G/bin/x64/Cyberpunk2077.exe"
 run update --yes --without-flight
 expect "--without-flight removes Let There Be Flight, folder and all" '[ $RC = 0 ] && [ ! -e "$P/let_there_be_flight" ]' "$OUT"
 expect "the mods it needed stay" '[ -f "$P/ArchiveXL/ArchiveXL.dll" ] && [ -f "$P/TweakXL/TweakXL.dll" ] && [ -f "$P/input_loader/input_loader.dll" ] && [ -f "$G/engine/tools/scc_lib.dll" ]' "$OUT"
@@ -324,6 +318,67 @@ BEFORE="$(snapshot "$G")"
 run install --yes --with-flight
 cp "$T/good.zip" "$Z"
 expect "an archive that does not match its SHA-256 is refused before anything changes" '[ $RC != 0 ] && [[ "$OUT" == *"SHA-256 mismatch for TweakXL-1.12.0.zip"* ]] && [ "$BEFORE" = "$(snapshot "$G")" ]' "$OUT"
+
+# ----------------------------------------------------------------- mods ----
+section "Mods (--with-mods): Virtual Atelier and its stores, Quick Stash, No Intro Videos"
+newworld mods native; OSR="$T/os-arch"
+D="$H/Downloads"; mkdir -p "$D"; NX="$FIX/nexus"
+P="$G/red4ext/Plugins"; CETM="$G/bin/x64/plugins/cyber_engine_tweaks/mods"; PRISTINE_MODS="$(snapshot "$G")"
+cp "$NX/Virtual Atelier - Basic-2987-1-6-4-1730000000.zip" "$NX/Virtual Atelier - Full-2987-1-6-4-1730000001.zip" "$NX/No Intro Videos-533-1-0-1600000000.zip" "$D/"
+# xdg-user-dir names the home folder when no Downloads folder is set; ~/Downloads is used then
+mkdir -p "$T/xdg-unset" "$T/xdg-fr"
+printf '#!/bin/sh\necho "$HOME"\n' > "$T/xdg-unset/xdg-user-dir"; printf '#!/bin/sh\necho "$HOME/T\303\251l\303\251chargements"\n' > "$T/xdg-fr/xdg-user-dir"
+chmod +x "$T/xdg-unset/xdg-user-dir" "$T/xdg-fr/xdg-user-dir"
+PATH="$T/xdg-unset:$PATH" run install --yes --with-mods
+expect "the frameworks come from GitHub" '[ $RC = 0 ] && [ "$(fver "$G/bin/x64/plugins/cyber_engine_tweaks.asi")" = 1.38.1 ] && [ -f "$G/bin/x64/version.dll" ] && [ "$(fver "$P/Codeware/Codeware.dll")" = 1.21.2 ] && [ -f "$P/TweakXL/TweakXL.dll" ] && [ -f "$P/ArchiveXL/ArchiveXL.dll" ] && grep -q "redscript lib 0.5.32" "$G/engine/tools/scc_lib.dll"' "$OUT"
+expect "Cyber Engine Tweaks loads from the first run: its override is set" '[ "$(hp reg-get "$PFX/user.reg" "$REG_KEY" version)" = native,builtin ] && [[ "$(launch_opts)" == *"winmm,version=n,b"* ]]' "$(launch_opts)"
+expect "the Basic file of Virtual Atelier is chosen over the Full one" '[ -f "$G/r6/scripts/VirtualAtelier/Basic.reds" ] && [ ! -e "$G/r6/scripts/VirtualAtelier/Full.reds" ] && [ ! -e "$CETM/VirtualAtelier" ]' "$OUT"
+expect "No Intro Videos installed" '[ -f "$G/archive/pc/mod/NoIntroVideos.archive" ]' "$OUT"
+expect "what is not downloaded yet is listed with its Nexus page" '[[ "$OUT" == *"A.G.I.S.: https://www.nexusmods.com/cyberpunk2077/mods/10909?tab=files"* ]] && [[ "$OUT" == *"Night City Marketplace: https://www.nexusmods.com/cyberpunk2077/mods/4433?tab=files"* ]] && [[ "$OUT" == *"Quick Stash: https://www.nexusmods.com/cyberpunk2077/mods/30016?tab=files"* ]]' "$OUT"
+expect "check lists the mods and what is missing" '[[ "$OUT" == *"Mods:"*"Virtual Atelier 1.6.4, No Intro Videos 1.0, with redscript 0.5.32, ArchiveXL 1.28.6, TweakXL 1.12.0, Codeware 1.21.2, Cyber Engine Tweaks 1.38.1 (kept up to date by this script)"* ]] && [[ "$OUT" == *"missing: A.G.I.S., Night City Marketplace, Quick Stash"* ]]' "$OUT"
+rm "$D"/Virtual*   # the Downloads folder cleaned up: the installer kept a copy
+cp "$NX/A.G.I.S. - All Game Items Store-10909-2-1-1720000000.zip" "$NX/Night City Marketplace-4433-1-2-1700000000.zip" "$NX/Quick Stash - Transfer All Inventory Items To V's Stash-30016-1-1-1720000000.zip" "$D/"
+run update --yes
+expect "the rest install once downloaded, a wrapped archive too, without its read-me" '[ $RC = 0 ] && [ -f "$G/r6/scripts/AGIS/agis.reds" ] && [ ! -e "$G/readme.txt" ] && [ ! -e "$G/AGIS" ] && [ -f "$G/r6/scripts/NCMarketplace/stores.reds" ] && [ -f "$CETM/QuickStash/init.lua" ]' "$OUT"
+expect "Virtual Atelier stays, from the installer's own copy" '[ -f "$G/r6/scripts/VirtualAtelier/Basic.reds" ] && [[ "$OUT" != *"Virtual Atelier (the Basic file):"* ]]' "$OUT"
+expect "Quick Stash comes with its co-op caution" '[[ "$OUT" == *"a guest'"'"'s stash there is not their own"* ]]' "$OUT"
+B1="$(newest_backup)"
+run update --yes
+expect "with everything downloaded and in place, a rerun changes nothing" '[ $RC = 0 ] && [[ "$OUT" == *"everything is up to date; nothing to do"* ]] && [ "$(newest_backup)" = "$B1" ]' "$OUT"
+cp "$FIX/nexus-bad/No Intro Videos-533-1-1-1700000000.zip" "$D/"
+run update --yes
+expect "a newer download without game folders is passed over for the copy that works" '[ $RC = 0 ] && [[ "$OUT" == *"No Intro Videos-533-1-1-1700000000.zip has no game folders"* ]] && [[ "$OUT" == *"everything is up to date; nothing to do"* ]] && [ -f "$G/archive/pc/mod/NoIntroVideos.archive" ]' "$OUT"
+rm "$H/.cache/nightcoop-linux/mods/No Intro Videos-533-1-0-1600000000.zip" "$D/No Intro Videos-533-1-0-1600000000.zip"   # no good copy left
+printf 'not a zip' > "$D/No Intro Videos-533-1-2-1700000002.zip"
+run update --yes
+expect "with no usable download at all, the installed copy stays" '[ $RC = 0 ] && [[ "$OUT" == *"could not unpack No Intro Videos-533-1-2-1700000002.zip: not a usable zip archive"* ]] && [[ "$OUT" == *"keeping the installed No Intro Videos: none of its downloads can be used"* ]] && [ -f "$G/archive/pc/mod/NoIntroVideos.archive" ]' "$OUT"
+rm "$D/No Intro Videos-533-1-1-1700000000.zip" "$D/No Intro Videos-533-1-2-1700000002.zip"
+run update --yes --with-flight
+expect "both sets: the shared frameworks once, Let There Be Flight added" '[ $RC = 0 ] && [ -f "$P/let_there_be_flight/let_there_be_flight.dll" ] && [[ "$OUT" == *"Add-ons: flight, mods"* ]]' "$OUT"
+run update --yes --without-mods
+expect "--without-mods removes the mods, Quick Stash from inside Cyber Engine Tweaks too" '[ $RC = 0 ] && [ ! -e "$G/r6/scripts/VirtualAtelier" ] && [ ! -e "$G/r6/scripts/AGIS" ] && [ ! -e "$CETM/QuickStash" ] && [ ! -e "$G/archive/pc/mod/NoIntroVideos.archive" ]' "$OUT"
+expect "the frameworks stay, and the flight set keeps its own" '[ -f "$G/bin/x64/plugins/cyber_engine_tweaks.asi" ] && [ -f "$G/bin/x64/plugins/cyber_engine_tweaks/scripts/autoexec.lua" ] && [ -f "$P/Codeware/Codeware.dll" ] && [ -f "$P/TweakXL/TweakXL.dll" ] && [ -f "$P/let_there_be_flight/let_there_be_flight.dll" ]' "$OUT"
+run check
+expect "check: the flight set still kept up to date, the mods no longer" '[[ "$OUT" == *"Let There Be Flight:"*"0.3.20, with redscript 0.5.32, ArchiveXL 1.28.6, TweakXL 1.12.0, Input Loader 0.2.6 (kept up to date"* ]] && [[ "$OUT" == *"Mods:"*"not installed by this script (add --with-mods)"* ]]' "$OUT"
+run uninstall --yes
+expect "uninstall puts the game folder back exactly" '[ $RC = 0 ] && [ "$PRISTINE_MODS" = "$(snapshot "$G")" ]' "$(diff <(echo "$PRISTINE_MODS") <(snapshot "$G"))"
+newworld modsneeds native; OSR="$T/os-arch"; D="$H/Téléchargements"; mkdir -p "$D"   # a French desktop's Downloads folder
+cp "$FIX/nexus/A.G.I.S. - All Game Items Store-10909-2-1-1720000000.zip" "$FIX/nexus/Virtual Atelier - Full-2987-1-6-4-1730000001.zip" "$D/"
+PATH="$T/xdg-fr:$PATH" run install --yes --with-mods
+expect "Virtual Atelier's Full file alone is not installed (it needs Mod Settings, which clashes with NightCoop)" '[ $RC = 0 ] && [ ! -e "$G/r6/scripts/VirtualAtelier" ] && [[ "$OUT" == *"is the Full file of Virtual Atelier, which needs mods that conflict with NightCoop"* ]]' "$OUT"
+expect "a store without Virtual Atelier is left out (it would stop every script compiling)" '[ ! -e "$G/r6/scripts/AGIS" ] && [[ "$OUT" == *"A.G.I.S. needs Virtual Atelier, which is not here"* ]] && [[ "$OUT" == *"Virtual Atelier (the Basic file): https://www.nexusmods.com/cyberpunk2077/mods/2987?tab=files"* ]]' "$OUT"
+newworld mods7z native; OSR="$T/os-arch"; D="$H/Downloads"; mkdir -p "$D" "$T/niv7z"
+python3 -I -m zipfile -e "$FIX/nexus/No Intro Videos-533-1-0-1600000000.zip" "$T/niv7z"
+if command -v bsdtar >/dev/null 2>&1; then   # Arch, CachyOS and SteamOS have it (pacman needs libarchive)
+    ln -s /etc/hostname "$T/niv7z/archive/pc/mod/elsewhere"
+    bsdtar --format 7zip -cf "$D/No Intro Videos-533-1-0-1600000000.7z" -C "$T/niv7z" archive
+    run install --yes --with-mods
+    expect "a 7z download is unpacked with bsdtar, without the links in it" '[ $RC = 0 ] && [ -f "$G/archive/pc/mod/NoIntroVideos.archive" ] && [ ! -L "$G/archive/pc/mod/elsewhere" ]' "$OUT"
+else
+    printf '7z\274\257\047\034' > "$D/No Intro Videos-533-1-0-1600000000.7z"
+    run install --yes --with-mods
+    expect "without bsdtar, a 7z download is left out, saying why, and the rest installs" '[ $RC = 0 ] && [[ "$OUT" == *"a .7z archive needs bsdtar (from libarchive) to unpack"* ]] && [[ "$OUT" == *"No Intro Videos is left out"* ]] && [ ! -e "$G/archive/pc/mod/NoIntroVideos.archive" ] && [ -f "$G/bin/x64/plugins/cyber_engine_tweaks.asi" ]' "$OUT"
+fi
 
 # ------------------------------------------------- Cyber Engine Tweaks ----
 section "Cyber Engine Tweaks installed alongside"

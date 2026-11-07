@@ -123,7 +123,8 @@ def zipdir(zpath, files):
 # ------------------------------------------------------------------ archives
 GAME = {   # patch: (Cyberpunk2077.exe file version, fixed product version), as the real builds have them
     '2.5': ('3.0.88.46235', '2.5.0.0'),
-    '2.31': ('3.0.80.51928', '2.3.1.0'),
+    '2.31': ('3.0.80.51928', '2.3.1.0'),   # older than the installer supports: refused
+    '2.6': ('3.0.90.10000', '2.6.0.0'),     # a patch newer than its tables
 }
 
 
@@ -207,53 +208,74 @@ def archives(fix):
     write(f'{fix}/site/releases.json', json.dumps(rel, indent=1))
     write(f'{fix}/red4ext.sha256', sha(f'{fix}/red4ext-1.31.0.zip'))
 
-    # Let There Be Flight and what it needs (--with-flight), shaped like the real releases,
-    # and the installer's FLIGHT_SET table pointing at them
+    # the installer's add-on sets (--with-flight, --with-mods), shaped like the real releases,
+    # and its ADDON_SETS table pointing at them; the Nexus mods are archives named as Nexus names its downloads
     table = []
 
-    def flight(comp, patch, ver, rule, probe, name, files):
+    def github(comp, sets, kind, rule, probe, ver, name, files):
         path = f'{fix}/gh/{name}'
         zipdir(path, files)
-        table.append(f'{comp} {patch} {ver} {rule} {probe} file://{path} {sha(path)}')
+        table.append(f'{comp} 2.5 {sets} {kind} {rule} {probe} {ver} file://{path} {sha(path)}')
 
-    # il_dll: the version Input Loader's DLL reports; the real 0.2.3 build says 0.1.1
-    for patch, (rs, axl, txl, il, il_dll, il_game, ltbf, ltbf_game) in {
-            '2.31': ('0.5.31', '1.27.5', '1.11.5', '0.2.3', '0.1.1', '2.30', '0.3.18', '2.31'),
-            '2.5': ('0.5.32', '1.28.6', '1.12.0', '0.2.6', '0.2.6', '2.50', '0.3.20', '2.50')}.items():
-        flight('redscript', patch, rs, '-', 'engine/tools/scc_lib.dll', f'redscript-v{rs}-windows.zip', {
-            'engine/config/base/scripts.ini': b'[Scripts]\r\nEnableCompilation = "true"\r\n',
-            'engine/tools/scc.exe': f'redscript scc {rs}'.encode(),
-            'engine/tools/scc_lib.dll': f'redscript lib {rs}'.encode(),
-            'r6/config/cybercmd/scc.toml': b'[args]\r\n'})
-        make_pe(f'{pe}/axl-{axl}/ArchiveXL.dll', axl + '.0', linker=(14, 44), imports=CRT)
-        files = {'red4ext/plugins/ArchiveXL/ArchiveXL.dll': f'{pe}/axl-{axl}/ArchiveXL.dll',
-                 'red4ext/plugins/ArchiveXL/Scripts/ArchiveXL.reds': f'// ArchiveXL {axl}\n'.encode(),
-                 'r6/config/redsUserHints/ArchiveXL.toml': b'# hints\n'}
-        if patch == '2.31':
-            files['red4ext/plugins/ArchiveXL/Scripts/Legacy.reds'] = b'// gone in 1.28\n'
-        flight('ArchiveXL', patch, axl, 'minor', 'red4ext/plugins/ArchiveXL/ArchiveXL.dll', f'ArchiveXL-{axl}.zip', files)
-        make_pe(f'{pe}/txl-{txl}/TweakXL.dll', txl + '.0', linker=(14, 44), imports=CRT)
-        flight('TweakXL', patch, txl, 'minor', 'red4ext/plugins/TweakXL/TweakXL.dll', f'TweakXL-{txl}.zip', {
-            'red4ext/plugins/TweakXL/TweakXL.dll': f'{pe}/txl-{txl}/TweakXL.dll',
-            'red4ext/plugins/TweakXL/Scripts/TweakXL.reds': f'// TweakXL {txl}\n'.encode()})
-        make_pe(f'{pe}/il-{il}/input_loader.dll', il_dll, il_game, linker=(14, 44), imports=CRT,
-                strings={'Comments': f'Built for {il_game}'})
-        flight('Input_Loader', patch, il, 'game', 'red4ext/plugins/input_loader/input_loader.dll', f'input_loader_v{il}.zip', {
-            'red4ext/plugins/input_loader/input_loader.dll': f'{pe}/il-{il}/input_loader.dll',
-            'r6/cache/inputContexts.xml': f'<bindings loader="{il}"/>\r\n'.encode(),
-            'r6/cache/inputUserMappings.xml': f'<mappings loader="{il}"/>\r\n'.encode(),
-            'engine/config/platform/pc/input_loader.ini': b'[Player/Input]\r\n'})
-        make_pe(f'{pe}/ltbf-{ltbf}/let_there_be_flight.dll', ltbf, ltbf_game, linker=(14, 44), imports=CRT,
-                strings={'Comments': f'Built for {ltbf_game}'})
-        files = {'red4ext/plugins/let_there_be_flight/let_there_be_flight.dll': f'{pe}/ltbf-{ltbf}/let_there_be_flight.dll',
-                 'red4ext/plugins/let_there_be_flight/packed.reds': f'// LTBF {ltbf}\n'.encode(),
-                 'red4ext/plugins/let_there_be_flight/inputs.xml': b'<inputs/>\r\n'}
-        if patch == '2.5':
-            files['red4ext/plugins/let_there_be_flight_uninstall.bat'] = b'@echo off\r\n'
-        flight('Let_There_Be_Flight', patch, ltbf, 'game', 'red4ext/plugins/let_there_be_flight/let_there_be_flight.dll',
-               f'let_there_be_flight_v{ltbf}.zip', files)
-    make_pe(f'{pe}/axl-1.28.7/ArchiveXL.dll', '1.28.7.0', linker=(14, 44), imports=CRT)   # a newer copy, by hand
-    write(f'{fix}/flight-set.txt', '\n'.join(table) + '\n')
+    github('redscript', 'flight,mods', 'lib', '-', 'engine/tools/scc_lib.dll', '0.5.32', 'redscript-v0.5.32-windows.zip', {
+        'engine/config/base/scripts.ini': b'[Scripts]\r\nEnableCompilation = "true"\r\n',
+        'engine/tools/scc.exe': b'redscript scc 0.5.32',
+        'engine/tools/scc_lib.dll': b'redscript lib 0.5.32',
+        'r6/config/cybercmd/scc.toml': b'[args]\r\n'})
+    make_pe(f'{pe}/axl/ArchiveXL.dll', '1.28.6.0', linker=(14, 44), imports=CRT)
+    github('ArchiveXL', 'flight,mods', 'lib', 'minor', 'red4ext/plugins/ArchiveXL/ArchiveXL.dll', '1.28.6', 'ArchiveXL-1.28.6.zip', {
+        'red4ext/plugins/ArchiveXL/ArchiveXL.dll': f'{pe}/axl/ArchiveXL.dll',
+        'red4ext/plugins/ArchiveXL/Scripts/ArchiveXL.reds': b'// ArchiveXL 1.28.6\n',
+        'r6/config/redsUserHints/ArchiveXL.toml': b'# hints\n'})
+    make_pe(f'{pe}/txl/TweakXL.dll', '1.12.0.0', linker=(14, 44), imports=CRT)
+    github('TweakXL', 'flight,mods', 'lib', 'minor', 'red4ext/plugins/TweakXL/TweakXL.dll', '1.12.0', 'TweakXL-1.12.0.zip', {
+        'red4ext/plugins/TweakXL/TweakXL.dll': f'{pe}/txl/TweakXL.dll',
+        'red4ext/plugins/TweakXL/Scripts/TweakXL.reds': b'// TweakXL 1.12.0\n'})
+    make_pe(f'{pe}/il/input_loader.dll', '0.2.6', '2.50', linker=(14, 44), imports=CRT, strings={'Comments': 'Built for 2.50'})
+    github('Input_Loader', 'flight', 'lib', 'game', 'red4ext/plugins/input_loader/input_loader.dll', '0.2.6', 'input_loader_v0.2.6.zip', {
+        'red4ext/plugins/input_loader/input_loader.dll': f'{pe}/il/input_loader.dll',
+        'r6/cache/inputContexts.xml': b'<bindings loader="0.2.6"/>\r\n',
+        'r6/cache/inputUserMappings.xml': b'<mappings loader="0.2.6"/>\r\n',
+        'engine/config/platform/pc/input_loader.ini': b'[Player/Input]\r\n'})
+    make_pe(f'{pe}/ltbf/let_there_be_flight.dll', '0.3.20', '2.50', linker=(14, 44), imports=CRT, strings={'Comments': 'Built for 2.50'})
+    github('Let_There_Be_Flight', 'flight', 'mod', 'game', 'red4ext/plugins/let_there_be_flight/let_there_be_flight.dll', '0.3.20',
+           'let_there_be_flight_v0.3.20.zip', {
+               'red4ext/plugins/let_there_be_flight/let_there_be_flight.dll': f'{pe}/ltbf/let_there_be_flight.dll',
+               'red4ext/plugins/let_there_be_flight/packed.reds': b'// LTBF 0.3.20\n',
+               'red4ext/plugins/let_there_be_flight/inputs.xml': b'<inputs/>\r\n',
+               'red4ext/plugins/let_there_be_flight_uninstall.bat': b'@echo off\r\n'})
+    make_pe(f'{pe}/cw/Codeware.dll', '1.21.2.0', linker=(14, 44), imports=CRT)
+    github('Codeware', 'mods', 'lib', 'minor', 'red4ext/plugins/Codeware/Codeware.dll', '1.21.2', 'Codeware-1.21.2.zip', {
+        'red4ext/plugins/Codeware/Codeware.dll': f'{pe}/cw/Codeware.dll',
+        'red4ext/plugins/Codeware/Scripts/Codeware.reds': b'// Codeware 1.21.2\n',
+        'red4ext/plugins/Codeware/LICENSE': b'MIT\n'})
+    make_pe(f'{pe}/cet/version.dll', '6.0.0', linker=(14, 44), imports=CRT)
+    make_pe(f'{pe}/cet/cyber_engine_tweaks.asi', '1.38.1', 'v1.38.1 [HEAD]', linker=(14, 44), imports=CRT)
+    github('Cyber_Engine_Tweaks', 'mods', 'lib', 'minor', 'bin/x64/plugins/cyber_engine_tweaks.asi', '1.38.1', 'cet_1_38_1.zip', {
+        'bin/x64/version.dll': f'{pe}/cet/version.dll',
+        'bin/x64/global.ini': b'[GlobalSets]\r\n',
+        'bin/x64/LICENSE': b'MIT\n',
+        'bin/x64/plugins/cyber_engine_tweaks.asi': f'{pe}/cet/cyber_engine_tweaks.asi',
+        'bin/x64/plugins/cyber_engine_tweaks/scripts/autoexec.lua': b'-- CET\n',
+        'bin/x64/plugins/cyber_engine_tweaks/fonts/Noto.ttf': b'font'})
+    for line in ('Virtual_Atelier 2.5 mods mod - - - nexus:2987:basic:full', 'A.G.I.S. 2.5 mods mod - - - nexus:10909',
+                 'Night_City_Marketplace 2.5 mods mod - - - nexus:4433', 'Quick_Stash 2.5 mods mod - - - nexus:30016',
+                 'No_Intro_Videos 2.5 mods mod - - - nexus:533'):
+        table.append(line)
+    write(f'{fix}/addon-sets.txt', '\n'.join(table) + '\n')
+    make_pe(f'{pe}/axl-1.28.7/ArchiveXL.dll', '1.28.7.0', linker=(14, 44), imports=CRT)   # a newer copy, installed by hand
+
+    nx = f'{fix}/nexus'   # as Nexus names its downloads: <file name>-<mod id>-<version>-<upload time>
+    zipdir(f'{nx}/Virtual Atelier - Basic-2987-1-6-4-1730000000.zip', {'r6/scripts/VirtualAtelier/Basic.reds': b'// basic\n'})
+    zipdir(f'{nx}/Virtual Atelier - Full-2987-1-6-4-1730000001.zip', {'r6/scripts/VirtualAtelier/Full.reds': b'// full\n',
+                                                                       'bin/x64/plugins/cyber_engine_tweaks/mods/VirtualAtelier/init.lua': b'--\n'})
+    zipdir(f'{nx}/A.G.I.S. - All Game Items Store-10909-2-1-1720000000.zip', {   # wrapped in a folder, with a read-me
+        'AGIS/r6/scripts/AGIS/agis.reds': b'// agis\n', 'AGIS/readme.txt': b'read me\n'})
+    zipdir(f'{nx}/Night City Marketplace-4433-1-2-1700000000.zip', {'r6/scripts/NCMarketplace/stores.reds': b'// ncm\n'})
+    zipdir(f"{nx}/Quick Stash - Transfer All Inventory Items To V's Stash-30016-1-1-1720000000.zip",
+           {'bin/x64/plugins/cyber_engine_tweaks/mods/QuickStash/init.lua': b'-- quick stash\n'})
+    zipdir(f'{nx}/No Intro Videos-533-1-0-1600000000.zip', {'archive/pc/mod/NoIntroVideos.archive': b'RDAR'})
+    zipdir(f'{fix}/nexus-bad/No Intro Videos-533-1-1-1700000000.zip', {'readme.txt': b'install by hand\n'})   # no game folders
 
 
 # --------------------------------------------------------------------- world

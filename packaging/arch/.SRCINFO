@@ -21,6 +21,7 @@ pkgbase = nightcoop-linux-git
 	optdepends = proton-cachyos-slr: CachyOS Proton build, chosen for the game on CachyOS
 	optdepends = protontricks: fallback for installing the Visual C++ runtime
 	optdepends = flatpak: for the Flatpak build of Steam
+	optdepends = libarchive: bsdtar, for mods published as 7z or RAR archives (pacman needs it too)
 	provides = nightcoop-linux
 	conflicts = nightcoop-linux
 	source = nightcoop-linux::git+https://github.com/Jadocee/nightcoop-linux.git

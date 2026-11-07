@@ -9,15 +9,16 @@
 #   2. checks what `nightcoop-install.sh check` reports;
 #   3. runs it again as `update`, which must find everything current and change nothing;
 #   4. starts the stand-in game through Proton with the registry override alone (Steam open)
-#      and with the launch options as Steam applies them (Steam closed).
+#      and with the launch options as Steam applies them (Steam closed);
+#   5. adds --with-mods: the frameworks from GitHub, the Nexus-only mods listed to download.
 # Exits 1 if any step fails.
 #
 #   docker compose -f sandbox/compose.yaml run --rm install-and-launch
-#   PATCHES=2.31 docker compose -f sandbox/compose.yaml run --rm install-and-launch
+#   PATCHES="2.5 …" docker compose -f sandbox/compose.yaml run --rm install-and-launch   (once there is a newer patch)
 set -uo pipefail
 . "$(dirname "$0")/lib.sh"
 
-PATCHES="${PATCHES:-2.5 2.31}"
+PATCHES="${PATCHES:-2.5}"
 [ -x "$PROTON/proton" ] || die "no Proton at $PROTON (set PROTON_TOOL or PROTON)"
 mkdir -p "$WORK"; WORK="$(mktemp -d "$WORK/journey.XXXXXX")"
 start_display
@@ -28,6 +29,11 @@ say "Creating a fresh Proton prefix"
 new_prefix "$WORK/c-base"
 
 fails=0
+addon_want() {   # addon_want <patch> <set> <kind>: "Name version, ..." from the installer's ADDON_SETS, as check names them
+    sed -n '/^# >>> add-on sets/,/^# <<< add-on sets/p' "$NI" | awk -v p="$1" -v set="$2" -v kind="$3" '
+        $2 == p && ("," $3 ",") ~ ("," set ",") && $4 == kind { gsub("_", " ", $1); s = s sep $1 " " $7; sep = ", " }
+        END { print s }'
+}
 check_line() {   # check_line <log> <description> <extended regex>
     if grep -E -q "$3" "$1"; then say "    pass: $2"; else say "    FAIL: $2"; fails=$((fails + 1)); fi
 }
@@ -70,10 +76,8 @@ for patch in $PATCHES; do
     check_line "$WORK/check-$patch.log" "a Proton build chosen for the game" "^  Proton for the game: .*\(chosen in Steam\)"
     check_line "$WORK/check-$patch.log" "launch options written" "^  launch options: +WINEDLLOVERRIDES=.*%command% --launcher-skip"
     check_line "$WORK/check-$patch.log" "no newer NightCoop build" "^  NightCoop update: +none; "
-    # the releases the installer's FLIGHT_SET pairs with this patch, as check names them
-    want="$(sed -n '/^# >>> flight set/,/^# <<< flight set/p' "$NI" | awk -v p="$patch" '
-        $2 == p { gsub("_", " ", $1); if ($1 == "Let There Be Flight") mod = $3; else rest = rest sep $1 " " $3; sep = ", " }
-        END { print mod ", with " rest }')"
+    # the releases the installer's ADDON_SETS pairs with this patch, as check names them
+    want="$(addon_want "$patch" flight mod)"; want="${want#Let There Be Flight }, with $(addon_want "$patch" flight lib)"
     check_line "$WORK/check-$patch.log" "Let There Be Flight and what it needs: $want" \
         "^  Let There Be Flight: +${want//./\\.} \(kept up to date"
     if HOME="$home" bash "$NI" update --yes > "$WORK/update-$patch.log" 2>&1; then
@@ -90,6 +94,19 @@ for patch in $PATCHES; do
         if [ "$RESULT" = started ]; then say "    pass: RED4ext started, $how ($DETAIL)"
         else say "    FAIL: $how: $RESULT ($DETAIL)"; fails=$((fails + 1)); fi
     done
+    # The mod set, after the launches (Cyber Engine Tweaks would load into the stand-in): its
+    # frameworks come from GitHub; Virtual Atelier and the rest are on Nexus Mods only, so the
+    # installer lists them to download.
+    if HOME="$home" bash "$NI" update --yes --with-mods > "$WORK/mods-$patch.log" 2>&1; then
+        want="$(addon_want "$patch" mods lib)"
+        check_line "$WORK/mods-$patch.log" "the mod set's frameworks: $want" "^  Mods: +.*with ${want//./\\.} \\(kept up to date"
+        check_line "$WORK/mods-$patch.log" "Cyber Engine Tweaks' loader gets the override too" "^  DLL override: +winmm,version = native,builtin"
+        check_line "$WORK/mods-$patch.log" "the Nexus-only mods listed with their pages" \
+            "Virtual Atelier \\(the Basic file\\): https://www\\.nexusmods\\.com/cyberpunk2077/mods/2987"
+    else
+        say "    FAIL: --with-mods exited with an error:"; tail -n 15 "$WORK/mods-$patch.log" | sed 's/^/        /'
+        fails=$((fails + 1))
+    fi
 done
 
 say

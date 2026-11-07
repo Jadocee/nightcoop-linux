@@ -4,7 +4,8 @@
 its site supports Windows only. The mod runs well under Proton, but three problems stop
 it from loading out of the box. `nightcoop-install.sh` fixes all three, installs the mod
 and sets up Proton for the game on SteamOS (Steam Deck), CachyOS and other Arch-based
-systems.
+systems. It can also install popular mods chosen to work alongside NightCoop (see
+[Other mods](#other-mods)).
 
 ## Supported systems
 
@@ -15,6 +16,9 @@ systems.
 | **Arch Linux** and derivatives (EndeavourOS, Manjaro, Garuda, …) | Steam from `[multilib]`. Installable as a pacman package. |
 | **Flatpak Steam** (any distribution) | Detected automatically. |
 | Bazzite and other distributions | Same code path. |
+
+The game must be the Steam version of Cyberpunk 2077 at **patch 2.5 or newer**. The script
+refuses older patches; update the game in Steam first.
 
 ## Quick start
 
@@ -70,20 +74,20 @@ The main menu then shows a **Co-op** entry ("Совместная игра" in R
    - When Steam is closed, it also merges `WINEDLLOVERRIDES="winmm=n,b"` into the game's
      launch options, keeping every other option.
 
-   If Cyber Engine Tweaks is installed, its `version.dll` loader gets the same override.
+   If Cyber Engine Tweaks is installed, by you or with the mod set, its `version.dll`
+   loader gets the same override.
 2. **Steam installs an old C++ runtime.** On the game's first launch, Steam installs the
    Visual C++ 2019 runtime (14.29) into the prefix. RED4ext is built with MSVC 14.51.
    Loaded into the 2019 runtime, it fails with *"RED4ext (error 998) No access to memory
    location"* and an empty log. The script runs Microsoft's current installer (14.51)
    quietly inside the prefix. It uses the Proton build that last ran the game, through
    Proton's `runinprefix`, so Steam need not be running.
-3. **Each RED4ext release supports one game patch.** RED4ext 1.31 refuses anything older
-   than patch 2.5, and 1.30 is the release for 2.31. NightCoop publishes one archive per
-   patch with the matching RED4ext inside. The script reads the patch from
-   `Cyberpunk2077.exe` and picks that archive. It installs the newest RED4ext the game
-   supports from three candidates: the bundled copy, the release pinned in the script,
-   and the installed copy. A working RED4ext is never replaced by an older one, but one
-   that cannot run on the installed patch is replaced.
+3. **Each RED4ext release supports one game patch.** NightCoop publishes one archive per
+   patch with the matching RED4ext inside; for patch 2.5 that is RED4ext 1.31. The script
+   reads the patch from `Cyberpunk2077.exe` and picks that archive. It installs the newest
+   RED4ext the game supports from three candidates: the bundled copy, the release pinned
+   in the script, and the installed copy. A working RED4ext is never replaced by an older
+   one, but one that cannot run on the installed patch is replaced.
 
 It also sets the game up for Proton:
 
@@ -149,55 +153,123 @@ prefix to another Proton version, it replaces only Wine's own files.
 | `--steam-root DIR` | Use this Steam installation instead of detecting one. |
 | `--with-flight` | Also install Let There Be Flight and the mods it needs (see below). Later runs keep them up to date. |
 | `--without-flight` | Remove Let There Be Flight again. The mods it needed stay, because other mods use them too. |
+| `--with-mods` | Also install the mod set: Virtual Atelier with two stores, Quick Stash, No Intro Videos and the frameworks they need (see below). Later runs keep it up to date. |
+| `--without-mods` | Remove the mod set's mods again. The frameworks stay. |
+| `--mods-from DIR` | Look for the Nexus Mods downloads in DIR instead of your Downloads folder. |
 
 When Steam is running, its two settings are not written, but the registry override alone
 lets the mod load. The script then prints the launch options and the Proton choice for you
 to set under Properties. Alternatively, rerun it with Steam closed or with `--close-steam`.
 
-## Other mods, and Let There Be Flight
+## Other mods
 
 NightCoop needs only RED4ext, which comes with it; it does not need Cyber Engine Tweaks.
 The script leaves other mods alone: it writes only RED4ext, NightCoop's own folders and
-what you ask for below, and `uninstall` keeps everything else. Mods built for NightCoop's
-SDK work in co-op with partners who have them too. Other mods are not synced, so it is
-safest for everyone in a session to use the same ones.
+the sets below, and `uninstall` keeps everything else. Mods built for NightCoop's SDK work
+in co-op with partners who have them too. Other mods are not synced, so it is safest for
+everyone in a session to use the same ones.
 
-The one mod NightCoop supports out of the box is **Let There Be Flight** (flying cars, by
-Jack Humbert). NightCoop's archive already holds its co-op port, which the script installs.
-The port shows your flight on your partners' screens, and does nothing until Let There Be
-Flight is installed. Add `--with-flight` once to install it with everything it needs:
+Add either optional set once; later runs keep it up to date:
 
 ```bash
-nightcoop-install --with-flight
+nightcoop-install --with-flight --with-mods
 ```
 
-| Mod | Game 2.5 | Game 2.31 | Why it is needed |
-| --- | --- | --- | --- |
-| Let There Be Flight | 0.3.20 | 0.3.18 | The flight itself |
-| ArchiveXL | 1.28.6 | 1.27.5 | Loads its game assets |
-| TweakXL | 1.12.0 | 1.11.5 | Loads its game data changes |
-| Input Loader | 0.2.6 | 0.2.3 | Adds its key bindings |
-| redscript | 0.5.32 | 0.5.31 | Compiles its scripts, and NightCoop's port |
+### Let There Be Flight (`--with-flight`)
 
-- **Matched to your game patch:** each project's own README and release notes give the
-  pairings, as does the game version its DLLs are built for. The archives come from the
-  projects' GitHub releases and are checked against SHA-256 values pinned in the script.
-- **Kept up to date:** later runs keep the set current, and switch to the other builds
-  when the game patch changes.
-- **Copies you installed yourself:** a copy that is newer and built for the same patch is
-  kept. Any other copy is replaced, and backed up like every file the script replaces.
-  redscript has no readable version, so it is always the paired build.
+**Let There Be Flight** (flying cars, by Jack Humbert) is the one mod NightCoop supports
+out of the box. NightCoop's archive already holds its co-op port, which the script
+installs. The port shows your flight on your partners' screens, and does nothing until Let
+There Be Flight is installed.
+
+| Mod | Game 2.5 | Why it is needed |
+| --- | --- | --- |
+| Let There Be Flight | 0.3.20 | The flight itself |
+| ArchiveXL | 1.28.6 | Loads its game assets |
+| TweakXL | 1.12.0 | Loads its game data changes |
+| Input Loader | 0.2.6 | Adds its key bindings |
+| redscript | 0.5.32 | Compiles its scripts, and NightCoop's port |
+
 - **Every player** who wants to see the flight properly needs Let There Be Flight. NightCoop
   names the partners who lack it. Without it, a partner sees your car flying without
   wheels.
-- **Removing it:** `--without-flight` removes Let There Be Flight. ArchiveXL, TweakXL, Input
-  Loader and redscript stay, because many other mods need them. `uninstall` removes
-  everything the script installed and puts back the game files it replaced: the
-  game's script compiler, which redscript replaces, and the input files Input Loader
-  changes.
 - **Settings:** the key bindings are in
   `red4ext/plugins/let_there_be_flight/inputs.xml`. The optional Mod Settings menu is not
-  installed.
+  installed, for the reason given below.
+
+### The mod set (`--with-mods`)
+
+| Mod | Source | What it does |
+| --- | --- | --- |
+| Virtual Atelier, the **Basic** file | Nexus Mods, [2987](https://www.nexusmods.com/cyberpunk2077/mods/2987?tab=files) | Online stores for clothing and items, opened from in-game computers |
+| A.G.I.S. (All Game Items Store) | Nexus Mods, [10909](https://www.nexusmods.com/cyberpunk2077/mods/10909?tab=files) | A Virtual Atelier store selling every item in the game |
+| Night City Marketplace | Nexus Mods, [4433](https://www.nexusmods.com/cyberpunk2077/mods/4433?tab=files) | Lore-friendly Virtual Atelier stores of the game's own items |
+| Quick Stash | Nexus Mods, [30016](https://www.nexusmods.com/cyberpunk2077/mods/30016?tab=files) | Moves your inventory to V's stash or your car in one go (not equipped or quest items) |
+| No Intro Videos | Nexus Mods, [533](https://www.nexusmods.com/cyberpunk2077/mods/533?tab=files) | Skips the logo videos at start-up |
+| Cyber Engine Tweaks 1.38.1 | GitHub, automatic | Runs Lua mods such as Quick Stash |
+| Codeware 1.21.2 | GitHub, automatic | The library Virtual Atelier is built on |
+| TweakXL 1.12.0, ArchiveXL 1.28.6 | GitHub, automatic | Load game-data changes and new assets, for the many item mods that use them |
+| redscript 0.5.32 | GitHub, automatic | Compiles the script mods, NightCoop's included |
+
+Nexus Mods does not let scripts download files (a browser check, and an API that needs
+each user's key), so you download those five yourself:
+
+1. Run `nightcoop-install --with-mods`. It installs the frameworks and prints the Nexus
+   page of each mod you have not downloaded yet.
+2. Sign in to Nexus Mods (a free account is enough). On each page's Files tab, choose
+   **Manual download**; for Virtual Atelier, take the **Basic** file. Keep the name Nexus
+   gives the file: it holds the mod's ID, which is how the script recognises it.
+3. Run the script again. It finds the files in your Downloads folder (or the folder given
+   with `--mods-from`) and installs them. It keeps a copy in
+   `~/.cache/nightcoop-linux/mods`, so you may delete the downloads. To update one of
+   these mods later, download its newer file and run the script again.
+
+Each archive's game folders (`archive`, `bin`, `engine`, `mods`, `r6`, `red4ext`) are
+installed, without read-me files or installer data, also when an archive wraps them in a
+folder of its own. Zip archives need nothing extra; 7z and RAR archives are unpacked with
+`bsdtar` from libarchive. A mod whose requirement is missing is left out with a warning;
+for example, a store without Virtual Atelier would stop redscript from compiling every
+script, NightCoop's included.
+
+**How the set stays compatible with NightCoop:**
+
+- **Virtual Atelier's Basic file only.** The Full file needs Mod Settings, which replaces
+  the pause, death and main menus, where NightCoop's co-op entry lives; NightCoop's own
+  guide lists the overlap. The script never installs a Virtual Atelier file with "Full" in
+  its name.
+- **Stores of the game's own items.** What you buy from them is an ordinary game item, so
+  partners without the stores see it too. Stores of modded outfits would need every player
+  to install the same outfit mods, so none are included.
+- **Browser Extension is left out.** It adds Virtual Atelier to the in-game browser, but
+  players report it broken since patch 2.3, and no update for 2.5 was found. Virtual
+  Atelier's stores open from in-game computers without it.
+- **Quick Stash in co-op:** everyone in a session plays in the host's world, so the stash a
+  guest opens there is not the guest's own. Move items in your own game, or as the host;
+  the script reminds you of this.
+- **No Intro Videos** replaces the start-up videos rather than hooking the game, so it
+  does not overlap NightCoop's own intro skip. Its page lists patch 2.3 and later, and
+  players report it working on 2.5.
+- **Cyber Engine Tweaks mods** work with NightCoop. One that replaces a game function
+  without calling the original can break parts of co-op; NightCoop names such conflicts
+  in its log (`red4ext/logs/nightcoop-*.log`). On its first start, Cyber Engine Tweaks
+  asks which key opens its overlay.
+
+### Both sets
+
+- **Matched to your game patch:** the pairings for the GitHub releases come from each
+  project's README and release notes, and from the game version their DLLs are built for.
+  Those archives are checked against SHA-256 values pinned in the script. On a game patch
+  the script does not know yet, what is installed is left as it is.
+- **Shared frameworks** (redscript, ArchiveXL, TweakXL) are installed once.
+- **Copies you installed yourself:** a framework copy that is newer and built for the same
+  patch is kept. Any other copy is replaced, and backed up like every file the script
+  replaces. redscript has no readable version, so it is always the paired build.
+- **Removing them:** `--without-flight` removes Let There Be Flight, and `--without-mods`
+  removes the five Nexus mods, Quick Stash from inside Cyber Engine Tweaks' folder too.
+  The frameworks stay, because many other mods need them. `uninstall` removes everything
+  the script installed and puts back the game files it replaced: the game's script
+  compiler, which redscript replaces, and the input files Input Loader changes.
+- **`check`** lists each set with its versions, and any mod still to download.
 
 ## Updating and undoing
 
@@ -239,7 +311,9 @@ Start with `check`.
   the matching one.
 - **After a game patch.** Rerun the script; it picks the NightCoop build and RED4ext for
   the new patch. If the patch is newer than the script knows, it uses the RED4ext that
-  NightCoop bundles.
+  NightCoop bundles, and leaves the mod sets as they are.
+- **A mod of the set is not installed.** `check` lists it as missing. Download it from the
+  page the script prints, keeping Nexus's file name, and run the script again.
 - **Logs for a bug report.** NightCoop writes `red4ext/logs/nightcoop-*.log`, and crash
   and hang logs go to `red4ext/plugins/NightCoop/logs`. For Proton's own log, add
   `PROTON_LOG=1` to the launch options; it is written to `~/steam-1091500.log`.
@@ -260,8 +334,9 @@ roots built from each distribution's own signed package repositories:
 
 - `proton-cachyos-native` 11.0 from CachyOS's repository;
 - the live NightCoop 0.2.0 archives and release list;
-- RED4ext 1.30 and 1.31;
-- Microsoft's VC++ 2019, 2022 and v14 installers.
+- RED4ext 1.31;
+- Microsoft's VC++ 2019, 2022 and v14 installers;
+- the GitHub releases of both mod sets.
 
 The game itself cannot run there, so a stand-in `Cyberpunk2077.exe` was used. It carries
 the real game's version data and imports, enough for RED4ext to start as it does in the
@@ -273,15 +348,22 @@ game.
 | Registry override (Steam open) or launch options | RED4ext's loader runs and RED4ext starts |
 | Steam's first-launch 2019 runtime (14.29) | "RED4ext (error 998)", empty log: the reported symptom |
 | After the script installs 14.51 (or 14.44) | RED4ext starts |
-| RED4ext 1.31 on game 2.31 | Refused by RED4ext; the script now installs 1.30 there |
 | VS 2019 installer run again after the fix | Exits with "newer version installed"; 14.51 stays |
 
-The full install ran online as a normal user on CachyOS, for game 2.5 and game 2.31. A
-launch through Proton afterwards started RED4ext both with and without the launch
-options. The test suite passes on all three systems.
+The full install ran online as a normal user on CachyOS, for game 2.5, with Let There Be
+Flight. A launch through Proton afterwards started RED4ext both with and without the
+launch options. Adding the mod set then installed its frameworks, gave Cyber Engine
+Tweaks' loader its override and listed the Nexus downloads. The test suite passes on all
+three systems.
 
-**Not covered:** the real game on real hardware, with a GPU and the main menu. If you try
-it, a report of `check` output with the result is welcome.
+**Not covered:**
+
+- the real game on real hardware, with a GPU and the main menu;
+- the Nexus Mods files, which scripts cannot download. The tests use archives laid out
+  like them, and the mods' support for patch 2.5 comes from their pages and players'
+  reports.
+
+If you try it, a report of `check` output with the result is welcome.
 
 ## Packaging
 
@@ -298,20 +380,30 @@ installation. It covers:
 - SD-card and Flatpak libraries;
 - `proton-cachyos` and the `--proton` choices;
 - Steam open while installing;
-- game patches 2.5 and 2.31;
+- game patch 2.5, an older patch (refused) and a newer one the tables do not know;
 - Cyber Engine Tweaks;
 - a hand-copied old NightCoop build;
 - updates in place: nothing changed when current, only differing files replaced, saves
   copied once, `--force` and `--backup-saves`;
 - the flight set:
-  - paired with the game patch, and following a patch change;
+  - paired with the game patch, and left as it is on an unknown patch;
   - a newer copy installed by hand kept;
   - `--without-flight` removing only Let There Be Flight;
   - an archive with the wrong SHA-256 refused;
+- the mod set:
+  - the frameworks from GitHub, Cyber Engine Tweaks' override from the first run;
+  - the Nexus files found in the Downloads folder, a localised one too, and installed
+    from the script's own copy once they are deleted;
+  - Virtual Atelier's Basic file preferred and its Full file never installed;
+  - a missing requirement leaving a mod out, and missing downloads listed;
+  - an archive wrapped in a folder, and one without game folders refused;
+  - `--without-mods` removing only the mods, Quick Stash from inside Cyber Engine Tweaks'
+    folder too, while the flight set keeps the frameworks it shares;
 - install, update, restore and uninstall back to a byte-identical game folder.
 
-`tests/mkfixtures.py` generates the PE files, archives (shaped like nightcoop.net's) and
-a stand-in Proton, so the suite needs neither Steam, Wine nor network access.
+`tests/mkfixtures.py` generates the PE files, archives (shaped like nightcoop.net's, the
+mods' GitHub releases and Nexus Mods' downloads) and a stand-in Proton, so the suite
+needs neither Steam, Wine nor network access.
 
 CI runs the suite in Arch Linux, CachyOS and SteamOS (holo) containers and on Ubuntu. It
 also builds the PKGBUILD with `makepkg`, checks it with `namcap`, and runs shellcheck.
@@ -321,7 +413,8 @@ also builds the PKGBUILD with `makepkg`, checks it with `namcap`, and runs shell
 - the test suite on Arch, CachyOS and SteamOS 3.8 built from Valve's repositories;
 - the PKGBUILD;
 - the real-Proton checks. These are the verification matrix above, and a full online
-  install and launch for patches 2.5 and 2.31, with `proton-cachyos` and the stand-in game.
+  install and launch for patch 2.5 with `proton-cachyos`, the stand-in game and both mod
+  sets.
 
 Run one with `docker compose -f sandbox/compose.yaml run --rm --build experiments`. A
 weekly CI run repeats them all to catch new Proton, RED4ext, NightCoop or SteamOS releases

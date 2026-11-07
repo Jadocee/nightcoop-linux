@@ -38,5 +38,5 @@ jobs:
           persist-credentials: false
       - name: Verification matrix
         run: docker compose -f sandbox/compose.yaml run --rm --build experiments
-      - name: Install and launch, game patches 2.5 and 2.31
+      - name: Install and launch, game patch 2.5, with both mod sets
         run: docker compose -f sandbox/compose.yaml run --rm install-and-launch
