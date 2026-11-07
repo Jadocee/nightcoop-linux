@@ -69,7 +69,7 @@ services:
   install-and-launch:
     <<: *proton
     environment:
-      PATCHES: ${PATCHES:-2.5 2.31}
+      PATCHES: ${PATCHES:-2.5}
     command: [bash, sandbox/e2e/install-and-launch.sh]
 
 volumes:

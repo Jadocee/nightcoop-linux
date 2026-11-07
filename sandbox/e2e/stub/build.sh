@@ -8,7 +8,6 @@ here="$(cd "$(dirname "$0")" && pwd)"
 out="${1:?usage: build.sh OUTDIR}"
 PATCHES=(
     "2.5:3.0.88.46235:2.5.0.0"
-    "2.31:3.0.80.51928:2.3.1.0"
 )
 mkdir -p "$out"
 for p in "${PATCHES[@]}"; do

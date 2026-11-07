@@ -21,7 +21,8 @@ checkdepends=('diffutils')
 optdepends=('steam: the native Steam client, from [multilib]'
             'proton-cachyos-slr: CachyOS Proton build, chosen for the game on CachyOS'
             'protontricks: fallback for installing the Visual C++ runtime'
-            'flatpak: for the Flatpak build of Steam')
+            'flatpak: for the Flatpak build of Steam'
+            'libarchive: bsdtar, for mods published as 7z or RAR archives (pacman needs it too)')
 provides=("$_name")
 conflicts=("$_name")
 source=("$_name::git+$url.git")

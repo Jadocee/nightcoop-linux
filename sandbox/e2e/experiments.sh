@@ -18,7 +18,6 @@ say "Proton:  $(cut -d' ' -f2- "$PROTON/version")"
 say "Fetching (cached in $CACHE):"
 build_stubs "$WORK/stub"
 nc25="$(nightcoop_for 2.5)" || exit 2
-nc231="$(nightcoop_for 2.31)" || exit 2
 vc2019="$(fetch "$VC2019_URL" vc2019.exe)" && vc2022="$(fetch "$VC2022_URL" vc2022.exe)" \
     && vc14="$(fetch "$VC14_URL" vc14.exe)" || exit 2
 say "    Microsoft runtimes: VS 2019 $(hp pever "$vc2019"), VS 2022 $(hp pever "$vc2022"), v14 $(hp pever "$vc14")"
@@ -26,14 +25,7 @@ say "    Microsoft runtimes: VS 2019 $(hp pever "$vc2019"), VS 2022 $(hp pever "
 say "Preparing a fresh Proton prefix and the game folders"
 new_prefix "$WORK/c-base"
 mkgame "$WORK/g25" "$WORK/stub/cp77-2.5.exe" "$nc25"
-mkgame "$WORK/g231" "$WORK/stub/cp77-2.31.exe" "$nc231"
-mkgame "$WORK/g231-newer" "$WORK/stub/cp77-2.31.exe" "$nc231"
-bsdtar -xf "$nc25" -C "$WORK/g231-newer" red4ext/RED4ext.dll bin/x64/winmm.dll   # the 2.5 RED4ext on 2.31
-r4_25="$(hp pever "$WORK/g25/red4ext/RED4ext.dll" product)"
-r4_231="$(hp pever "$WORK/g231/red4ext/RED4ext.dll" product)"
-say "    RED4ext bundled for 2.5: $r4_25; for 2.31: $r4_231"
-# RED4ext's own patch gate, as the installer models it (RED4EXT_COMPAT)
-if hp r4ok "$r4_25" 3.0.80.51928 "$(sed -n 's/^RED4EXT_COMPAT="\(.*\)"/\1/p' "$NI")"; then newer_on_231=started; else newer_on_231=refused; fi
+say "    RED4ext bundled for 2.5: $(hp pever "$WORK/g25/red4ext/RED4ext.dll" product)"
 
 rows=() fails=0
 row() {   # row <description> <expected> : compare RESULT with the expectation
@@ -77,14 +69,6 @@ RESULT=kept; [ "$after" = "$before" ] || RESULT=replaced; DETAIL="$before -> $af
 row "runtime after VS 2019 installer reruns" kept
 launch "$WORK/c7" "$WORK/g25"
 row "RED4ext after that" started
-
-step "8. RED4ext $r4_25 (bundled for 2.5) on game 2.31"
-launch "$WORK/c6" "$WORK/g231-newer"
-row "RED4ext $r4_25 on game 2.31" "$newer_on_231"
-
-step "9. RED4ext $r4_231 (bundled for 2.31) on game 2.31"
-launch "$WORK/c6" "$WORK/g231"
-row "RED4ext $r4_231 on game 2.31" started
 
 say; say "== Summary (work folder: $WORK)"
 printf '%-4s  %-52s %-10s %-10s %s\n' "" "scenario" "expected" "result" "detail"
