@@ -117,7 +117,7 @@ expect "MANGOHUD=1 after the overrides" '[ "$(lo "gamemoderun %command%" 2 winmm
 expect "the mangohud wrapper counts as MangoHud" '[ "$(lo "WINEDLLOVERRIDES=\"winmm=n,b\" mangohud %command%" 1 winmm "" +mangohud)" = ok ]'
 expect "MANGOHUD=0 turned on"        '[ "$(lo "MANGOHUD=0 %command%" 2 winmm "" +mangohud)" = "WINEDLLOVERRIDES=\"winmm=n,b\" MANGOHUD=1 %command%" ]'
 expect "MangoHud taken out: wrapper, its --dlsym and the variable" '[ "$(lo "MANGOHUD=1 mangohud --dlsym game-performance %command%" 2 winmm "" -mangohud)" = "WINEDLLOVERRIDES=\"winmm=n,b\" game-performance %command%" ]'
-expect "a quoted value with spaces is one word" '[ "$(lo "DXVK_HUD=\"fps, memory\" %command%" 2 winmm "" +game-performance)" = "WINEDLLOVERRIDES=\"winmm=n,b\" DXVK_HUD=\"fps, memory\" game-performance %command%" ]'
+expect "a quoted value is one word, its spacing kept" '[ "$(lo "DXVK_HUD=\"fps,  memory\" %command%" 2 winmm "" +game-performance)" = "WINEDLLOVERRIDES=\"winmm=n,b\" DXVK_HUD=\"fps,  memory\" game-performance %command%" ]'
 
 section "Release selection (releases.json, as nightcoop.net publishes it)"
 pick() { hp pick "$FIX/site/releases.json" "$1" "https://nightcoop.net" "${2:-}" | tr '\037' '|'; }
@@ -529,6 +529,8 @@ run check
 expect "check: game-performance without powerprofilesctl would stop the game" '[[ "$OUT" == *"game-performance:"*"in the launch options, but it needs powerprofilesctl (power-profiles-daemon), which is not installed"* ]] && [[ "$OUT" == *"the game will not start this way"* ]]' "$OUT"
 run install --yes
 expect "the install takes it out, saying why" '[ $RC = 0 ] && [ "$(launch_opts)" = "WINEDLLOVERRIDES=\\\"winmm=n,b\\\" %command% --launcher-skip" ] && [[ "$OUT" == *"the launch options run game-performance, but it needs powerprofilesctl (power-profiles-daemon), which is not installed: the game would not start, so it is taken out"* ]]' "$OUT"
+run install --yes --dry-run --no-game-performance
+expect "a dry run with nothing to change remembers nothing either" '[ $RC = 0 ] && [[ "$OUT" == *"everything is up to date; nothing to do"* ]] && [ ! -e "$H/.local/share/nightcoop-linux/settings.tsv" ]' "$OUT"
 TOOLS="$T/tools-tlp-old"
 run install --yes
 expect "TLP's tlpctl is no help to a game-performance that knows only powerprofilesctl" '[ $RC = 0 ] && [[ "$(launch_opts)" != *game-performance* ]]' "$(launch_opts)"
