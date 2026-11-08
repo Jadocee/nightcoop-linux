@@ -57,8 +57,9 @@
 #                         There Be Flight, Virtual Car Dealer with car and bike packs, Drive an
 #                         Aerial Vehicle, Vehicle Customizer, Curbside, Cyber Drift, Impact FX,
 #                         Immersive Audio Distance, Immersive First Person, Katana Pack 2,
-#                         Quick Stash and No Intro Videos (download them from Nexus Mods; the
-#                         installer lists them), with the frameworks they need (Cyber Engine
+#                         Quick Stash and No Intro Videos (from Nexus Mods: you download them,
+#                         as the installer lists, or it does with a Premium account's API key,
+#                         see --save-nexus-key), with the frameworks they need (Cyber Engine
 #                         Tweaks, Codeware, TweakXL, ArchiveXL, redscript, Input Loader, Mod
 #                         Settings, Audioware, VendorsXL, Zenitex Core Dependency, Browser
 #                         Extension and more); kept up to date
@@ -68,10 +69,19 @@
 #                         session needs it too
 #   --without-equipment-ex remove Equipment-EX again
 #   --mods-from DIR       where the Nexus downloads are (default: your Downloads folder)
+#   --save-nexus-key      ask for your Nexus Mods API key (not shown) and keep it, readable by
+#                         you alone, in ~/.config/nightcoop-linux/nexus-api-key for this run and
+#                         later ones. With a Premium account's key the script downloads the Nexus
+#                         mods itself, checks each file with Nexus Mods, and keeps them up to
+#                         date; with another account's key it links each file to download
+#   --nexus-key-file FILE read the key from FILE this time (otherwise from NEXUS_API_KEY, or
+#                         from the file above)
+#   --no-nexus-api        do not use a Nexus Mods API key this time
 #   --force               reinstall every mod file, even those that already match
 #   --backup-saves        copy the save games first (the default on a first install)
 #   --no-save-backup      do not copy them (the default when updating an earlier install)
-#   --dry-run             detect, download and verify everything; change nothing
+#   --dry-run             detect, download and verify everything; change nothing (the files
+#                         an API key would download from Nexus Mods are only listed)
 #   -y, --yes             do not ask for confirmation
 #   -h, --help            show this help
 #
@@ -81,13 +91,14 @@
 # SPDX-License-Identifier: MIT
 set -euo pipefail
 
-SCRIPT_VERSION="3.4.0"
+SCRIPT_VERSION="3.5.0"
 APPID=1091500
 GAME_EXE_REL="bin/x64/Cyberpunk2077.exe"
 RED4EXT_VER="1.31.0"
 RED4EXT_URL="https://github.com/wopss/RED4ext/releases/download/v${RED4EXT_VER}/red4ext-${RED4EXT_VER}.zip"
 RED4EXT_SHA="b9ae4351f547f90af58dfbf7445d45c55cd5ba24fbee27fb16fb5d91e9df621e"
 NIGHTCOOP_SITE="https://nightcoop.net"
+NEXUS_API="https://api.nexusmods.com"   # the Nexus Mods API, for the downloads of a Premium account
 # The v14 link serves the newest runtime (VS 2017-2026); the VS 2022 link is a fallback.
 VCREDIST_URLS=("https://aka.ms/vc14/vc_redist.x64.exe" "https://aka.ms/vs/17/release/vc_redist.x64.exe")
 # MSVC 14.40 changed std::mutex: anything built with it or later fails with error 998
@@ -119,8 +130,9 @@ MIN_GAME_FILEVER="3.0.88.46235" MIN_GAME_PATCH="2.5"
 # A component in both sets is installed once. When its sets are dropped (--without-...), a
 # "mod" is removed and a "lib" stays, since other mods use it too.
 # Source: a GitHub release (archive and pinned SHA-256), or nexus:<mod id>[:<prefer>[:<avoid>,...]]
-# for a mod published only on Nexus Mods, which blocks scripted downloads: you download it,
-# and the installer takes it from your Downloads folder (--mods-from DIR). For those, version is
+# for a mod published only on Nexus Mods, which lets scripts download only with a Premium
+# account's API key: you download it, and the installer takes it from your Downloads folder
+# (--mods-from DIR), or the installer downloads it with that key. For those, version is
 # the oldest release known to work with the patch. Of several files of such a mod, one with
 # <prefer> in its name wins ("+word": only such files, for a mod whose files go together, each
 # its own component); one with an <avoid> word in its name is never installed (see
@@ -348,6 +360,7 @@ Drive_an_Aerial_Vehicle bin/x64/plugins/cyber_engine_tweaks/mods/DriveAerialVehi
 Vehicle_Customizer      bin/x64/plugins/cyber_engine_tweaks/mods/VehicleCustomizerSVE/*
 "
 DATA_DIR="${XDG_DATA_HOME:-$HOME/.local/share}/nightcoop-linux"
+CONFIG_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/nightcoop-linux"   # the Nexus Mods API key (nexus-api-key)
 CACHE_DIR="${XDG_CACHE_HOME:-$HOME/.cache}/nightcoop-linux"
 BACKUP_ROOT="$DATA_DIR/backups"
 
@@ -365,6 +378,9 @@ RM_OPT=""        # on or off: --redmod, --no-redmod (remembered in settings.tsv)
 SAVE_BACKUP=""   # 1 or 0; empty: copy the saves on the first install only
 SET_WANT=()      # +flight, -flight, +mods, -mods from the options; a set not named stays as it was
 NEXUS_DIRS=()    # where to look for the Nexus downloads (--mods-from); default: the Downloads folder
+NEXUS_KEY_FILE="" # --nexus-key-file; else NEXUS_API_KEY, else $CONFIG_DIR/nexus-api-key
+NEXUS_API_USE=1  # 0: --no-nexus-api
+SAVE_NEXUS_KEY=0 # --save-nexus-key: ask for the key and keep it in $CONFIG_DIR/nexus-api-key
 FORCE=0
 DRY_RUN=0
 ASSUME_YES=0
@@ -1670,21 +1686,52 @@ def nexus_name(fn, mod_id):
     return None
 
 
-def cmd_nexus_find(mod_id, prefer, avoid, minver, *dirs):
-    """The downloads of a Nexus mod in the given folders (see NEXUS_NAMES), best first, one per
-    line: path, version, and "preferred" or "other". A file whose name has <prefer> in it (e.g.
-    "light") comes first, then the newest; "+word" means only such files count (a mod with several
-    files that go together, each its own component). A file with one of the comma-separated
-    <avoid> words in its name, or older than <minver>, is never listed: when there is nothing else,
-    the newest such is named, as "avoided" or "old"; "~word" is never named (another component
-    takes it). In the words "_" stands for a space. Each upload is listed once. "-" means no word
-    or version."""
+def nexus_rank(entries, mod_id, prefer, avoid, minver):
+    """The files of a Nexus mod among entries, each (file name, path, mtime), best first, as
+    [(path, version, "preferred" or "other", (preferred, upload time))]. A file whose name has
+    <prefer> in it (e.g. "light") comes first, then the newest; "+word" means only such files count
+    (a mod with several files that go together, each its own component). A file with one of the
+    comma-separated <avoid> words in its name, or older than <minver>, is never listed: when there
+    is nothing else, the newest such is, as (path, version, "avoided" or "old", None); "~word" is
+    never named (another component takes it). In the words "_" stands for a space. Each upload is
+    listed once. "-" means no word or version."""
     need = prefer.startswith('+')
     prefer = '' if prefer in ('-', '+') else prefer.lstrip('+').lower().replace('_', ' ')
     avoid = [] if avoid == '-' else [w.replace('_', ' ') for w in avoid.lower().split(',') if w]
     quiet = [w[1:] for w in avoid if w.startswith('~')]
     avoid = [w for w in avoid if not w.startswith('~')]
     found, shunned, old = [], [], []
+    for n, p, mtime in entries:
+        got = nexus_name(n, mod_id)
+        if not got:
+            continue
+        name, ver, t = got
+        low = name.lower().replace('_', ' ')
+        if (need and prefer not in low) or any(w in low for w in quiet):
+            continue
+        key = (t, mtime, p, ver, low)
+        if any(w in low for w in avoid):
+            shunned.append(key)
+        elif minver != '-' and vcmp(ver, minver) < 0:
+            old.append(key)
+        else:
+            found.append((1 if prefer and prefer in low else 0,) + key)
+    ranked, seen = [], set()
+    for fav, t, _, p, ver, low in sorted(found, reverse=True):
+        if (t, ver, low) not in seen:
+            seen.add((t, ver, low))
+            ranked.append((p, ver, 'preferred' if fav or not prefer else 'other', (fav, t)))
+    if not found:
+        for kind, keys in (('avoided', shunned), ('old', old)):
+            if keys:
+                _, _, p, ver, _ = max(keys)
+                ranked.append((p, ver, kind, None))
+    return ranked
+
+
+def nexus_local(mod_id, dirs):
+    """(file name, path, mtime) of each file in the folders named as a Nexus download of the mod."""
+    entries = []
     for d in dirs:
         try:
             names = os.listdir(d)
@@ -1692,30 +1739,235 @@ def cmd_nexus_find(mod_id, prefer, avoid, minver, *dirs):
             continue
         for n in names:
             p = os.path.join(d, n)
-            got = nexus_name(n, mod_id)
-            if not got or not os.path.isfile(p):
-                continue
-            name, ver, t = got
-            low = name.lower().replace('_', ' ')
-            if (need and prefer not in low) or any(w in low for w in quiet):
-                continue
-            key = (t, os.path.getmtime(p), p, ver, low)
-            if any(w in low for w in avoid):
-                shunned.append(key)
-            elif minver != '-' and vcmp(ver, minver) < 0:
-                old.append(key)
-            else:
-                found.append((1 if prefer and prefer in low else 0,) + key)
-    seen = set()
-    for fav, t, _, p, ver, low in sorted(found, reverse=True):
-        if (t, ver, low) not in seen:
-            seen.add((t, ver, low))
-            out(p, ver, 'preferred' if fav or not prefer else 'other')
-    if not found:
-        for kind, keys in (('avoided', shunned), ('old', old)):
-            if keys:
-                _, _, p, ver, _ = max(keys)
-                out(p, ver, kind)
+            if nexus_name(n, mod_id) and os.path.isfile(p):
+                entries.append((n, p, os.path.getmtime(p)))
+    return entries
+
+
+def cmd_nexus_find(mod_id, prefer, avoid, minver, *dirs):
+    """The downloads of a Nexus mod in the given folders (see NEXUS_NAMES), ranked by nexus_rank,
+    one per line: path, version, and "preferred", "other", "avoided" or "old"."""
+    for p, ver, kind, _ in nexus_rank(nexus_local(mod_id, dirs), mod_id, prefer, avoid, minver):
+        out(p, ver, kind)
+
+
+# ---------------------------------------------------------- Nexus Mods API
+# With the player's own API key, the files of the Nexus mods come from Nexus Mods: the file
+# lists of every account, the download links of Premium accounts only (Nexus Mods gives others
+# none through its API). The key comes in the environment (NIGHTCOOP_NEXUS_KEY), never on a
+# command line, and nothing of it or of the account is printed or written anywhere.
+NEXUS_GAME = 'cyberpunk2077'
+NEXUS_CURRENT = ('MAIN', 'UPDATE', 'OPTIONAL', 'MISCELLANEOUS')   # not OLD_VERSION, ARCHIVED or DELETED
+NEXUS_HOSTS = ('.nexusmods.com', '.nexus-cdn.com')   # where its download links point
+NEXUS_KEEP = ('file_id', 'name', 'file_name', 'version', 'category_name', 'size_in_bytes', 'uploaded_timestamp')
+
+
+class NexusError(Exception):
+    def __init__(self, msg, code=0, stop=False):
+        Exception.__init__(self, msg)
+        self.code, self.stop = code, stop   # stop: no more requests this run (a rejected key, the hourly limit)
+
+
+def nexus_get(base, appver, path, tries=3):
+    """What the API answers (JSON) for path, under its v1; transient failures are retried."""
+    import urllib.error, urllib.request
+    url = base.rstrip('/') + '/v1/' + path
+    headers = {'apikey': os.environ.get('NIGHTCOOP_NEXUS_KEY', ''), 'Application-Name': 'nightcoop-linux',
+               'Application-Version': appver, 'User-Agent': 'nightcoop-linux/%s' % appver, 'Accept': 'application/json'}
+    why = 'no answer'
+    for n in range(tries):
+        try:
+            with urllib.request.urlopen(urllib.request.Request(url, headers=headers), timeout=30) as r:
+                return json.loads(r.read().decode('utf-8'))
+        except urllib.error.HTTPError as e:
+            if e.code == 401:
+                raise NexusError('Nexus Mods does not accept the API key (401); make a new one at '
+                                 'https://next.nexusmods.com/settings/api-keys', 401, True)
+            if e.code == 429:
+                reset = e.headers.get('X-RL-Hourly-Reset', '')
+                raise NexusError('the hourly limit of Nexus Mods API requests is reached%s' % (
+                    ' (it resets at %s)' % reset if reset else ''), 429, True)
+            if e.code < 500:
+                raise NexusError({403: 'Nexus Mods refused the request (403)', 404: 'not on Nexus Mods (404)'}.get(
+                    e.code, 'Nexus Mods answered %d' % e.code), e.code)
+            why = 'Nexus Mods answered %d' % e.code
+        except urllib.error.URLError as e:
+            if isinstance(e.reason, FileNotFoundError):   # a file:// answer that is not there (the test suite)
+                raise NexusError('not on Nexus Mods (404)', 404)
+            why = 'could not reach Nexus Mods (%s)' % e.reason
+        except (OSError, ValueError) as e:   # a timeout, an answer cut off, or one that is not JSON
+            why = 'Nexus Mods gave no usable answer (%s)' % (e.__class__.__name__ if not str(e) else e)
+        if n + 1 < tries:
+            time.sleep(2 * (n + 1))
+    raise NexusError(why)
+
+
+def cmd_nexus_validate(base, appver):
+    """Whether the API key is a Premium account's: "premium", "free", or "error" and why."""
+    try:
+        d = nexus_get(base, appver, 'users/validate.json')
+    except NexusError as e:
+        out('error', 'Nexus Mods did not answer as its API does (404)' if e.code == 404 else str(e))
+        return
+    if not isinstance(d, dict):
+        out('error', 'Nexus Mods gave no usable answer')
+    else:
+        out('premium' if d.get('is_premium') or d.get('is_premium?') else 'free', '')
+
+
+def nexus_list_path(d, mod_id):
+    return os.path.join(d, '%s.files.json' % mod_id)
+
+
+def cmd_nexus_sync(base, appver, cache, work, *ids):
+    """Brings the file lists of the mods up to date: a list in cache is kept unless the mod's files
+    changed since it was fetched (one request, updated.json, says which); other lists are fetched,
+    four at a time, into work. Prints the status ("ok", or "stop" when the API stopped answering),
+    how many lists were fetched, kept and not fetched, and the first failure."""
+    from concurrent.futures import ThreadPoolExecutor
+    ids = sorted(set(ids), key=int)
+    os.makedirs(work, exist_ok=True)
+    have = {}
+    for i in ids:
+        try:
+            have[i] = os.path.getmtime(nexus_list_path(cache, i))
+        except OSError:
+            pass
+    stale = [i for i in ids if i not in have]
+    if have:   # the smallest period that covers the oldest list; older than a month: fetch them all
+        age = time.time() - min(have.values())
+        period = next((p for p, s in (('1d', 86400), ('1w', 604800), ('1m', 2419200)) if age < s - 3600), None)
+        if not period:
+            stale = ids
+        else:
+            try:
+                changed = {str(e.get('mod_id')): max(e.get('latest_file_update') or 0, e.get('latest_mod_activity') or 0)
+                           for e in nexus_get(base, appver, 'games/%s/mods/updated.json?period=%s' % (NEXUS_GAME, period))
+                           if isinstance(e, dict)}
+            except (NexusError, TypeError) as e:   # the lists at hand serve this run
+                if getattr(e, 'stop', False):
+                    out('stop', 0, len(have), len(stale), str(e))
+                    return
+                changed = {}
+            # changed after (or within the hour before) it was fetched: the clocks may differ a little
+            stale += [i for i in have if changed.get(i, 0) > have[i] - 3600]
+    failures = []
+
+    def fetch(i):
+        if len(failures) >= 3 or any(e.stop for e in failures):   # Nexus Mods is not answering: no more tries
+            return NexusError('not fetched')
+        try:
+            d = nexus_get(base, appver, 'games/%s/mods/%s/files.json' % (NEXUS_GAME, i))
+            lst = {'files': [{k: f.get(k) for k in NEXUS_KEEP} for f in d.get('files', []) if isinstance(f, dict)]}
+        except NexusError as e:
+            if e.code != 404:
+                failures.append(e)
+                return e
+            lst = {'files': [], 'gone': True}   # hidden or removed: its downloads only, if any
+        except (AttributeError, TypeError) as e:
+            failures.append(NexusError('Nexus Mods gave no usable answer (%s)' % e))
+            return failures[-1]
+        tmp = nexus_list_path(work, i) + '.part'
+        with open(tmp, 'w', encoding='utf-8') as fh:
+            json.dump(lst, fh)
+        os.replace(tmp, nexus_list_path(work, i))
+        return None
+
+    stale = sorted(set(stale), key=int)
+    with ThreadPoolExecutor(4) as pool:
+        failed = [e for e in pool.map(fetch, stale) if e]
+    stop = [e for e in failures if e.stop]
+    out('stop' if stop else 'ok', len(stale) - len(failed), len(ids) - len(stale), len(failed),
+        str((stop or failures)[0]) if failures else '')
+
+
+def nexus_list(cache, work, mod_id):
+    for d in (work, cache):
+        try:
+            with open(nexus_list_path(d, mod_id), encoding='utf-8') as fh:
+                return json.load(fh)
+        except (OSError, ValueError):
+            continue
+    return None
+
+
+def cmd_nexus_pick(cache, work, mod_id, prefer, avoid, minver, *dirs):
+    """The file of the mod to install, chosen by nexus_rank among its current files on Nexus Mods
+    (this run's list in work, else the one in cache): "have" and the path of a download in the
+    folders that is as good; "get", its file id, file name, size, version, and whether it is the
+    preferred file; "none" and why ("avoided" or "old", and the version; "gone" for a mod no longer
+    on Nexus Mods; "nothing"); "nolist" without a list of its files."""
+    lst = nexus_list(cache, work, mod_id)
+    if not isinstance(lst, dict):
+        out('nolist')
+        return
+    files = {}
+    for f in lst.get('files') or []:
+        n = str(f.get('file_name') or '')
+        if f.get('category_name') in NEXUS_CURRENT and n == os.path.basename(n) and not n.startswith('.') \
+                and not any(ord(c) < 32 for c in n):
+            files[str(f.get('file_id'))] = f
+    ranked = nexus_rank([(f['file_name'], fid, 0) for fid, f in files.items()], mod_id, prefer, avoid, minver)
+    if not ranked or ranked[0][3] is None:
+        out('none', ranked[0][2] if ranked else 'gone' if lst.get('gone') else 'nothing', ranked[0][1] if ranked else '')
+        return
+    fid, ver, which, rank = ranked[0]
+    here = [e for e in nexus_rank(nexus_local(mod_id, dirs), mod_id, prefer, avoid, minver) if e[3]]
+    if here and here[0][3] >= rank:
+        out('have', here[0][0])
+        return
+    out('get', fid, files[fid]['file_name'], int(files[fid].get('size_in_bytes') or 0), ver, which)
+
+
+def cmd_nexus_link(base, appver, mod_id, file_id):
+    """The download link of a file (Premium accounts), on a Nexus Mods server, its path quoted:
+    "ok" and the link, or "error" (or "stop") and why."""
+    import urllib.parse
+    try:
+        links = nexus_get(base, appver, 'games/%s/mods/%s/files/%s/download_link.json' % (NEXUS_GAME, mod_id, file_id))
+    except NexusError as e:
+        out('stop' if e.stop else 'error', 'Nexus Mods gives download links through its API to Premium members only (403)'
+            if e.code == 403 else str(e))
+        return
+    own = urllib.parse.urlsplit(base).scheme
+    links = [e for e in links if isinstance(e, dict)] if isinstance(links, list) else []
+    for e in sorted(links, key=lambda e: e.get('short_name') != 'Nexus CDN'):
+        sp = urllib.parse.urlsplit(str(e.get('URI') or ''))
+        if (sp.scheme == 'https' and (sp.hostname or '').lower().endswith(NEXUS_HOSTS)) or sp.scheme == own == 'file':
+            path = urllib.parse.quote(sp.path, safe="/%:@!$&'()*+,;=-._~")
+            out('ok', urllib.parse.urlunsplit((sp.scheme, sp.netloc, path, sp.query, '')))
+            return
+    out('error', 'Nexus Mods gave no download link on its own servers')
+
+
+def cmd_nexus_verify(base, appver, mod_id, file_id, path, size):
+    """Whether a download is the file Nexus Mods lists: its size, and its MD5 looked up on Nexus
+    Mods (md5_search), which must name this mod and file. "ok", or "bad" (or "error") and why."""
+    got = os.path.getsize(path)
+    if int(size or 0) and got != int(size):
+        out('bad', 'it is %d bytes, and Nexus Mods lists %s' % (got, size))
+        return
+    try:
+        h = hashlib.md5(usedforsecurity=False)
+    except TypeError:
+        h = hashlib.md5()
+    with open(path, 'rb') as fh:
+        for block in iter(lambda: fh.read(1 << 20), b''):
+            h.update(block)
+    try:
+        hits = nexus_get(base, appver, 'games/%s/mods/md5_search/%s.json' % (NEXUS_GAME, h.hexdigest()))
+    except NexusError as e:
+        if e.code == 404:
+            out('bad', 'no file on Nexus Mods has its MD5')
+        else:
+            out('stop' if e.stop else 'error', 'it could not be checked: %s' % e)
+        return
+    for hit in hits if isinstance(hits, list) else []:
+        m, f = (hit.get('mod') or {}, hit.get('file_details') or {}) if isinstance(hit, dict) else ({}, {})
+        if str(m.get('mod_id')) == str(mod_id) and str(f.get('file_id')) == str(file_id):
+            out('ok')
+            return
+    out('bad', 'its MD5 is that of another file on Nexus Mods')
 
 
 def sha256_of(path):
@@ -1755,6 +2007,8 @@ def cmd_keep_state(files, game, recorded, *patterns):
 
 CMDS = {
     'redmods': cmd_redmods, 'roots': cmd_roots, 'split-roots': cmd_split_roots, 'modroot': cmd_modroot, 'nexus-find': cmd_nexus_find, 'keep-state': cmd_keep_state,
+    'nexus-validate': cmd_nexus_validate, 'nexus-sync': cmd_nexus_sync, 'nexus-pick': cmd_nexus_pick,
+    'nexus-link': cmd_nexus_link, 'nexus-verify': cmd_nexus_verify,
     'pever': cmd_pever, 'gamever': cmd_gamever, 'r4ok': cmd_r4ok, 'pestr': cmd_pestr, 'vge': cmd_vge, 'builtin': cmd_builtin, 'pecrt': cmd_pecrt,
     'libs': cmd_libs, 'proton': cmd_proton, 'slr': cmd_slr,
     'ct-get': cmd_ct_get, 'ct-list': cmd_ct_list, 'ct-pick': cmd_ct_pick, 'ct-set': cmd_ct_set,
@@ -1837,6 +2091,9 @@ while [ $# -gt 0 ]; do
         --with-equipment-ex) SET_WANT+=(+eqex); shift ;;
         --without-equipment-ex) SET_WANT+=(-eqex); shift ;;
         --mods-from)      need_arg "$1" $#; NEXUS_DIRS+=("$(readlink -m "$2")"); shift 2 ;;
+        --nexus-key-file) need_arg "$1" $#; NEXUS_KEY_FILE="$(readlink -m "$2")"; shift 2 ;;
+        --save-nexus-key) SAVE_NEXUS_KEY=1; shift ;;
+        --no-nexus-api)   NEXUS_API_USE=0; shift ;;
         --force)          FORCE=1; shift ;;
         --dry-run)        DRY_RUN=1; shift ;;
         -y|--yes)         ASSUME_YES=1; shift ;;
@@ -1892,9 +2149,9 @@ fs_type()       { findmnt -n -o FSTYPE --target "$1" 2>/dev/null || stat -f -c %
 
 sha_check() { [ "$(sha256sum "$1" | cut -d' ' -f1)" = "${2,,}" ]; }
 
-download() {    # download <url> <dest> [quiet]
+download() {    # download <url> <dest> [quiet | what]: "downloading <what>" (by default the URL's file name)
     local -a progress=(-sS)
-    [ -z "${3:-}" ] && info "downloading $(basename "${1%%\?*}")" && [ -t 1 ] && progress=(--progress-bar)
+    [ "${3:-}" != quiet ] && info "downloading ${3:-$(basename "${1%%\?*}")}" && [ -t 1 ] && progress=(--progress-bar)
     curl -fL "${progress[@]}" --proto '=https,file' --proto-redir '=https' --retry 3 \
          --connect-timeout 20 -o "$2" "$1"
 }
@@ -2327,6 +2584,7 @@ do_check() {
         *) row "NightCoop update" "unknown (could not reach $NIGHTCOOP_SITE)" ;;
     esac
     addon_rows
+    nexus_rows
     IFS=$'\x1f' read -r app def < <(py ct-get "$STEAM_ROOT" "$APPID") || true
     if [ -n "$app" ]; then row "Proton for the game" "$app (chosen in Steam)"
     else row "Proton for the game" "not chosen; Steam uses ${def:-its default}"; fi
@@ -2701,10 +2959,155 @@ nexus_avoided() {   # nexus_avoided <component>: what a file of it that is never
         *) h="$(nexus_file "$1")"; echo "another file of $(name_of "$1") than the one this script takes${h:+ ($h)}" ;;
     esac
 }
-cache_it() {   # cache_it <archive>: kept for later runs (not by a dry run)
+cache_it() {   # cache_it <archive>: kept for later runs (not by a dry run); this run's Nexus downloads move there
     if [ "$DRY_RUN" != 1 ] && [ "$(dirname "$1")" != "$CACHE_DIR/mods" ] && mkdir -p "$CACHE_DIR/mods"; then
-        cp "$1" "$CACHE_DIR/mods/$(basename "$1")" 2>/dev/null || true
+        if [ "$(dirname "$1")" = "$NEXUS_DL" ]; then mv -f "$1" "$CACHE_DIR/mods/" 2>/dev/null || true
+        else cp "$1" "$CACHE_DIR/mods/$(basename "$1")" 2>/dev/null || true; fi
     fi
+}
+
+# ------------------------------------------------------- Nexus Mods API ----
+# With a Nexus Mods API key, the files of the Nexus mods come from Nexus Mods, for a Premium
+# account (Nexus Mods gives other accounts no download links through its API; for those, the
+# list of what to download links each file). The key is read from --nexus-key-file, NEXUS_API_KEY
+# or $CONFIG_DIR/nexus-api-key; it goes to the helper in its environment, never on a command
+# line, and is not passed on to anything else this script starts (Steam, the game).
+NEXUS_KEY="" NEXUS_KEY_FROM="" NEXUS_STATE="" NEXUS_DL="" NEXUS_WORK="" NEXUS_FID="" NEXUS_LATER=0 NEXUS_WOULD=()
+NEXUS_KEY_RE='^[A-Za-z0-9+/=_-]{16,1024}$'
+nexus_key_load() {   # NEXUS_KEY and NEXUS_KEY_FROM (where it is from), for install, update and check
+    local f="" k="${NEXUS_API_KEY:-}" mode
+    [ "$NEXUS_API_USE" = 1 ] || return 0
+    if [ -n "$NEXUS_KEY_FILE" ]; then
+        f="$NEXUS_KEY_FILE" k=""; [ -f "$f" ] && [ -r "$f" ] || fail "--nexus-key-file: there is no readable file $f"
+    elif [ -n "$k" ]; then NEXUS_KEY_FROM=NEXUS_API_KEY
+    elif [ -f "$CONFIG_DIR/nexus-api-key" ]; then f="$CONFIG_DIR/nexus-api-key"; fi
+    if [ -n "$f" ]; then
+        k="$(tr -d ' \t\r\n' < "$f" 2>/dev/null || true)" NEXUS_KEY_FROM="$f"
+        mode="$(stat -c %a "$f" 2>/dev/null || echo 600)"
+        if [ "${mode: -2}" != 00 ]; then warn "$f can be read by other users: make it yours alone (chmod 600 '$f')"; fi
+        if [ -z "$k" ]; then warn "$f is empty; the Nexus Mods API is not used"; return 0; fi
+    fi
+    [ -n "$k" ] || return 0
+    if [[ ! "$k" =~ $NEXUS_KEY_RE ]]; then
+        warn "the Nexus Mods API key in $NEXUS_KEY_FROM does not look like one (letters, digits and + / = -); it is not used"
+        NEXUS_KEY_FROM=""; return 0
+    fi
+    NEXUS_KEY="$k"
+}
+nexus_key_save() {   # --save-nexus-key: ask for the key (hidden) and keep it in the key file, for this user alone
+    local k tmp f="$CONFIG_DIR/nexus-api-key"
+    [ -t 0 ] || fail "--save-nexus-key asks for the key on a terminal; or put the key in $f yourself (chmod 600)"
+    info "Your Nexus Mods API key is the Personal API Key at https://next.nexusmods.com/settings/api-keys"
+    read -r -s -p "  Paste it here (it is not shown): " k; echo
+    k="$(tr -d ' \t\r\n' <<<"$k")"
+    [[ "$k" =~ $NEXUS_KEY_RE ]] || fail "that does not look like a Nexus Mods API key; nothing was saved"
+    if ! { mkdir -p "$CONFIG_DIR" && tmp="$(mktemp "$CONFIG_DIR/.nexus-api-key.XXXXXX")"; }; then fail "could not write in $CONFIG_DIR"; fi
+    if ! { printf '%s\n' "$k" > "$tmp" && mv -f "$tmp" "$f"; }; then rm -f "$tmp"; fail "could not write $f"; fi
+    ok "the Nexus Mods API key is saved in $f, for you alone; this run and later ones use it"
+    NEXUS_KEY_FILE="$f"
+}
+napi() { NIGHTCOOP_NEXUS_KEY="$NEXUS_KEY" py "nexus-$1" "$NEXUS_API" "$SCRIPT_VERSION" "${@:2}"; }   # napi <command> <args...>
+nexus_api_start() {   # nexus_api_start <table lines>: check the key, and bring the file lists of the Nexus mods that are on up to date
+    local comp patch sets kind rule probe ver src sha id st msg n m failed ids=()
+    [ -n "$NEXUS_KEY" ] || return 0
+    while read -r comp patch sets kind rule probe ver src sha; do
+        if [[ "$src" != nexus:* ]] || ! in_sets_on "$sets"; then continue; fi
+        if needs_pl "$comp" && ! has_pl; then continue; fi
+        IFS=: read -r _ id _ <<<"$src"; ids+=("$id")
+    done <<<"$1"
+    [ "${#ids[@]}" -gt 0 ] || return 0
+    IFS=$'\x1f' read -r st msg < <(napi validate) || true
+    case "$st" in
+        premium) NEXUS_STATE=premium ;;
+        free) NEXUS_STATE=free ;;
+        *) warn "Nexus Mods API: ${msg:-no answer}; the Nexus mods are taken from your downloads only"; return 0 ;;
+    esac
+    # the file lists are kept, to ask Nexus Mods only about mods that changed since; the downloads go
+    # to disk (the whole set is over 2 GB), and a dry run only lists them
+    if [ "$DRY_RUN" = 1 ]; then NEXUS_WORK="$TMP/nexus-api"
+    else NEXUS_WORK="$CACHE_DIR/nexus-api" NEXUS_DL="$CACHE_DIR/incoming"
+         mkdir -p "$NEXUS_DL" && find "$NEXUS_DL" -maxdepth 1 -type f -delete   # what an interrupted run left
+    fi
+    IFS=$'\x1f' read -r st n m failed msg < <(napi sync "$CACHE_DIR/nexus-api" "$NEXUS_WORK" "${ids[@]}") || true
+    case "$st" in
+        ok|stop) if [ "${n:-0}" -gt 0 ]; then ok "Nexus Mods: the file lists of $n mod$([ "$n" = 1 ] || echo s) fetched$([ "${m:-0}" = 0 ] || echo " ($m unchanged since the last run)")"; fi
+                 if [ "${failed:-0}" -gt 0 ]; then warn "Nexus Mods: $failed file lists were not fetched: $msg"; fi
+                 if [ "$st" = stop ]; then NEXUS_STATE=stopped; fi ;;
+        *) warn "Nexus Mods API: the file lists were not fetched"; NEXUS_STATE=stopped ;;
+    esac
+    if [ "$NEXUS_STATE" = premium ]; then ok "Nexus Mods: a Premium account's key ($NEXUS_KEY_FROM); the files of the Nexus mods are downloaded as needed"
+    elif [ "$NEXUS_STATE" = free ]; then
+        info "The Nexus Mods account of the API key ($NEXUS_KEY_FROM) is not Premium: Nexus Mods gives others no download"
+        info "links through its API, so what is not downloaded yet is listed below, file by file."
+    fi
+}
+nexus_api_get() {   # nexus_api_get <component> <mod id> <prefer> <avoid> <minver>: unless a download as good is
+    # here, its file on Nexus Mods, downloaded (Premium) into NEXUS_DL; NEXUS_FID: that file's id;
+    # NEXUS_LATER=1: a dry run, which lists it instead
+    local st a b c d e url part r
+    NEXUS_FID="" NEXUS_LATER=0
+    [ "$NEXUS_STATE" = premium ] || [ "$NEXUS_STATE" = free ] || return 0
+    IFS=$'\x1f' read -r st a b c d e < <(py nexus-pick "$CACHE_DIR/nexus-api" "$NEXUS_WORK" "$2" "$3" "$4" "$5" \
+        "${NEXUS_DIRS[@]}" "$CACHE_DIR/mods" ${NEXUS_DL:+"$NEXUS_DL"}) || true
+    case "$st" in
+        get) NEXUS_FID="$a" ;;
+        none) case "$a" in
+                  old) warn "Nexus Mods has $(name_of "$1") $b at the newest; game ${GAME_VER:-?} needs $5 or newer" ;;
+                  gone) warn "$(name_of "$1") is no longer on Nexus Mods (hidden or removed)" ;;
+                  *) r="$(nexus_file "$1")"; warn "Nexus Mods lists no file of $(name_of "$1") that this script takes${r:+ ($r)}" ;;
+              esac
+              return 0 ;;
+        *) return 0 ;;   # a download as good is here, or no list of its files
+    esac
+    [ "$NEXUS_STATE" = premium ] || return 0
+    for r in $(needs_of "$1"); do   # left out anyway
+        if [ "$r" != Phantom_Liberty ] && [[ "$ADDON_HAVE" != *" $r "* ]]; then return 0; fi
+    done
+    if [ "$DRY_RUN" = 1 ]; then NEXUS_WOULD+=("$1"$'\t'"$d"$'\t'"$c"); NEXUS_LATER=1; return 0; fi   # listed after the add-ons
+    IFS=$'\x1f' read -r st url < <(napi link "$2" "$a") || true
+    case "$st" in
+        ok) ;;
+        stop) NEXUS_STATE=stopped; warn "Nexus Mods API: $url; what is left is listed below, to download by hand"; return 0 ;;
+        *) warn "$(name_of "$1") was not downloaded from Nexus Mods: ${url:-no answer}"; return 0 ;;
+    esac
+    part="$NEXUS_DL/$b.part"
+    if ! download "$url" "$part" "$b$([ "${c:-0}" = 0 ] || echo " ($(human "$c"))") from Nexus Mods"; then
+        rm -f "$part"; warn "the download of $b from Nexus Mods failed"; return 0
+    fi
+    IFS=$'\x1f' read -r st r < <(napi verify "$2" "$a" "$part" "$c") || true
+    case "$st" in
+        ok) mv -f "$part" "$NEXUS_DL/$b" ;;
+        stop) rm -f "$part"; NEXUS_STATE=stopped; warn "Nexus Mods API: $r; what is left is listed below, to download by hand" ;;
+        *) rm -f "$part"; warn "$b from Nexus Mods is not installed: ${r:-it could not be checked}" ;;
+    esac
+}
+nexus_api_end() {   # what a dry run would download; what this run downloaded and did not use goes (a usable download is in the cache)
+    local e c v n total=0 names=()
+    for e in "${NEXUS_WOULD[@]}"; do
+        IFS=$'\t' read -r c v n <<<"$e"; names+=("$(name_of "$c") $v"); total=$((total + ${n:-0}))
+    done
+    if [ "${#names[@]}" -gt 0 ]; then
+        info "A real run downloads these from Nexus Mods ($(human "$total")) and installs them: $(listing "${names[@]}")"
+    fi
+    if [ -n "$NEXUS_DL" ] && [ -d "$NEXUS_DL" ]; then
+        find "$NEXUS_DL" -maxdepth 1 -type f -delete; rmdir "$NEXUS_DL" 2>/dev/null || true
+    fi
+}
+nexus_rows() {   # check: the Nexus Mods API key
+    local st msg r="Nexus Mods API"
+    if [ -z "$NEXUS_KEY" ]; then
+        if [ "$NEXUS_API_USE" != 1 ]; then row "$r" "not used (--no-nexus-api)"
+        elif [[ " $SETS_RECORDED " == *" mods "* ]] || [[ " $SETS_RECORDED " == *" eqex "* ]]; then
+            row "$r" "no key: the Nexus mods are downloaded by hand (with a Premium account, --save-nexus-key lets this script do it)"
+        fi
+        return 0
+    fi
+    IFS=$'\x1f' read -r st msg < <(napi validate) || true
+    case "$st" in
+        premium) row "$r" "a Premium account's key ($NEXUS_KEY_FROM): this script downloads the Nexus mods" ;;
+        free) row "$r" "the key of an account without Premium ($NEXUS_KEY_FROM): the Nexus mods are downloaded by hand, as listed file by file" ;;
+        *) row "$r" "the key in $NEXUS_KEY_FROM was not checked: ${msg:-no answer}" ;;
+    esac
 }
 unpack_any() {   # unpack_any <archive> <dir>: zip with the helper, 7z and rar with bsdtar (libarchive); prints why not
     local why
@@ -2755,6 +3158,7 @@ step_addons() {   # the add-on sets (--with-flight, --with-mods), matched to the
         return 0
     fi
     mkdir -p "$TMP/addons"
+    nexus_api_start "$lines"   # with a Nexus Mods API key
     while read -r comp patch sets kind rule probe ver src sha; do
         if ! in_sets_on "$sets"; then   # its sets are off: a lib stays as it is (no longer managed), a mod goes
             if [ -n "$(recorded_roots "$comp")" ]; then
@@ -2768,7 +3172,8 @@ step_addons() {   # the add-on sets (--with-flight, --with-mods), matched to the
         case "$src" in
             nexus:*)   # the user's downloads, and the copies kept from earlier runs; ver: the oldest release for the patch
                 IFS=: read -r _ id prefer avoid <<<"$src"
-                mapfile -t found < <(py nexus-find "$id" "${prefer:--}" "${avoid:--}" "$ver" "${NEXUS_DIRS[@]}" "$CACHE_DIR/mods" || true)
+                nexus_api_get "$comp" "$id" "${prefer:--}" "${avoid:--}" "$ver"   # from Nexus Mods, with a Premium account's key
+                mapfile -t found < <(py nexus-find "$id" "${prefer:--}" "${avoid:--}" "$ver" "${NEXUS_DIRS[@]}" "$CACHE_DIR/mods" ${NEXUS_DL:+"$NEXUS_DL"} || true)
                 for e in "${found[@]}"; do
                     IFS=$'\x1f' read -r path v which <<<"$e"
                     case "$which" in
@@ -2778,7 +3183,9 @@ step_addons() {   # the add-on sets (--with-flight, --with-mods), matched to the
                     esac
                 done
                 if [ "${#cands[@]}" = 0 ]; then   # not downloaded yet: listed below; installed before: stays as it is
-                    if [ -n "$(recorded_roots "$comp")" ]; then keep_recorded "$comp"; else ADDON_MISSING+=("$comp $id"); fi
+                    if [ -n "$(recorded_roots "$comp")" ]; then keep_recorded "$comp"
+                    elif [ "$NEXUS_LATER" = 1 ]; then ADDON_HAVE+="$comp "   # a dry run: a real run downloads it
+                    else ADDON_MISSING+=("$comp $id $NEXUS_FID"); fi
                     continue
                 fi ;;
             *)
@@ -2890,13 +3297,21 @@ step_addons() {   # the add-on sets (--with-flight, --with-mods), matched to the
         info "Vehicle Customizer works only with the game's language set to English."
     fi
     if [ "${#ADDON_MISSING[@]}" -gt 0 ]; then
-        warn "not found in $(listing "${NEXUS_DIRS[@]}"): these are published only on Nexus Mods, which does not allow"
-        warn "downloads by scripts. Download them there (a free account is enough), then run this again:"
+        case "$NEXUS_STATE" in
+            premium|stopped) warn "not downloaded from Nexus Mods (see above), nor found in $(listing "${NEXUS_DIRS[@]}"):"
+                             warn "download them there by hand, or run this again later:" ;;
+            free) warn "not found in $(listing "${NEXUS_DIRS[@]}"): these are published only on Nexus Mods. Download them"
+                  warn "there (each link opens the file to download), then run this again:" ;;
+            *) warn "not found in $(listing "${NEXUS_DIRS[@]}"): these are published only on Nexus Mods, which lets scripts"
+               warn "download only for Premium members (--save-nexus-key). Download them there (a free account is"
+               warn "enough), then run this again:" ;;
+        esac
         for e in "${ADDON_MISSING[@]}"; do
-            read -r comp id <<<"$e"; h="$(nexus_file "$comp")"
-            info "    $(name_of "$comp")${h:+ ($h)}: https://www.nexusmods.com/cyberpunk2077/mods/$id?tab=files"
+            read -r comp id fid <<<"$e"; h="$(nexus_file "$comp")"
+            info "    $(name_of "$comp")${h:+ ($h)}: https://www.nexusmods.com/cyberpunk2077/mods/$id?tab=files${fid:+&file_id=$fid}"
         done
     fi
+    nexus_api_end
     if [ "$DRY_RUN" != 1 ] && [ -d "$CACHE_DIR/mods" ]; then   # the cache keeps what this run uses
         for path in "$CACHE_DIR/mods"/*; do [[ "$ADDON_USED" == *" $(basename "$path") "* ]] || rm -f "$path"; done
     fi
@@ -3371,6 +3786,8 @@ main() {
     detect_os
     need_tools
     TMP="$(mktemp -d "${TMPDIR:-/tmp}/nightcoop.XXXXXX")"; trap cleanup EXIT
+    case "$MODE" in install|check) if [ "$SAVE_NEXUS_KEY" = 1 ]; then nexus_key_save; fi; nexus_key_load ;; esac
+    unset NEXUS_API_KEY   # not passed on to what this script starts (Steam, and the game with it)
 
     bold "System"
     ok "$OS_NAME${DEVICE:+ on a $DEVICE}"

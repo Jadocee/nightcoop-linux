@@ -9,12 +9,15 @@ LAYOUT is one of: native (game on a second library, as on a Steam Deck SD card),
 flatpak (Flatpak Steam, sandbox paths in Steam's files) or cachyos (both proton-cachyos
 packages installed, Steam's default set to Proton 10, no config_info yet). OPTS: see world().
 """
+import calendar
 import hashlib
 import json
 import os
 import re
+import shutil
 import struct
 import sys
+import time
 import zipfile
 
 
@@ -542,6 +545,78 @@ def archives(fix):
     for name, paths in ROUND5.items():
         zname = re.sub(r'\.(rar|7z)$', '.zip', name)
         zipdir(f'{fix}/round5/{zname}', {p: placeholder(p, name) for p in paths})
+    eqex = 'Equipment-EX 6945 1.2.11 2026-11-06T10-00Z Lt7Qw2zXa.zip'   # a later release, only on Nexus Mods
+    zipdir(f'{fix}/nexus-later/{eqex}', {p: placeholder(p, eqex) for p in ROUND3['Equipment-EX 6945 1.2.10 2026-10-25T21-07Z k8Iw8mmPd.zip']})
+    nexus_api(fix, sorted({r.split()[7].split(':')[1] for r in table if r.split()[7].startswith('nexus:')}, key=int))
+
+
+# Nexus Mods' API, as files: what https://api.nexusmods.com/v1/... answers, under nexusapi/v1/...,
+# for the fixtures' Nexus downloads. Its download links point at the archives themselves (file://).
+NEXUS_NAMES = (r'^.+ %s (?P<ver>\S+) (?P<iso>\d{4}-\d\d-\d\dT\d\d-\d\dZ) [A-Za-z0-9]+\.(?:zip|7z|rar)$',
+               r'^.+-%s-(?P<ver>[vV]?[0-9][0-9a-zA-Z-]*?)-(?P<ts>[0-9]{9,11})\.(?:zip|7z|rar)$')
+NEXUS_CATEGORY = {   # what is not a main file
+    'No Intro Videos-533-0-6-1730000000.zip': 'ARCHIVED',   # newer than 0.5, and no game folders: never taken
+    'Virtual Atelier - Basic-2987-1-2-4-1706771312.zip': 'OLD_VERSION',
+    'Vehicle Customizer SVE 3dot1 9034 3.1 2026-09-21T11-33Z tvQTvsQ74.zip': 'UPDATE',
+}
+NEXUS_LATER = ('Drive an Aerial Vehicle 13842 3.5.1 2026-11-02T09-30Z Zx81kQp0a.zip',   # listed in nexusapi/later only
+               'Equipment-EX 6945 1.2.11 2026-11-06T10-00Z Lt7Qw2zXa.zip')
+NEXUS_NO_SIZE = ('CyberDrift 2.0 Light for game ver. 2.31 8306 2.31 2026-08-03T18-29Z 4rpqrKU17.zip',)   # as Nexus lists it
+
+
+def nexus_api(fix, ids):
+    api, game = f'{fix}/nexusapi/v1', f'{fix}/nexusapi/v1/games/cyberpunk2077/mods'
+    account = {'user_id': 1, 'key': 'not-the-key', 'name': 'tester', 'is_premium?': True, 'is_supporter?': True,
+               'email': 'tester@example.invalid', 'profile_url': '', 'is_supporter': True, 'is_premium': True}
+    write(f'{api}/users/validate-premium.json', json.dumps(account))
+    write(f'{api}/users/validate.json', json.dumps(account))
+    write(f'{api}/users/validate-free.json', json.dumps(dict(account, **{'is_premium?': False, 'is_premium': False,
+                                                                         'is_supporter?': False, 'is_supporter': False})))
+    for period in ('?period=1d', '?period=1w', '?period=1m', ''):   # nothing changed lately (Python 3.14 opens a
+        write(f'{game}/updated.json{period}', '[]')                  # file:// URL without its query)
+    archives = []
+    for d in ('nexus', 'style', 'round3', 'round4', 'round5', 'nexus-bad', 'nexus-later'):
+        archives += [(n, f'{fix}/{d}/{n}') for n in sorted(os.listdir(f'{fix}/{d}'))]
+    md5s, fid, lists = {}, 100000, {}
+    for mod in ids:
+        for n, path in archives:
+            m = next((m for m in (re.match(pat % mod, n) for pat in NEXUS_NAMES) if m), None)
+            if not m:
+                continue
+            fid += 1
+            ts = int(m.group('ts')) if 'ts' in m.groupdict() and m.group('ts') else \
+                calendar.timegm(time.strptime(m.group('iso'), '%Y-%m-%dT%H-%MZ'))
+            data = open(path, 'rb').read()
+            f = {'file_id': fid, 'name': n.rsplit('.', 1)[0], 'version': m.group('ver'), 'category_name': NEXUS_CATEGORY.get(n, 'MAIN'),
+                 'size_in_bytes': None if n in NEXUS_NO_SIZE else len(data), 'file_name': n, 'uploaded_timestamp': ts, 'md5': None}
+            lists.setdefault(mod, []).append(f)
+            link = [{'name': 'Elsewhere', 'short_name': 'Elsewhere', 'URI': 'https://downloads.example.invalid/' + n},
+                    {'name': 'Nexus Global Content Delivery Network', 'short_name': 'Nexus CDN', 'URI': 'file://' + path}]
+            write(f'{game}/{mod}/files/{fid}/download_link.json', json.dumps(link))
+            md5s.setdefault(hashlib.md5(data).hexdigest(), []).append(
+                {'mod': {'mod_id': int(mod), 'name': 'mod %s' % mod}, 'file_details': dict(f, md5=hashlib.md5(data).hexdigest())})
+    for mod, files in lists.items():
+        now = [f for f in files if f['file_name'] not in NEXUS_LATER]
+        write(f'{game}/{mod}/files.json', json.dumps({'files': now, 'file_updates': []}))
+        if len(now) != len(files):   # its later list: the new release, the old one an old version
+            later = [dict(f, category_name='OLD_VERSION') if f in now else f for f in files]
+            write(f'{fix}/nexusapi/later/{mod}.files.json', json.dumps({'files': later, 'file_updates': []}))
+    for md5, hits in md5s.items():
+        write(f'{game}/md5_search/{md5}.json', json.dumps(hits))
+    # Equipment-EX as a server could hand it over: changed in one byte, or cut short; and a link elsewhere only
+    eq = 'Equipment-EX 6945 1.2.10 2026-10-25T21-07Z k8Iw8mmPd.zip'
+    efid = next(f['file_id'] for f in lists['6945'] if f['file_name'] == eq)
+    data = bytearray(open(f'{fix}/round3/{eq}', 'rb').read())
+    data[len(data) // 2] ^= 0xff
+    os.makedirs(f'{fix}/nexuscdn-bad', exist_ok=True)
+    open(f'{fix}/nexuscdn-bad/{eq}', 'wb').write(bytes(data))
+    os.makedirs(f'{fix}/nexuscdn-short', exist_ok=True)
+    open(f'{fix}/nexuscdn-short/{eq}', 'wb').write(bytes(data[:len(data) // 2]))
+    for v, uri in (('bad', f'file://{fix}/nexuscdn-bad/{eq}'), ('short', f'file://{fix}/nexuscdn-short/{eq}'),
+                   ('elsewhere', 'https://downloads.example.invalid/' + eq)):
+        write(f'{game}/6945/files/{efid}/download_link-{v}.json', json.dumps([{'name': v, 'short_name': v, 'URI': uri}]))
+    shutil.copy(f'{game}/6945/files/{efid}/download_link.json', f'{game}/6945/files/{efid}/download_link-good.json')
+    write(f'{fix}/nexusapi/eqex-fid', str(efid))
 
 # --------------------------------------------------------------------- world
 VDF_LOCALCONFIG = '''"UserLocalConfigStore"

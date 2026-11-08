@@ -193,13 +193,13 @@ WINEDLLOVERRIDES="winmm,version=n,b" MANGOHUD=1 game-performance %command% --lau
 | --- | --- |
 | `nightcoop-install` (or `./nightcoop-install.sh`) | Install, or update in place to the latest build for your game patch. |
 | `… update` | The same as `install`. |
-| `… check` | Report the installed versions and whether a newer NightCoop build exists, the Proton choice, the runtime, the overrides and the latest RED4ext and NightCoop logs. Changes nothing. |
+| `… check` | Report the installed versions and whether a newer NightCoop build exists, the Proton choice, the runtime, the overrides, the Nexus Mods API key's state and the latest RED4ext and NightCoop logs. Changes nothing. |
 | `… restore [DIR]` | Undo the most recent install (or the given backup). |
 | `… uninstall` | Undo every install, newest first, leaving the game folder as it was. |
 
 | Option | Effect |
 | --- | --- |
-| `--dry-run` | Detect, download and verify everything; change nothing. |
+| `--dry-run` | Detect, download and verify everything; change nothing. The files a Nexus Mods API key would download are only listed, with their total size. |
 | `-y`, `--yes` | Do not ask for confirmation. |
 | `--proton TOOL` | Choose the Proton build for the game (see above). |
 | `--no-launcher-skip` | Do not add `--launcher-skip` to the launch options. |
@@ -221,6 +221,9 @@ WINEDLLOVERRIDES="winmm,version=n,b" MANGOHUD=1 game-performance %command% --lau
 | `--with-equipment-ex` | Also install Equipment-EX, to wear layered outfits, and with `--with-mods` raem's jewellery made for its slots (see below). Every partner in a session needs it too. |
 | `--without-equipment-ex` | Remove Equipment-EX again. |
 | `--mods-from DIR` | Look for the Nexus Mods downloads in DIR instead of your Downloads folder. |
+| `--save-nexus-key` | Ask for your Nexus Mods API key (it is not shown) and keep it in `~/.config/nightcoop-linux/nexus-api-key`, readable by you alone. With a Premium account's key, this run and later ones download the Nexus mods themselves (see [Downloads through the Nexus Mods API](#downloads-through-the-nexus-mods-api)). |
+| `--nexus-key-file FILE` | Read the key from FILE this time. Without this option the key comes from `NEXUS_API_KEY`, or else from the file above. |
+| `--no-nexus-api` | Do not use a Nexus Mods API key this time. |
 
 When Steam is running, its two settings are not written, but the registry override alone
 lets the mod load. The script then prints the launch options and the Proton choice for you
@@ -364,10 +367,11 @@ hand slots (without it, a ring would take the whole torso slot):
 | The Community Palette Project | [10437](https://www.nexusmods.com/cyberpunk2077/mods/10437?tab=files) | 1.1 or newer | The colours Chain Jewelry and Reyes Accessories use: a bare `.archive`, installed into `archive/pc/mod` |
 | raem's Atelier Store: Accessories - Main Store, among the optional files | [14210](https://www.nexusmods.com/cyberpunk2077/mods/14210?tab=files) | 2.0 or newer | The store that sells them (not raem's other stores, which would stay empty) |
 
-A download older than its minimum is passed over, with the reason. Nexus Mods does not let
-scripts download files (a browser check, and an API that needs each user's key; downloads
-through it need Premium),
-so you download the Nexus mods yourself:
+A download older than its minimum is passed over, with the reason. Nexus Mods lets scripts
+download files only through its API, with each user's own key, and gives download links
+through it to Premium members only. With a Premium account, give the script your key and it
+downloads these mods itself (see [Downloads through the Nexus Mods API](#downloads-through-the-nexus-mods-api)).
+Otherwise you download the Nexus mods yourself:
 
 1. Run `nightcoop-install --with-mods`. It installs the frameworks from GitHub and prints
    the Nexus page of each mod you have not downloaded yet, and which file to take where a
@@ -560,6 +564,59 @@ new release of the mod changes the file it ships, and your copy is backed up fir
   Input Loader changes.
 - **`check`** lists each set with its versions, and any mod still to download.
 
+### Downloads through the Nexus Mods API
+
+With a Nexus Mods **Premium** account, the script downloads the Nexus mods of your sets
+itself:
+
+1. Copy your Personal API Key from your
+   [Nexus Mods API keys page](https://next.nexusmods.com/settings/api-keys).
+2. Run `nightcoop-install --save-nexus-key --with-mods` (with the sets you want) and paste
+   the key when asked. It is not shown, and it is kept in
+   `~/.config/nightcoop-linux/nexus-api-key`, readable by you alone. Later runs use it
+   without asking.
+
+Each run with the key then:
+
+- **Picks the same files** as from your downloads, by the same rules, among each mod's
+  current files on Nexus Mods (main, update, optional and miscellaneous files, not old
+  versions or archived ones). Nexus Mods is asked for the file lists of the mods in your
+  sets; later runs ask again only about mods whose files changed since (one request names
+  them), so a run with nothing new makes two requests.
+- **Downloads only what you do not have**, in your downloads or in the script's cache,
+  into `~/.cache/nightcoop-linux` (the whole mod set is over 2 GB, so not into `/tmp`,
+  which is often held in memory), and installs a file only after checking it: its size
+  against the one Nexus Mods lists, and its MD5 checksum with Nexus Mods, which must name
+  that mod and file. Download links must point to Nexus Mods' own servers.
+- **Keeps the mods up to date:** a new release on Nexus Mods comes in with the next run.
+  To stay on what you have, add `--no-nexus-api`.
+
+| When | What happens |
+| --- | --- |
+| The account is not Premium | Nexus Mods gives others no download links through its API. Nothing is downloaded; the list of what to download links each exact file (`…?tab=files&file_id=…`). |
+| The key is rejected, the hourly limit is reached, or Nexus Mods does not answer | A warning; what is missing is listed to download by hand, as without a key. |
+| A download is not the file Nexus Mods lists | It is not installed or kept; an installed copy stays. |
+| `--dry-run` | It lists what a real run would download, with the total size, and downloads nothing. |
+
+**The key** opens your account to anyone who has it, so the script guards it:
+
+- It reads the key from `--nexus-key-file FILE`, from `NEXUS_API_KEY`, or from
+  `~/.config/nightcoop-linux/nexus-api-key`, in that order, and warns when that file can
+  be read by other users (`chmod 600` it).
+- It sends the key only to `api.nexusmods.com`, in a request header. It never puts the
+  key on a command line, where other users could see it, nor prints it or writes it
+  anywhere but that file, and it keeps `NEXUS_API_KEY` from what it starts, Steam and the
+  game included.
+- To stop using it, delete the file (`uninstall` leaves it), or revoke the key on the API
+  keys page.
+
+The script names itself to the API as `nightcoop-linux` with its version. A first run
+of the whole mod set makes about 330 requests, of the 2,000 an hour Nexus Mods allows.
+Nexus Mods' [API Acceptable Use Policy](https://help.nexusmods.com/article/114-api-acceptable-use-policy)
+tolerates personal API keys in tools for personal use or testing, and asks tools for a
+wider audience to register with it, which also lets their users sign in through Nexus Mods
+instead of pasting a key. This script is not registered.
+
 ## Updating and undoing
 
 - **New NightCoop build:** run the script again (`update` is another name for
@@ -608,6 +665,9 @@ Start with `check`.
   NightCoop bundles, and leaves the mod sets as they are.
 - **A mod of the set is not installed.** `check` lists it as missing. Download it from the
   page the script prints, keeping Nexus's file name, and run the script again.
+- **"Nexus Mods does not accept the API key (401)".** The key was revoked or mistyped:
+  make a new one on the [API keys page](https://next.nexusmods.com/settings/api-keys) and
+  run the script with `--save-nexus-key`.
 - **Logs for a bug report.** NightCoop writes `red4ext/logs/nightcoop-*.log`, and crash
   and hang logs go to `red4ext/plugins/NightCoop/logs`. For Proton's own log, add
   `PROTON_LOG=1` to the launch options; it is written to `~/steam-1091500.log`.
@@ -730,12 +790,25 @@ installation. It covers:
   `archive/pc/mod`, and bare files in two folders passed over), Phantom Liberty for Iconic
   Shops; Immersive First Person (not its file for Immersive Third Person), Katana Pack 2's
   file with every blade, Browser Extension's framework file and Curbside;
+- downloads through the Nexus Mods API, from a stand-in API that lists every fixture
+  download, decoys included:
+  - with a Premium account's key, the whole of both sets downloaded, checked and
+    installed, by the same file rules (not an archived release, an old version or a file a
+    rule passes over), and nothing downloaded again on a rerun, which fetches no file
+    list; a dry run that only lists what it would download;
+  - a new release downloaded by the next run, which fetches that mod's file list alone;
+  - downloads changed in one byte (MD5), cut short (size) or linked outside Nexus Mods'
+    servers refused, neither installed nor kept;
+  - an account without Premium: nothing downloaded, each file linked;
+  - the key from `NEXUS_API_KEY`, `--nexus-key-file` or the key file (with a warning when
+    others can read it), `--no-nexus-api`, a file without a key, an API that does not
+    answer, and the key found nowhere but in its file afterwards;
 - the fixtures' add-on table matching the installer's, so that a change to one shows;
 - install, update, restore and uninstall back to a byte-identical game folder.
 
 `tests/mkfixtures.py` generates the PE files, archives (shaped like nightcoop.net's, the
-mods' GitHub releases and Nexus Mods' downloads) and a stand-in Proton, so the suite
-needs neither Steam, Wine nor network access.
+mods' GitHub releases and Nexus Mods' downloads), the stand-in Nexus Mods API (its answers
+as files) and a stand-in Proton, so the suite needs neither Steam, Wine nor network access.
 
 CI runs the suite in Arch Linux, CachyOS and SteamOS (holo) containers and on Ubuntu. It
 also builds the PKGBUILD with `makepkg`, checks it with `namcap`, and runs shellcheck.
