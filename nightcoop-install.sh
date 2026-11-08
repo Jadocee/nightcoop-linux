@@ -77,6 +77,9 @@
 #   --nexus-key-file FILE read the key from FILE this time (otherwise from NEXUS_API_KEY, or
 #                         from the file above)
 #   --no-nexus-api        do not use a Nexus Mods API key this time
+#   --no-github-downloads download nothing from GitHub: take RED4ext and the frameworks'
+#                         release archives from your Downloads folder (or --mods-from), checked
+#                         against their pinned SHA-256; the run lists the links of those missing
 #   --force               reinstall every mod file, even those that already match
 #   --backup-saves        copy the save games first (the default on a first install)
 #   --no-save-backup      do not copy them (the default when updating an earlier install)
@@ -91,7 +94,7 @@
 # SPDX-License-Identifier: MIT
 set -euo pipefail
 
-SCRIPT_VERSION="3.5.0"
+SCRIPT_VERSION="3.5.1"
 APPID=1091500
 GAME_EXE_REL="bin/x64/Cyberpunk2077.exe"
 RED4EXT_VER="1.31.0"
@@ -381,6 +384,7 @@ NEXUS_DIRS=()    # where to look for the Nexus downloads (--mods-from); default:
 NEXUS_KEY_FILE="" # --nexus-key-file; else NEXUS_API_KEY, else $CONFIG_DIR/nexus-api-key
 NEXUS_API_USE=1  # 0: --no-nexus-api
 SAVE_NEXUS_KEY=0 # --save-nexus-key: ask for the key and keep it in $CONFIG_DIR/nexus-api-key
+NO_GITHUB=0      # 1: --no-github-downloads, the GitHub release archives come from the Downloads folder only
 FORCE=0
 DRY_RUN=0
 ASSUME_YES=0
@@ -2094,6 +2098,7 @@ while [ $# -gt 0 ]; do
         --nexus-key-file) need_arg "$1" $#; NEXUS_KEY_FILE="$(readlink -m "$2")"; shift 2 ;;
         --save-nexus-key) SAVE_NEXUS_KEY=1; shift ;;
         --no-nexus-api)   NEXUS_API_USE=0; shift ;;
+        --no-github-downloads) NO_GITHUB=1; shift ;;
         --force)          FORCE=1; shift ;;
         --dry-run)        DRY_RUN=1; shift ;;
         -y|--yes)         ASSUME_YES=1; shift ;;
@@ -2704,7 +2709,7 @@ do_uninstall() {
 # ---------------------------------------------------------------- install ----
 NC_STATUS="" NC_VER="" NC_URL="" NC_SHA="" NC_GAMES="" NC_PROTO="" NC_R4="" NC_MATCHED="" NC_YANKED="" NC_PRESENT=""
 PLAN_ADDED=0 PLAN_REPLACED=0 PLAN_REMOVED=0 PLAN_SAME=0 PLAN_STALE=() FILES_CHANGE=0 PREFIX_CHANGE=0 STEAM_CHANGE=0 SAVE_AUTO=""
-SETS_ON="" SETS_DROPPED="" ADDON_ROOTS=() ADDON_VERS=() ADDON_STATE_NEW=() ADDON_PLAN=() ADDON_KEEP=() ADDON_DROP=() ADDON_GONE=() ADDON_NOPL=() ADDON_MISSING=() ADDON_HAVE=" " ADDON_USED=" " PROTECT=()
+SETS_ON="" SETS_DROPPED="" ADDON_ROOTS=() ADDON_VERS=() ADDON_STATE_NEW=() ADDON_PLAN=() ADDON_KEEP=() ADDON_DROP=() ADDON_GONE=() ADDON_NOPL=() ADDON_MISSING=() ADDON_FAILED=() ADDON_HAVE=" " ADDON_USED=" " PROTECT=()
 NC_ROOT="" NC_DLL_REL="" NC_PLUGIN_DIR="" R4_CHOICE="" R4_FINAL="" RT_WANT="" RT_TARGET="" RV="" RK="" NEED_RT=0
 VCREDIST_VER="" REG_STATE="" LO_STATE="" LO_VALUE="" LO_WINMM="" RESTART_STEAM=0 DLLS="winmm"
 WRAP="" GP_WANT="" GP_WHY="" GP_USED=0 MH_WHY="" MH_MISSING="" MH_USED=0 MH_WRAPPER=0 RM_USED=0 RM_WANT="" RM_MODS=0
@@ -2817,6 +2822,14 @@ step_red4ext() {
         release)
             if [ -n "$RED4EXT_ZIP" ]; then
                 src="$RED4EXT_ZIP"
+            elif [ "$NO_GITHUB" = 1 ]; then   # a copy downloaded in a browser, with the pinned SHA-256
+                src=""
+                for d in "${NEXUS_DIRS[@]}"; do
+                    if [ -f "$d/red4ext-$RED4EXT_VER.zip" ] && sha_check "$d/red4ext-$RED4EXT_VER.zip" "$RED4EXT_SHA"; then src="$d/red4ext-$RED4EXT_VER.zip"; break; fi
+                done
+                [ -n "$src" ] || fail "--no-github-downloads: download $RED4EXT_URL in a browser into $(listing "${NEXUS_DIRS[@]}") and run this again (or pass --red4ext-zip FILE)"
+                mkdir -p "$r4dir"; py unzip "$src" "$r4dir" || fail "could not unpack $src"
+                [ -n "$(red4ext_core_version "$r4dir")" ] || fail "unexpected RED4ext archive layout"
             else
                 src="$TMP/red4ext-$RED4EXT_VER.zip"
                 download "$RED4EXT_URL" "$src" || fail "download failed: $RED4EXT_URL"
@@ -3189,10 +3202,20 @@ step_addons() {   # the add-on sets (--with-flight, --with-mods), matched to the
                     continue
                 fi ;;
             *)
-                path="$CACHE_DIR/mods/$(basename "${src%%\?*}")"
-                if ! { [ -f "$path" ] && sha_check "$path" "$sha"; }; then
+                path=""   # a copy at hand, with the pinned SHA-256: the cache's, or one downloaded in a browser
+                for d in "$CACHE_DIR/mods" "${NEXUS_DIRS[@]}"; do
+                    e="$d/$(basename "${src%%\?*}")"
+                    if [ -f "$e" ] && sha_check "$e" "$sha"; then path="$e"; break; fi
+                done
+                if [ -z "$path" ]; then
                     path="$TMP/addons/$(basename "${src%%\?*}")"
-                    download "$src" "$path" || fail "download failed: $src"
+                    if [ "$NO_GITHUB" = 1 ] || ! download "$src" "$path"; then   # listed below, to download in a browser; installed before: stays
+                        rm -f "$path"
+                        if [ -z "$(recorded_roots "$comp")" ]; then ADDON_FAILED+=("$comp $src")
+                        elif [ "$NO_GITHUB" = 1 ]; then keep_recorded "$comp"
+                        else keep_recorded "$comp"; warn "keeping the installed $(name_of "$comp"): its download failed"; fi
+                        continue
+                    fi
                     sha_check "$path" "$sha" || fail "SHA-256 mismatch for $(basename "$path") (expected $sha)"
                 fi
                 cands=("$path"$'\x1f'"$ver"$'\x1f'preferred) ;;
@@ -3295,6 +3318,12 @@ step_addons() {   # the add-on sets (--with-flight, --with-mods), matched to the
     fi
     if [[ "$ADDON_HAVE" == *" Vehicle_Customizer "* ]]; then
         info "Vehicle Customizer works only with the game's language set to English."
+    fi
+    if [ "${#ADDON_FAILED[@]}" -gt 0 ]; then   # GitHub answers 504 for some releases at times, a browser does not
+        if [ "$NO_GITHUB" = 1 ]; then warn "not found in $(listing "${NEXUS_DIRS[@]}") (--no-github-downloads): download each in a browser there,"
+        else warn "could not be downloaded (see above): download each in a browser into $(listing "${NEXUS_DIRS[@]}"),"; fi
+        warn "keeping its name, then run this again; its SHA-256 is checked against the one this script pins:"
+        for e in "${ADDON_FAILED[@]}"; do read -r comp src <<<"$e"; info "    $(name_of "$comp"): $src"; done
     fi
     if [ "${#ADDON_MISSING[@]}" -gt 0 ]; then
         case "$NEXUS_STATE" in
