@@ -30,7 +30,8 @@ NI="$T/nightcoop-install.sh"
 sed -e "s#^NIGHTCOOP_SITE=.*#NIGHTCOOP_SITE=\"file://$FIX/site\"#" \
     -e "s#^RED4EXT_URL=.*#RED4EXT_URL=\"file://$FIX/red4ext-1.31.0.zip\"#" \
     -e "s#^RED4EXT_SHA=.*#RED4EXT_SHA=\"$(cat "$FIX/red4ext.sha256")\"#" \
-    -e "s#^VCREDIST_URLS=.*#VCREDIST_URLS=(\"file://$FIX/site/vc_redist.x64.exe\")#" "$SCRIPT" |
+    -e "s#^VCREDIST_URLS=.*#VCREDIST_URLS=(\"file://$FIX/site/vc_redist.x64.exe\")#" \
+    -e "s#^NEXUS_API=.*#NEXUS_API=\"file://$FIX/nexusapi\"#" "$SCRIPT" |
     awk -v table="$FIX/addon-sets.txt" '   # the add-on sets from the fixtures
         /^# >>> add-on sets/ { print; print "ADDON_SETS=\""; while ((getline line < table) > 0) print line; print "\""; skip = 1; next }
         /^# <<< add-on sets/ { skip = 0 }
@@ -72,10 +73,10 @@ EOF
 tools "$T/tools-fp" game-performance powerprofilesctl; fpstub "$T/tools-fp" 26.08
 tools "$T/tools-fp-nomh"; fpstub "$T/tools-fp-nomh" 25.08
 
-H="" OSR="$T/os-steamos" OUT="" TOOLS="$T/tools-none"
-run() {   # run <args...> : output in $OUT, status in $RC
+H="" OSR="$T/os-steamos" OUT="" TOOLS="$T/tools-none" RUNENV=()
+run() {   # run <args...> : output in $OUT, status in $RC (RUNENV: more variables for it, NAME=value each)
     OUT="$(env -i PATH="$PATH" HOME="$H" LANG=C.UTF-8 DISPLAY=:0 NIGHTCOOP_ALLOW_ROOT=1 \
-           NIGHTCOOP_OS_RELEASE="$OSR" NIGHTCOOP_TOOL_PATH="$TOOLS" bash "$NI" "$@" 2>&1)"; RC=$?
+           NIGHTCOOP_OS_RELEASE="$OSR" NIGHTCOOP_TOOL_PATH="$TOOLS" ${RUNENV[@]+"${RUNENV[@]}"} bash "$NI" "$@" 2>&1)"; RC=$?
 }
 hp() { bash "$SCRIPT" __py "$@"; }
 newworld() {   # newworld <name> <layout> [options for mkfixtures.py world]
@@ -594,6 +595,94 @@ mkdir -p "$T/bare-two/One" "$T/bare-two/Two"; printf 'RDAR one' > "$T/bare-two/O
 (cd "$T/bare-two" && python3 -I -m zipfile -c "$D/The Community Palette Project 10437 1.2 2026-11-20T09-00Z Co8doe62j.zip" One Two)
 run update --yes
 expect "a download of bare .archive files in two folders (versions to choose from) is not installed" '[ $RC = 0 ] && [[ "$OUT" == *"Co8doe62j.zip has no game folders (r6, archive, bin, red4ext) or .archive files in it"* ]] && [ ! -e "$G/archive/pc/mod/palette.archive" ] && [[ "$OUT" == *"The Community Palette Project is left out: none of its downloads can be used"* ]]' "$OUT"
+
+# ------------------------------------------------------ Nexus Mods API ----
+section "Nexus Mods API: with a Premium account's key, the script downloads the Nexus mods itself"
+# the fake API (mkfixtures.py nexus_api) lists the fixtures' Nexus downloads, decoys and all, and links them
+API="$FIX/nexusapi/v1/games/cyberpunk2077/mods" NKEY='Tst0KEY+abc/def==--ghiJKL012--mno345PQR=='
+EQL="$API/6945/files/$(cat "$FIX/nexusapi/eqex-fid")"   # Equipment-EX's file, whose download the tests spoil
+EQ10="Equipment-EX 6945 1.2.10 2026-10-25T21-07Z k8Iw8mmPd.zip" EQ11="Equipment-EX 6945 1.2.11 2026-11-06T10-00Z Lt7Qw2zXa.zip"
+keyfile() {   # keyfile [mode] [key]: the key in the default key file
+    mkdir -p "$H/.config/nightcoop-linux"; (umask 077; printf '%s\n' "${2:-$NKEY}" > "$H/.config/nightcoop-linux/nexus-api-key")
+    chmod "${1:-600}" "$H/.config/nightcoop-linux/nexus-api-key"
+}
+fetched() { grep -c "^  downloading .* from Nexus Mods$" <<<"$OUT"; }   # how many files the run downloaded from Nexus Mods
+NEXUS_N="$(awk 'NF == 8 && $8 ~ /^nexus:/' "$FIX/addon-sets.txt" | wc -l)" GITHUB_N="$(awk 'NF == 9' "$FIX/addon-sets.txt" | wc -l)"
+NEXUS_IDS="$(awk 'NF == 8 && $8 ~ /^nexus:/ { split($8, a, ":"); print a[2] }' "$FIX/addon-sets.txt" | sort -u | wc -l)"
+newworld napi native; OSR="$T/os-arch"; D="$H/Downloads"; mkdir -p "$D" "$G/archive/pc/ep1"
+CETM="$G/bin/x64/plugins/cyber_engine_tweaks/mods"; C="$H/.cache/nightcoop-linux"; PRISTINE_NAPI="$(snapshot "$G")"
+keyfile; BEFORE="$(snapshot "$H")"
+run install --yes --dry-run --with-mods --with-equipment-ex
+expect "a dry run lists what a real run would download from Nexus Mods, downloads none of it, and changes nothing, not even the cache" '[ $RC = 0 ] && [[ "$OUT" == *"A real run downloads these from Nexus Mods ("*"Virtual Atelier 1.6.4, A.G.I.S. 1.2.1"*"Equipment EX 1.2.10"*"Curbside 1.0.1"* ]] && [ "$(fetched)" = 0 ] && [[ "$OUT" != *"found in"* ]] && [[ "$OUT" != *"which is not here"* ]] && [ "$BEFORE" = "$(snapshot "$H")" ]' "$OUT"
+run install --yes --with-mods --with-equipment-ex
+expect "every Nexus mod of the sets is downloaded, checked and installed; none is left to download by hand" '[ $RC = 0 ] && [[ "$OUT" == *"Nexus Mods: the file lists of $NEXUS_IDS mods fetched"* ]] && [[ "$OUT" == *"Nexus Mods: a Premium account'"'"'s key ($H/.config/nightcoop-linux/nexus-api-key)"* ]] && [ "$(fetched)" = "$NEXUS_N" ] && [[ "$OUT" != *"not found in"* ]] && [[ "$OUT" != *"is not installed"* ]] && [[ "$OUT" != *"which is not here"* ]]' "$OUT"
+expect "the files the rules take, from among all the files Nexus Mods lists" '[ -f "$G/r6/scripts/EquipmentEx/EquipmentEx.reds" ] && [ ! -e "$G/r6/scripts/EquipmentEx/EquipmentEx.HideHubButtons.reds" ] && [ -f "$G/r6/scripts/virtual-atelier-full/Config.reds" ] && [ ! -e "$G/r6/scripts/VirtualAtelier" ] && [ -f "$G/archive/pc/mod/NoIntroVideos.archive" ] && [ ! -e "$G/r6/scripts/NoIntroVideos" ] && [ -f "$G/r6/scripts/AGIS/agis.reds" ] && [ ! -e "$G/r6/scripts/AGIS_BLACKWALL" ] && [ -f "$CETM/CyberDrift Light/init.lua" ] && [ -f "$G/archive/pc/mod/Katana_Pack_2.archive" ] && [ ! -e "$G/archive/pc/mod/Katana_Nagakiba.archive" ] && [ -f "$G/archive/pc/mod/TheCommunityPaletteProject_MLTemplateResource.archive" ] && [ -f "$G/r6/tweaks/scorpiontank/#_scorpion_zenitex_core_dependency.yaml" ] && grep -q "3.1" "$CETM/VehicleCustomizerSVE/init.lua"' "$OUT"
+expect "the cache keeps the downloads used, and no others: not an archived release (No Intro Videos 0.6, without game folders), an old one, or a file the rules pass over" '[ "$(ls "$C/mods" | wc -l)" = "$((NEXUS_N + GITHUB_N))" ] && ! ls "$C/mods" | grep -q -e "0-6-1730000000" -e BLACKWALL -e "Intro Videos - redscript" -e "Atelier - Basic" -e Verdant -e Nagakiba -e BrowserExtensionExample -e "ITP Compatibility" -e Hide && [ ! -e "$C/incoming" ] && [ "$(ls "$C/nexus-api" | wc -l)" = "$NEXUS_IDS" ]' "$(ls "$C/mods" "$C")"
+expect "the key is nowhere but in its file: not in the output, the cache, the records or the game folder" '[[ "$OUT" != *"$NKEY"* ]] && [ "$(grep -r -l -F -- "$NKEY" "$H" "$LIB" 2>/dev/null)" = "$H/.config/nightcoop-linux/nexus-api-key" ]' "$(grep -r -l -F -- "$NKEY" "$H" "$LIB" 2>/dev/null)"
+run check
+expect "check: the key is a Premium account's" '[[ "$OUT" == *"Nexus Mods API:"*"a Premium account'"'"'s key ($H/.config/nightcoop-linux/nexus-api-key): this script downloads the Nexus mods"* ]]' "$OUT"
+run uninstall --yes
+expect "uninstall puts the game folder back exactly" '[ $RC = 0 ] && [ "$PRISTINE_NAPI" = "$(snapshot "$G")" ]' "$(diff <(echo "$PRISTINE_NAPI") <(snapshot "$G"))"
+# Equipment-EX alone, handed over changed in one byte, cut short, linked elsewhere than Nexus Mods, then as it is
+newworld napieq native; OSR="$T/os-arch"; D="$H/Downloads"; mkdir -p "$D"; C="$H/.cache/nightcoop-linux"; keyfile
+cp "$EQL/download_link-bad.json" "$EQL/download_link.json"
+run install --yes --with-equipment-ex
+expect "a download that is not the file Nexus Mods lists (its MD5) is not installed or kept, and the file is linked to download by hand" '[ $RC = 0 ] && [[ "$OUT" == *"$EQ10 from Nexus Mods is not installed: no file on Nexus Mods has its MD5"* ]] && [ ! -e "$G/r6/scripts/EquipmentEx" ] && ! ls "$C/mods" | grep -q Equipment && [ ! -e "$C/incoming" ] && [[ "$OUT" == *"not downloaded from Nexus Mods (see above)"*"mods/6945?tab=files&file_id="[0-9]* ]]' "$OUT"
+cp "$EQL/download_link-short.json" "$EQL/download_link.json"
+run update --yes
+expect "nor one cut short (its size)" '[ $RC = 0 ] && [[ "$OUT" == *"$EQ10 from Nexus Mods is not installed: it is "*" bytes, and Nexus Mods lists "* ]] && [ ! -e "$G/r6/scripts/EquipmentEx" ]' "$OUT"
+cp "$EQL/download_link-elsewhere.json" "$EQL/download_link.json"
+run update --yes
+expect "a download link to a server other than those of Nexus Mods is not followed" '[ $RC = 0 ] && [[ "$OUT" == *"Equipment EX was not downloaded from Nexus Mods: Nexus Mods gave no download link on its own servers"* ]] && [ "$(fetched)" = 0 ]' "$OUT"
+cp "$EQL/download_link-good.json" "$EQL/download_link.json"
+run update --yes
+expect "the good file is downloaded, checked, installed and kept" '[ $RC = 0 ] && [[ "$OUT" == *"downloading $EQ10 ("*"B) from Nexus Mods"* ]] && [ "$(fetched)" = 1 ] && [ -f "$G/r6/scripts/EquipmentEx/EquipmentEx.reds" ] && [ -f "$C/mods/$EQ10" ] && [ ! -e "$C/incoming" ]' "$OUT"
+stamps() { stat -c '%n %Y' "$C/nexus-api"/*; }
+LISTS="$(stamps)"
+run update --yes
+expect "a rerun downloads nothing, and asks Nexus Mods only what changed lately, not for every file list" '[ $RC = 0 ] && [[ "$OUT" == *"everything is up to date; nothing to do"* ]] && [ "$(fetched)" = 0 ] && [[ "$OUT" != *"file lists of"* ]] && [ "$LISTS" = "$(stamps)" ]' "$OUT"
+# Equipment-EX 1.2.11 comes out, and updated.json names the mod
+cp "$API/6945/files.json" "$T/eqex-files.json"; cp "$FIX/nexusapi/later/6945.files.json" "$API/6945/files.json"
+updated() { printf '%s' "$1" > "$API/updated.json?period=1d"; printf '%s' "$1" > "$API/updated.json"; }   # Python 3.14 drops a file:// URL's query
+updated "$(printf '[{"mod_id": 6945, "latest_file_update": %s, "latest_mod_activity": %s}]' "$(date +%s)" "$(date +%s)")"
+run update --yes
+expect "a new release on Nexus Mods is downloaded and installed by the next run, its file list alone fetched again" '[ $RC = 0 ] && [[ "$OUT" == *"Nexus Mods: the file lists of 1 mod fetched"* ]] && [[ "$OUT" == *"downloading $EQ11 ("* ]] && [ "$(fetched)" = 1 ] && grep -q "Lt7Qw2zXa" "$G/r6/scripts/EquipmentEx/EquipmentEx.reds" && [ -f "$C/mods/$EQ11" ] && [ ! -e "$C/mods/$EQ10" ]' "$OUT"
+cp "$T/eqex-files.json" "$API/6945/files.json"; updated '[]'
+
+section "Nexus Mods API: a key without Premium, and how the key is given"
+newworld napifree native; OSR="$T/os-arch"; D="$H/Downloads"; mkdir -p "$D"
+cp "$FIX/nexusapi/v1/users/validate-free.json" "$FIX/nexusapi/v1/users/validate.json"
+mkdir -p "$T/xdg-spy"; printf '#!/bin/sh\nenv > "%s/spied-env"\necho "$HOME/Downloads"\n' "$T" > "$T/xdg-spy/xdg-user-dir"; chmod +x "$T/xdg-spy/xdg-user-dir"
+RUNENV=(NEXUS_API_KEY="$NKEY"); PATH="$T/xdg-spy:$PATH" run install --yes --with-equipment-ex; RUNENV=()
+expect "the key in NEXUS_API_KEY is not passed on to what the script starts" '[ -s "$T/spied-env" ] && ! grep -q -F -e NEXUS_API_KEY -e NIGHTCOOP_NEXUS_KEY -e "$NKEY" "$T/spied-env"' "$(cat "$T/spied-env")"
+expect "NEXUS_API_KEY of an account without Premium: nothing is downloaded from Nexus Mods, and each file to download is linked" '[ $RC = 0 ] && [[ "$OUT" == *"The Nexus Mods account of the API key (NEXUS_API_KEY) is not Premium"* ]] && [ "$(fetched)" = 0 ] && [[ "$OUT" == *"Equipment EX (the main file, not the Hide Hub Buttons patch): https://www.nexusmods.com/cyberpunk2077/mods/6945?tab=files&file_id="[0-9]* ]] && [ ! -e "$G/r6/scripts/EquipmentEx" ] && [[ "$OUT" != *"$NKEY"* ]]' "$OUT"
+RUNENV=(NEXUS_API_KEY="$NKEY"); run check; RUNENV=()
+expect "check: the key's account is not Premium" '[[ "$OUT" == *"Nexus Mods API:"*"the key of an account without Premium (NEXUS_API_KEY): the Nexus mods are downloaded by hand"* ]]' "$OUT"
+cp "$FIX/nexusapi/v1/users/validate-premium.json" "$FIX/nexusapi/v1/users/validate.json"
+newworld napikeys native; OSR="$T/os-arch"; D="$H/Downloads"; mkdir -p "$D"
+run install --yes --with-equipment-ex
+expect "without a key, the list of what to download says how a Premium member lets the script do it" '[ $RC = 0 ] && [[ "$OUT" == *"which lets scripts"*"download only for Premium members (--save-nexus-key)"* ]] && [[ "$OUT" == *"mods/6945?tab=files"* ]] && [[ "$OUT" != *"file_id="* ]]' "$OUT"
+run check
+expect "check: no key" '[[ "$OUT" == *"Nexus Mods API:"*"no key: the Nexus mods are downloaded by hand (with a Premium account, --save-nexus-key lets this script do it)"* ]]' "$OUT"
+run update --yes --save-nexus-key < /dev/null
+expect "--save-nexus-key asks on a terminal only" '[ $RC != 0 ] && [[ "$OUT" == *"--save-nexus-key asks for the key on a terminal"* ]] && [ ! -e "$H/.config/nightcoop-linux/nexus-api-key" ]' "$OUT"
+run update --yes --nexus-key-file "$H/no-such-key"
+expect "a --nexus-key-file that is not there stops the run" '[ $RC != 0 ] && [[ "$OUT" == *"--nexus-key-file: there is no readable file $H/no-such-key"* ]]' "$OUT"
+keyfile 600 'not a key!'
+run update --yes
+expect "a key file that holds no key is not used" '[ $RC = 0 ] && [[ "$OUT" == *"the Nexus Mods API key in $H/.config/nightcoop-linux/nexus-api-key does not look like one"* ]] && [[ "$OUT" != *"file_id="* ]]' "$OUT"
+keyfile 644
+run update --yes --no-nexus-api
+expect "--no-nexus-api: the key is not used, nor even read" '[ $RC = 0 ] && [[ "$OUT" != *"Premium account"* ]] && [[ "$OUT" != *"can be read by other users"* ]] && [ ! -e "$G/r6/scripts/EquipmentEx" ] && [[ "$OUT" == *"(--save-nexus-key)"* ]]' "$OUT"
+mv "$FIX/nexusapi/v1/users/validate.json" "$T/validate.json"
+run update --yes
+expect "a key file others can read is used with a warning; an API that does not answer leaves the downloads to you" '[ $RC = 0 ] && [[ "$OUT" == *"$H/.config/nightcoop-linux/nexus-api-key can be read by other users: make it yours alone (chmod 600"* ]] && [[ "$OUT" == *"Nexus Mods API: Nexus Mods did not answer as its API does (404); the Nexus mods are taken from your downloads only"* ]] && [ ! -e "$G/r6/scripts/EquipmentEx" ]' "$OUT"
+mv "$T/validate.json" "$FIX/nexusapi/v1/users/validate.json"
+cp "$H/.config/nightcoop-linux/nexus-api-key" "$H/my-key"; rm "$H/.config/nightcoop-linux/nexus-api-key"
+mkdir -p "$T/spy"; printf '#!/bin/sh\nenv > "%s/spied-numfmt"\nexec "%s" "$@"\n' "$T" "$(command -v numfmt)" > "$T/spy/numfmt"; chmod +x "$T/spy/numfmt"
+PATH="$T/spy:$PATH" run update --yes --nexus-key-file "$H/my-key"   # numfmt sizes a download, after the API's answers
+expect "the key is not passed on to what the script starts while it uses the API either" '[ -s "$T/spied-numfmt" ] && ! grep -q -F -e NIGHTCOOP_NEXUS_KEY -e "$NKEY" "$T/spied-numfmt"' "$(cat "$T/spied-numfmt" 2>/dev/null)"
+expect "--nexus-key-file: Equipment-EX comes from Nexus Mods" '[ $RC = 0 ] && [[ "$OUT" == *"a Premium account'"'"'s key ($H/my-key)"* ]] && [[ "$OUT" == *"downloading $EQ10 ("*"B) from Nexus Mods"* ]] && [ -f "$G/r6/scripts/EquipmentEx/EquipmentEx.reds" ] && [[ "$OUT" != *"not found in"* ]]' "$OUT"
 
 # ------------------------------------------------- Cyber Engine Tweaks ----
 section "Cyber Engine Tweaks installed alongside"
