@@ -141,9 +141,10 @@ says so; add anything you need back under Properties after the run.
 | `game-performance` | When it can run: native Steam, CachyOS's `game-performance`, and `powerprofilesctl` (power-profiles-daemon). A newer `game-performance` that supports TLP's `tlpctl` can use that instead; cachyos-settings 1.4.1 does not. | Runs the game in the performance power profile, and restores the previous profile when the game exits. It goes last, right before `%command%`. |
 | `MANGOHUD=1` | With `--mangohud`, or when the line had MangoHud already; only where MangoHud is installed. | Shows MangoHud's overlay in the game. |
 | `--launcher-skip` | Unless `--no-launcher-skip` is given. | Starts the game without CDPR's launcher window, which adds nothing under Proton. |
+| `-modded` | Only with `--redmod`, which is remembered; `--no-redmod` takes it out. | Loads REDmod mods once they are deployed (see below). It goes after the other game arguments. |
 
-Nothing else is required. No mod in the sets is a REDmod, so `-modded` is not needed, and
-Audioware, Mod Settings and the other frameworks need no variables.
+Nothing else is required: no mod in the sets is a REDmod, and Audioware, Mod Settings and
+the other frameworks need no variables.
 
 - **game-performance** stops the game from starting where it cannot run:
   - under Flatpak Steam, which starts the game inside its sandbox, without the host's
@@ -164,6 +165,21 @@ Audioware, Mod Settings and the other frameworks need no variables.
   - Flatpak Steam needs the `org.freedesktop.Platform.VulkanLayer.MangoHud` extension for
     Steam's runtime; the script names the one to install.
   - `--no-mangohud` takes MangoHud out again, including the `mangohud` wrapper.
+- **REDmod** is CDPR's own mod format: mods in `mods/<name>/`, each with an `info.json`. The
+  game loads them only when started with `-modded`, after a deploy that compiles them into
+  `r6/cache/modded`. No mod in the sets is one, so the script leaves `-modded` out unless
+  you run it with `--redmod`, which it remembers.
+  - A `-modded` that was in the line before goes with the rest of it. The script says so
+    and names `--redmod`, as it does when REDmod mods are in `mods/` without `-modded`;
+    `check` shows them.
+  - Deploying needs the free REDmod DLC (the game's Properties > DLC in Steam). CDPR's
+    launcher deploys when its mods setting is on, but `--launcher-skip` skips the launcher:
+    after adding or changing a REDmod mod, run the script once with `--no-launcher-skip`,
+    or run `tools/redmod/bin/redMod.exe deploy` in the game's Proton prefix. The script
+    does not deploy.
+  - redscript compiles its scripts on top of the deployed ones. NightCoop cannot check
+    REDmod script mods (`mods/<name>/scripts/`) for overlaps with what co-op relies on,
+    since they replace whole game script files, so try each one in co-op first.
 
 On CachyOS with Cyber Engine Tweaks installed, a run with `--mangohud` gives:
 
@@ -189,6 +205,7 @@ WINEDLLOVERRIDES="winmm,version=n,b" MANGOHUD=1 game-performance %command% --lau
 | `--no-launcher-skip` | Do not add `--launcher-skip` to the launch options. |
 | `--no-game-performance` | Do not start the game with `game-performance`, and take it out of the launch options. Remembered in `~/.local/share/nightcoop-linux/settings.tsv`; `--game-performance` undoes it. |
 | `--mangohud` | Show MangoHud's overlay in the game (`MANGOHUD=1` in the launch options). Not on SteamOS. `--no-mangohud` takes it out. |
+| `--redmod` | Start the game with `-modded`, which loads REDmod mods. Remembered; `--no-redmod` takes it out. |
 | `--close-steam` | Close Steam to write its settings (launch options, Proton choice), then reopen it. Desktop Mode only. |
 | `--force` | Reinstall every mod file, even those that already match the latest build. |
 | `--backup-saves` | Copy the saves before an update too. By default only the first install copies them. |
@@ -651,8 +668,11 @@ installation. It covers:
   - `game-performance` added on CachyOS, and taken out where it cannot run (SteamOS,
     Flatpak Steam, no power-profile tool it supports), with `--no-game-performance`
     remembered;
-  - `--mangohud` and `--no-mangohud`, refused on SteamOS and in gamescope, and with Flatpak
-    Steam only when the extension for Steam's runtime is installed;
+  - `--mangohud` and `--no-mangohud`, refused on SteamOS, taken out where MangoHud cannot
+    run, and with Flatpak Steam only when the extension for Steam's runtime is installed;
+  - `--redmod`: `-modded` only when asked, remembered, and taken out by `--no-redmod`; an
+    earlier `-modded` dropped with a note; REDmod mods in `mods/` named; the REDmod DLC
+    and the deploy;
 - a hand-copied old NightCoop build;
 - updates in place: nothing changed when current, only differing files replaced, saves
   copied once, `--force` and `--backup-saves`;

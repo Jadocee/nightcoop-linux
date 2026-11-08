@@ -107,6 +107,7 @@ expect "the line the script writes is ok" '[ "$(lo "WINEDLLOVERRIDES=\"winmm=n,b
 expect "anything more is not" '[ "$(lo "WINEDLLOVERRIDES=\"winmm=n,b\" gamemoderun %command% --launcher-skip" 1 winmm --launcher-skip)" = missing ]'
 expect "nor anything less" '[ "$(lo "WINEDLLOVERRIDES=\"winmm=n,b\" %command%" 1 winmm --launcher-skip)" = missing ]'
 expect "an override after %command% is broken" '[ "$(lo "%command% WINEDLLOVERRIDES=winmm=n,b" 1)" = broken ]'
+expect "REDmod: -modded after the other game arguments, and the line with it is ok" '[ "$(lo "gamemoderun %command%" 2 winmm "--launcher-skip -modded")" = "WINEDLLOVERRIDES=\"winmm=n,b\" %command% --launcher-skip -modded" ] && [ "$(lo "WINEDLLOVERRIDES=\"winmm=n,b\" %command% --launcher-skip -modded" 1 winmm "--launcher-skip -modded")" = ok ]'
 expect "what a line runs: wrappers before %command%, not game arguments or variables" '[ "$(hp lo-uses "MANGOHUD=1 TOOL=/opt/x/game-performance gamescope -- %command% game-performance")" = "MANGOHUD=1 gamescope" ]'
 expect "a quoted value is one word" '[ "$(hp lo-uses "DXVK_HUD=\"fps,  game-performance\" mangohud --dlsym %command%")" = mangohud ]'
 
@@ -686,6 +687,41 @@ expect "a plain run takes it out too" '[ $RC = 0 ] && [ "$(launch_opts)" = "WINE
 set_lo "mangohud %command%"
 run install --yes --no-mangohud
 expect "--no-mangohud takes the wrapper out" '[ $RC = 0 ] && [ "$(launch_opts)" = "WINEDLLOVERRIDES=\\\"winmm=n,b\\\" %command% --launcher-skip" ]' "$(launch_opts)"
+
+# ---------------------------------------------------------------- REDmod ----
+section "REDmod: -modded only with --redmod, which is remembered"
+newworld redmod native; OSR="$T/os-arch"
+set_lo "gamemoderun %command% -modded"
+run install --yes
+expect "an earlier -modded goes with the rest of the line, and the run says how to keep it" '[ $RC = 0 ] && [ "$(launch_opts)" = "WINEDLLOVERRIDES=\\\"winmm=n,b\\\" %command% --launcher-skip" ] && [[ "$OUT" == *"the launch options had -modded, which REDmod mods need"* ]] && [[ "$OUT" == *"Run this again with --redmod to keep it"* ]]' "$OUT"
+mkdir -p "$G/mods/Some REDmod"; printf '{"name": "Some REDmod", "version": "1.0"}\n' > "$G/mods/Some REDmod/info.json"
+mkdir -p "$G/mods/not a REDmod"; printf 'notes\n' > "$G/mods/not a REDmod/readme.txt"
+run check
+expect "check: a REDmod mod in mods/ (a folder with info.json) without -modded is named, with the option" '[[ "$OUT" == *"REDmod:"*"1 mod(s) in mods/, which load only with -modded"*"--redmod"* ]]' "$OUT"
+run install --yes
+expect "install says so too, and leaves the line as it is" '[ $RC = 0 ] && [[ "$OUT" == *"REDmod: 1 mod(s) in the game'"'"'s mods folder load only with -modded; --redmod adds it"* ]] && [[ "$(launch_opts)" != *-modded* ]]' "$OUT"
+run install --yes --redmod
+expect "--redmod puts -modded after --launcher-skip; without the REDmod DLC, it says to install it" '[ $RC = 0 ] && [ "$(launch_opts)" = "WINEDLLOVERRIDES=\\\"winmm=n,b\\\" %command% --launcher-skip -modded" ] && [[ "$OUT" == *"REDmod: -modded goes in the launch options"* ]] && [[ "$OUT" == *"install the free REDmod DLC in Steam"* ]]' "$OUT"
+run install --yes
+expect "--redmod is remembered: a later run keeps -modded and has nothing to do" '[ $RC = 0 ] && [[ "$(launch_opts)" == *"%command% --launcher-skip -modded" ]] && [[ "$OUT" == *"everything is up to date; nothing to do"* ]]' "$OUT"
+run check
+expect "check: -modded in the launch options, the mod counted, the REDmod DLC missing" '[[ "$OUT" == *"REDmod:"*"-modded in the launch options; 1 mod(s) in mods/; the REDmod DLC is not installed"* ]]' "$OUT"
+mkdir -p "$G/tools/redmod/bin"; printf 'MZ redmod' > "$G/tools/redmod/bin/redMod.exe"
+run install --yes --no-launcher-skip
+expect "with --no-launcher-skip, -modded alone follows %command%" '[ $RC = 0 ] && [ "$(launch_opts)" = "WINEDLLOVERRIDES=\\\"winmm=n,b\\\" %command% -modded" ]' "$(launch_opts)"
+set_lo "gamemoderun %command%"
+run install --yes
+expect "with the DLC there and the launcher skipped, the run says how REDmod mods get deployed" '[ $RC = 0 ] && [[ "$(launch_opts)" == *"--launcher-skip -modded" ]] && [[ "$OUT" == *"REDmod mods need a deploy after each change"* ]] && [[ "$OUT" == *"tools/redmod/bin/redMod.exe deploy"* ]] && [[ "$OUT" != *"install the free REDmod DLC"* ]]' "$OUT"
+run check
+expect "check: the REDmod DLC is installed" '[[ "$OUT" == *"REDmod:"*"-modded in the launch options; 1 mod(s) in mods/; the REDmod DLC is installed"* ]]' "$OUT"
+run install --yes --no-redmod
+expect "--no-redmod takes it out again" '[ $RC = 0 ] && [ "$(launch_opts)" = "WINEDLLOVERRIDES=\\\"winmm=n,b\\\" %command% --launcher-skip" ] && [[ "$OUT" == *"REDmod: -modded taken out of the launch options (--no-redmod)"* ]] && [ ! -e "$H/.local/share/nightcoop-linux/settings.tsv" ]' "$OUT"
+run install --yes --dry-run --redmod
+run install --yes
+expect "a dry run does not remember --redmod" '[ $RC = 0 ] && [[ "$(launch_opts)" != *-modded* ]]' "$(launch_opts)"
+run install --yes --redmod --no-game-performance
+run install --yes --game-performance
+expect "--redmod and --no-game-performance are remembered side by side; one choice does not drop the other" '[ $RC = 0 ] && [[ "$(launch_opts)" == *"-modded" ]] && grep -q "^redmod" "$H/.local/share/nightcoop-linux/settings.tsv" && ! grep -q "^game-performance" "$H/.local/share/nightcoop-linux/settings.tsv"' "$(cat "$H/.local/share/nightcoop-linux/settings.tsv" 2>/dev/null)"
 
 # ----------------------------------------------------------- refusals ----
 section "Refusals"

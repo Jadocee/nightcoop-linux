@@ -39,6 +39,8 @@
 #                         launch options when it can run); remembered, --game-performance undoes it
 #   --mangohud            show MangoHud's overlay in the game (MANGOHUD=1 in the launch options;
 #                         not on SteamOS, which has its own); --no-mangohud takes it out again
+#   --redmod              start the game with -modded, which loads REDmod mods (mods/, after a
+#                         REDmod deploy); remembered, --no-redmod takes it out again
 #   --close-steam         close Steam to write its settings, then reopen it
 #   --nightcoop-zip FILE  use a downloaded NightCoop archive instead of the latest
 #   --red4ext-zip FILE    use a downloaded RED4ext release archive
@@ -355,6 +357,7 @@ PROTON_WANT="auto"
 GAME_ARGS="--launcher-skip"
 GP_OPT=""        # on or off: --game-performance, --no-game-performance (remembered in settings.tsv)
 MH_OPT=""        # on or off: --mangohud, --no-mangohud
+RM_OPT=""        # on or off: --redmod, --no-redmod (remembered in settings.tsv)
 SAVE_BACKUP=""   # 1 or 0; empty: copy the saves on the first install only
 SET_WANT=()      # +flight, -flight, +mods, -mods from the options; a set not named stays as it was
 NEXUS_DIRS=()    # where to look for the Nexus downloads (--mods-from); default: the Downloads folder
@@ -1337,6 +1340,17 @@ def cmd_findci(top, rel):
     out(p)
 
 
+def cmd_redmods(game):
+    """How many REDmod mods the game folder has: folders in mods/ with an info.json."""
+    top, n = ci_resolve(game, 'mods'), 0
+    if top and os.path.isdir(top):
+        for d in os.listdir(top):
+            p = os.path.join(top, d)
+            if os.path.isdir(p) and any(f.lower() == 'info.json' for f in os.listdir(p)):
+                n += 1
+    out(n)
+
+
 def cmd_rmci(top, *rels):
     for rel in rels:
         p = ci_resolve(top, rel)
@@ -1736,7 +1750,7 @@ def cmd_keep_state(files, game, recorded, *patterns):
 
 
 CMDS = {
-    'roots': cmd_roots, 'split-roots': cmd_split_roots, 'modroot': cmd_modroot, 'nexus-find': cmd_nexus_find, 'keep-state': cmd_keep_state,
+    'redmods': cmd_redmods, 'roots': cmd_roots, 'split-roots': cmd_split_roots, 'modroot': cmd_modroot, 'nexus-find': cmd_nexus_find, 'keep-state': cmd_keep_state,
     'pever': cmd_pever, 'gamever': cmd_gamever, 'r4ok': cmd_r4ok, 'pestr': cmd_pestr, 'vge': cmd_vge, 'builtin': cmd_builtin, 'pecrt': cmd_pecrt,
     'libs': cmd_libs, 'proton': cmd_proton, 'slr': cmd_slr,
     'ct-get': cmd_ct_get, 'ct-list': cmd_ct_list, 'ct-pick': cmd_ct_pick, 'ct-set': cmd_ct_set,
@@ -1808,6 +1822,8 @@ while [ $# -gt 0 ]; do
         --no-game-performance) GP_OPT=off; shift ;;
         --mangohud)       MH_OPT=on; shift ;;
         --no-mangohud)    MH_OPT=off; shift ;;
+        --redmod)         RM_OPT=on; shift ;;
+        --no-redmod)      RM_OPT=off; shift ;;
         --no-save-backup) SAVE_BACKUP=0; shift ;;
         --backup-saves)   SAVE_BACKUP=1; shift ;;
         --with-flight)    SET_WANT+=(+flight); shift ;;
@@ -2040,12 +2056,14 @@ mh_missing() {   # why MangoHud's overlay cannot show in the game (nothing when 
     fi
 }
 setting() { if [ -f "$DATA_DIR/settings.tsv" ]; then sed -n "s/^$1\t//p" "$DATA_DIR/settings.tsv" | tail -n1; fi; }
-save_settings() {   # remember --no-game-performance (or --game-performance) for later runs
-    [ -n "$GP_OPT" ] && [ "$DRY_RUN" != 1 ] || return 0
-    local f="$DATA_DIR/settings.tsv"
+save_settings() {   # remember --no-game-performance (or --game-performance) and --redmod (or --no-redmod)
+    { [ -n "$GP_OPT" ] || [ -n "$RM_OPT" ]; } && [ "$DRY_RUN" != 1 ] || return 0
+    local f="$DATA_DIR/settings.tsv" gp red
+    gp="${GP_OPT:-$(setting game-performance)}" red="${RM_OPT:-$(setting redmod)}"
     mkdir -p "$DATA_DIR"
-    { if [ -f "$f" ]; then grep -v $'^game-performance\t' "$f" || true; fi
-      if [ "$GP_OPT" = off ]; then printf 'game-performance\toff\n'; fi; } > "$f.new"
+    { if [ -f "$f" ]; then grep -v -e $'^game-performance\t' -e $'^redmod\t' "$f" || true; fi
+      if [ "$gp" = off ]; then printf 'game-performance\toff\n'; fi
+      if [ "$red" = on ]; then printf 'redmod\ton\n'; fi; } > "$f.new"
     if [ -s "$f.new" ]; then mv "$f.new" "$f"; else rm -f "$f.new" "$f"; fi
 }
 wrap_plan() {   # wrap_plan <launch options>: WRAP, the wrapper wishes for the lo-* helpers, and why
@@ -2062,6 +2080,43 @@ wrap_plan() {   # wrap_plan <launch options>: WRAP, the wrapper wishes for the l
     # the script writes the whole line: MangoHud stays when it was there and can run, or when asked for
     local mh="$MH_OPT"; [ -n "$mh" ] || [ "$MH_USED" = 0 ] || mh=on
     case "$mh" in on) [ -n "$MH_WHY" ] || WRAP+=",+mangohud" ;; off) WRAP+=",-mangohud" ;; esac
+    redmod_plan "$1"
+}
+redmod_plan() {   # redmod_plan <launch options>: -modded among the game arguments when REDmod is on
+    RM_USED=0; [[ " $1 " != *" -modded "* ]] || RM_USED=1
+    RM_WANT="${RM_OPT:-$(setting redmod)}" RM_MODS="$(py redmods "$GAME_DIR" 2>/dev/null || echo 0)"
+    if [ "$RM_WANT" = on ] && [[ " $GAME_ARGS " != *" -modded "* ]]; then GAME_ARGS="${GAME_ARGS:+$GAME_ARGS }-modded"; fi
+}
+has_redmod_tool() { findci "$GAME_DIR" tools/redmod/bin/redMod.exe >/dev/null 2>&1; }   # the REDmod DLC is installed
+redmod_notes() {   # install: what happens to -modded (REDmod) in the launch options
+    if [ "$RM_WANT" = on ]; then
+        if [ "$RM_USED" = 0 ]; then
+            info "REDmod: -modded goes in the launch options, so the game loads deployed REDmod mods (--no-redmod takes it out)"
+        elif [ "$RM_OPT" = on ]; then ok "REDmod: -modded is already in the launch options"; fi
+        if ! has_redmod_tool; then
+            warn "REDmod's tool is not installed: install the free REDmod DLC in Steam (the game's Properties > DLC) to deploy REDmod mods"
+        elif [ "$RM_USED" = 0 ] && [[ " $GAME_ARGS " == *" --launcher-skip "* ]]; then
+            info "REDmod mods need a deploy after each change. CDPR's launcher runs it when its mods setting is on, but"
+            info "--launcher-skip skips the launcher: run with --no-launcher-skip once after a change, or run"
+            info "tools/redmod/bin/redMod.exe deploy in the game's Proton prefix"
+        fi
+    elif [ "$RM_USED" = 1 ] && [ "$RM_OPT" = off ]; then
+        info "REDmod: -modded taken out of the launch options (--no-redmod)"
+    elif [ "$RM_USED" = 1 ]; then
+        warn "the launch options had -modded, which REDmod mods need; it is taken out with the rest of the line."
+        warn "Run this again with --redmod to keep it (the choice is remembered)"
+    elif [ "$RM_MODS" -gt 0 ]; then
+        info "REDmod: $RM_MODS mod(s) in the game's mods folder load only with -modded; --redmod adds it"
+    fi
+}
+redmod_rows() {   # check: -modded (REDmod)
+    local tool="the REDmod DLC is installed"
+    has_redmod_tool || tool="the REDmod DLC is not installed (Steam: the game's Properties > DLC)"
+    if [ "$RM_USED" = 1 ]; then row "REDmod" "-modded in the launch options; $RM_MODS mod(s) in mods/; $tool"
+    elif [ "$RM_WANT" = on ]; then row "REDmod" "on (--redmod), not in the launch options yet: run '$0' with Steam closed"
+    elif [ "$RM_MODS" -gt 0 ]; then row "REDmod" "$RM_MODS mod(s) in mods/, which load only with -modded ('$0 --redmod' adds it)"
+    fi
+    return 0
 }
 wrap_notes() {   # install: what happens to game-performance and MangoHud in the launch options
     if [ "$GP_USED" = 1 ] && [ -n "$GP_WHY" ]; then
@@ -2298,7 +2353,7 @@ do_check() {
         missing) row "launch options" "${lo_val:-empty}; recommended: $(py lo-merge "$lo_val" "$dlls" "$GAME_ARGS" "$WRAP" | cut -d$'\x1f' -f2)" ;;
         *) row "launch options" "Steam user config not found" ;;
     esac
-    case "$lo" in ok|broken|missing) wrap_rows ;; esac
+    case "$lo" in ok|broken|missing) wrap_rows; redmod_rows ;; esac
     if [ "$(reg_state winmm)" != ok ] && [ "${lo_winmm:-}" != ok ]; then
         warn "neither override is set: Proton will ignore RED4ext's loader and the mod will not start"
     fi
@@ -2390,7 +2445,7 @@ PLAN_ADDED=0 PLAN_REPLACED=0 PLAN_REMOVED=0 PLAN_SAME=0 PLAN_STALE=() FILES_CHAN
 SETS_ON="" SETS_DROPPED="" ADDON_ROOTS=() ADDON_VERS=() ADDON_STATE_NEW=() ADDON_PLAN=() ADDON_KEEP=() ADDON_DROP=() ADDON_GONE=() ADDON_NOPL=() ADDON_MISSING=() ADDON_HAVE=" " ADDON_USED=" " PROTECT=()
 NC_ROOT="" NC_DLL_REL="" NC_PLUGIN_DIR="" R4_CHOICE="" R4_FINAL="" RT_WANT="" RT_TARGET="" RV="" RK="" NEED_RT=0
 VCREDIST_VER="" REG_STATE="" LO_STATE="" LO_VALUE="" LO_WINMM="" RESTART_STEAM=0 DLLS="winmm"
-WRAP="" GP_WANT="" GP_WHY="" GP_USED=0 MH_WHY="" MH_MISSING="" MH_USED=0 MH_WRAPPER=0
+WRAP="" GP_WANT="" GP_WHY="" GP_USED=0 MH_WHY="" MH_MISSING="" MH_USED=0 MH_WRAPPER=0 RM_USED=0 RM_WANT="" RM_MODS=0
 TOOL_NAME="" TOOL_DIR="" TOOL_REASON="" TOOL_LABEL="" TOOL_STATE="none"
 
 step_nightcoop() {
@@ -2977,14 +3032,14 @@ step_override() {
     esac
     IFS=$'\x1f' read -r LO_STATE LO_VALUE LO_WINMM < <(py lo-status "$STEAM_ROOT" "$APPID" "$DLLS" "$GAME_ARGS") || LO_STATE=nofile
     if [ "$LO_STATE" != nofile ]; then
-        wrap_plan "$LO_VALUE"; wrap_notes
+        wrap_plan "$LO_VALUE"; wrap_notes; redmod_notes
         IFS=$'\x1f' read -r LO_STATE LO_VALUE LO_WINMM < <(py lo-status "$STEAM_ROOT" "$APPID" "$DLLS" "$GAME_ARGS" "$WRAP") || LO_STATE=nofile
     fi
     case "$LO_STATE" in
         ok) ok "launch options already set: $LO_VALUE" ;;
         nofile) warn "Steam's per-user config was not found; launch options cannot be checked" ;;
         *) info "launch options: will be set to $(py lo-merge "$LO_VALUE" "$DLLS" "$GAME_ARGS" "$WRAP" | cut -d$'\x1f' -f2)"
-           [ -z "$GAME_ARGS" ] || info "(--launcher-skip starts the game without CDPR's launcher window; --no-launcher-skip keeps it)"
+           [[ " $GAME_ARGS " != *" --launcher-skip "* ]] || info "(--launcher-skip starts the game without CDPR's launcher window; --no-launcher-skip keeps it)"
            steam_settings_note ;;
     esac
 }
