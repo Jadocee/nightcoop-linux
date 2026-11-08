@@ -207,6 +207,54 @@ ROUND3 = {
     'Yeehaw Spur Boots-26982-1-0-1-1770378994.zip': ['archive/pc/mod/PinkyDude_Clothes_YeehawSpurBoots.archive', 'archive/pc/mod/PinkyDude_Clothes_YeehawSpurBoots.xl', 'r6/tweaks/PinkyDude_TheRVC00NDumpster3/PinkyDude_Clothes_YeehawSpurBoots.yaml'],
 }
 
+# The fourth round (the seven Zenitex outfits and two Zenitex accessories, Nola Dreamer's boutique,
+# hairstyles, and raem's jewellery for Equipment-EX): each download's real file name and entries, read
+# from the archive itself, with the files a rule must pass over. Contents are stand-ins (see placeholder).
+ROUND4 = {
+    '(masc) necklace 6 higher fit-15861-1-2-1728769985.zip': ['archive/pc/mod/rm_00_acc_set_doll_MESH_masc_neck 6 higher fit.archive'],
+    '1. AIO - ALL IN ONE - HYST HAIR COLLECTION-21766-1-2-1762627999.zip': ['archive/pc/mod/Hyst_Iconic_Hair_CCXL.archive', 'archive/pc/mod/Hyst_Karina_Hair_CCXL.archive', 'archive/pc/mod/Hyst_Kim_Hair_CCXL.archive', 'archive/pc/mod/Hyst_Mina_Hair_CCXL.archive', 'archive/pc/mod/Hyst_Spark_Hair_CCXL.archive', 'archive/pc/mod/Hyst_Stellar_Hair_CCXL.archive', 'archive/pc/mod/Hyst_Winter_Hair_CCXL.archive', 'archive/pc/mod/hyst_iconic_hair_ccxl.xl', 'archive/pc/mod/hyst_karina_hair_ccxl.xl', 'archive/pc/mod/hyst_kim_hair_ccxl.xl', 'archive/pc/mod/hyst_mina_hair_ccxl.xl', 'archive/pc/mod/hyst_spark_hair_ccxl.xl', 'archive/pc/mod/hyst_stellar_hair_ccxl.xl', 'archive/pc/mod/hyst_winter_hair_ccxl.xl'],
+    'Accessories - Main Store 14210 2.0 2026-07-22T17-45Z q7jg7fhhj.zip': ['archive/pc/mod/rm_!atelier_accessories_main.archive', 'r6/scripts/raem/rm_atelier_accessories_main.reds'],
+    'Accessories - Pearl Jewelry 14210 2.0 2026-07-22T17-45Z JSKWSQpp5.zip': ['archive/pc/mod/rm_!atelier_accessories_pearls.archive', 'r6/scripts/raem/rm_atelier_accessories_pearls.reds'],
+    'CCXL - HAIR MEGAPAK-19197-5-0-0-1744339844.zip': ['CCXL - MEGAPAK/archive/pc/mod/MELUMINARY - CCXL - # HAIR MEGAPAK.archive', 'CCXL - MEGAPAK/archive/pc/mod/MELUMINARY - CCXL - CAROLINE INVERTED BOB.xl', 'CCXL - MEGAPAK/archive/pc/mod/MELUMINARY - CCXL - CHAERI BLUNT BANG.xl', 'CCXL - MEGAPAK/archive/pc/mod/MELUMINARY - CCXL - FAMKE MODERN LAYERS - V1.xl', 'CCXL - MEGAPAK/archive/pc/mod/MELUMINARY - CCXL - FAMKE MODERN LAYERS - V2.xl', 'CCXL - MEGAPAK/archive/pc/mod/MELUMINARY - CCXL - KIMBER SPACE BUNS.xl', 'CCXL - MEGAPAK/archive/pc/mod/MELUMINARY - CCXL - KUROTANI MICROBOB - V1.xl', 'CCXL - MEGAPAK/archive/pc/mod/MELUMINARY - CCXL - KUROTANI MICROBOB - V2.xl', 'CCXL - MEGAPAK/archive/pc/mod/MELUMINARY - CCXL - KUROTANI MICROBOB - V3.xl', 'CCXL - MEGAPAK/archive/pc/mod/MELUMINARY - CCXL - MELANIE GLAM PONY - V1.xl', 'CCXL - MEGAPAK/archive/pc/mod/MELUMINARY - CCXL - MELANIE GLAM PONY - V2.xl', 'CCXL - MEGAPAK/archive/pc/mod/MELUMINARY - CCXL - RICHIE MINI MULLET.xl', 'CCXL - MEGAPAK/archive/pc/mod/MELUMINARY - CCXL - SABRINA MESSY PONY - V1.xl', 'CCXL - MEGAPAK/archive/pc/mod/MELUMINARY - CCXL - SABRINA MESSY PONY - V2.xl', 'CCXL - MEGAPAK/archive/pc/mod/MELUMINARY - CCXL - SASHA MODERN BLOWOUT - V1.xl', 'CCXL - MEGAPAK/archive/pc/mod/MELUMINARY - CCXL - SASHA MODERN BLOWOUT - V2.xl', 'CCXL - MEGAPAK/archive/pc/mod/MELUMINARY - CCXL - SOFIA SOFT LOB - V1.xl', 'CCXL - MEGAPAK/archive/pc/mod/MELUMINARY - CCXL - SOFIA SOFT LOB - V2.xl', 'CCXL - MEGAPAK/archive/pc/mod/MELUMINARY - CCXL - SOFIA SOFT LOB - V3.xl', 'CCXL - MEGAPAK/archive/pc/mod/MELUMINARY - CCXL - WINONA CROP - V1.xl', 'CCXL - MEGAPAK/archive/pc/mod/MELUMINARY - CCXL - WINONA CROP - V2.xl'],
+    'CCXL - WINONA-19197-5-0-0-1744340175.zip': ['CCXL - WINONA/MELUMINARY - CCXL - WINONA CROP - V1 + V2.archive', 'CCXL - WINONA/MELUMINARY - CCXL - WINONA CROP - V1.xl', 'CCXL - WINONA/MELUMINARY - CCXL - WINONA CROP - V2.xl'],
+    'CCXL Sub Hair Pack - AllInOne-19268-1-09-1772653636.rar': ['archive/pc/mod/CCXL_Sub_HairPack_Frost.archive', 'archive/pc/mod/CCXL_Sub_HairPack_Frost.xl', 'archive/pc/mod/CCXL_Sub_HairPack_Fuze.archive', 'archive/pc/mod/CCXL_Sub_HairPack_Fuze.xl', 'archive/pc/mod/CCXL_Sub_HairPack_Glace.archive', 'archive/pc/mod/CCXL_Sub_HairPack_Glace.xl', 'archive/pc/mod/CCXL_Sub_HairPack_Heart.archive', 'archive/pc/mod/CCXL_Sub_HairPack_Heart.xl', 'archive/pc/mod/CCXL_Sub_HairPack_Hope.archive', 'archive/pc/mod/CCXL_Sub_HairPack_Hope.xl', 'archive/pc/mod/CCXL_Sub_HairPack_Lightning.archive', 'archive/pc/mod/CCXL_Sub_HairPack_Lightning.xl', 'archive/pc/mod/CCXL_Sub_HairPack_Lunar.archive', 'archive/pc/mod/CCXL_Sub_HairPack_Lunar.xl', 'archive/pc/mod/CCXL_Sub_HairPack_Mercy.archive', 'archive/pc/mod/CCXL_Sub_HairPack_Mercy.xl', 'archive/pc/mod/CCXL_Sub_HairPack_Nuclear.archive', 'archive/pc/mod/CCXL_Sub_HairPack_Nuclear.xl', 'archive/pc/mod/CCXL_Sub_HairPack_Poison.archive', 'archive/pc/mod/CCXL_Sub_HairPack_Poison.xl', 'archive/pc/mod/CCXL_Sub_HairPack_Stealth.archive', 'archive/pc/mod/CCXL_Sub_HairPack_Stealth.xl', 'archive/pc/mod/CCXL_Sub_HairPack_Surge.archive', 'archive/pc/mod/CCXL_Sub_HairPack_Surge.xl', 'archive/pc/mod/CCXL_Sub_HairPack_Volt.archive', 'archive/pc/mod/CCXL_Sub_HairPack_Volt.xl', 'archive/pc/mod/CCXL_Sub_HairPack_Wolf.archive', 'archive/pc/mod/CCXL_Sub_HairPack_Wolf.xl'],
+    'CCXL Sub Hair Pack - Wolf-19268-1-09-1772653934.zip': ['archive/pc/mod/CCXL_Sub_HairPack_Wolf.archive', 'archive/pc/mod/CCXL_Sub_HairPack_Wolf.xl'],
+    'Chain Jewelry - Main-15861-1-2-1728769757.zip': ['archive/pc/mod/rm_acc_set_doll.archive', 'archive/pc/mod/rm_acc_set_doll.xl', 'r6/tweaks/raem/rm_acc_set_doll.yaml'],
+    'Clothes - Main Store 14210 2.0 2026-07-22T17-47Z k8Iw8mCCl.zip': ['archive/pc/mod/rm_!atelier_clothes_main.archive', 'r6/scripts/raem/rm_atelier_clothes_main.reds'],
+    'Emo Wolfcut - CCXL-16697-2-0-1747433013.zip': ['archive/pc/mod/NUT_emowolf_ccxl.archive', 'archive/pc/mod/NUT_wolfcut_emo_ccxl.xl'],
+    'Emo Wolfcut - FV-16697-1-0-1726897852.zip': ['NUT_F40-41_emo_wolfcut/archive/pc/mod/NUT_F40_wolfemo_long.archive', 'NUT_F40-41_emo_wolfcut/archive/pc/mod/NUT_F41_wolfemo_short.archive'],
+    'Emo Wolfcut - MV-16697-1-0-1726897884.zip': ['NUT_M41-42_emo_wolfcut/NUT_M41-42_EMO/NUT_M41_wolfemo_short.archive', 'NUT_M41-42_emo_wolfcut/NUT_M41-42_EMO/NUT_M42_wolfemo_long.archive'],
+    'HAIR 01 - Slickback Undercut-19907-1-0b-1759251188.zip': ['archive/pc/mod/HALK_Hair_SlickBackUndercut.archive', 'archive/pc/mod/HALK_Hair_SlickBackUndercut.xl'],
+    'HAIR 02 - Sidewave Undercut-19907-1-0-1740311599.zip': ['archive/pc/mod/HALK_CCXL_Hair_SideWaveUndercut.archive', 'archive/pc/mod/HALK_CCXL_Hair_SideWaveUndercut.xl'],
+    'HAIR 03 - ManBun Undercut-19907-1-0a-1741536842.zip': ['archive/pc/mod/HALK_CCXL_Hair_ManBunUndercut.archive', 'archive/pc/mod/HALK_CCXL_Hair_ManBunUndercut.xl'],
+    'HAIR 04 - Slickback Braids Undercut-19907-1-1-1741536363.zip': ['archive/pc/mod/HALK_CCXL_Hair_SlickBackBraidsUndercut.archive', 'archive/pc/mod/HALK_CCXL_Hair_SlickBackBraidsUndercut.xl'],
+    'Hime Long Jelly - CCXL-16697-2-0-1747433240.zip': ['archive/pc/mod/NUT_hime_jelly_ccxl.archive', 'archive/pc/mod/NUT_hime_jelly_ccxl.xl'],
+    'Hime Medium - CCXL-16697-2-0-1747433180.zip': ['archive/pc/mod/NUT_hime_medium.xl', 'archive/pc/mod/NUT_hime_medium_ccxl.archive'],
+    'Hime Short - CCXL-16697-2-0-1747433137.zip': ['archive/pc/mod/NUT_hime_short.xl', 'archive/pc/mod/NUT_hime_short_ccxl.archive'],
+    'Kim Hair-21766-1-0-1762627938.zip': ['archive/pc/mod/Hyst_Kim_Hair_CCXL.archive', 'archive/pc/mod/hyst_kim_hair_ccxl.xl'],
+    'Messy Wolfcut - CCXL-16697-2-0-1747432969.zip': ['archive/pc/mod/NUT_messywolf_ccxl.archive', 'archive/pc/mod/NUT_wolfcut_messy_ccxl.xl'],
+    'Military Armored Ballistic Vest - Alt. Vest-14348-3-2-1742087043.zip': ['archive/pc/mod/0_scorpion_military_armored_vest_addon_alternate_vest.archive'],
+    'Military Armored Ballistic Vest - Garment Support-14348-3-2-1742087108.zip': ['archive/pc/mod/0_scorpion_military_armored_ballistic_vest_addon_garment_support.archive'],
+    'Military Ballistic Vest-14348-3-6-1757019003.zip': ['archive/pc/mod/scorpion_military_armored_ballistic_vest.archive', 'archive/pc/mod/scorpion_military_armored_ballistic_vest.xl', 'codes.txt', 'r6/tweaks/scorpiontank/scorpion_military_armored_ballistic_vest.yaml'],
+    'Military Combat Armor-13212-3-3-1757018748.zip': ['archive/pc/mod/scorpion_military_combat_armor.archive', 'archive/pc/mod/scorpion_military_combat_armor.xl', 'codes.txt', 'r6/tweaks/scorpiontank/scorpion_military_combat_armor.yaml'],
+    'Military Combat Boots-14781-3-4-1757019093.zip': ['archive/pc/mod/scorpion_military_combat_boots.archive', 'archive/pc/mod/scorpion_military_combat_boots.xl', 'codes.txt', 'r6/tweaks/scorpiontank/scorpion_military_combat_boots.yaml'],
+    'Military Pistol Holsters-18002-1-5-1757023050.zip': ['archive/pc/mod/scorpion_military_dual_pistol_holsters.archive', 'archive/pc/mod/scorpion_military_dual_pistol_holsters.xl', 'codes.txt', 'r6/tweaks/scorpiontank/scorpion_military_dual_pistol_holsters.yaml'],
+    'ND_female_virtual_boutique 5114 7.6 2026-10-05T16-51Z AgoGgilxQ.zip': ['archive/pc/mod/ND_female_virtual_boutique.archive', 'r6/scripts/ND_female_virtual_boutique.reds'],
+    'ND_male_virtual_boutique-5114-1-2-1713209715.zip': ['archive/pc/mod/ND_male_virtual_boutique.archive', 'r6/scripts/ND_male_virtual_boutique.reds'],
+    'Ops-Core FAST Helmet - Garment Support-13557-3-1-1750787316.zip': ['archive/pc/mod/0_scorpion_military_opscore_helmet_addon_garment_support.archive'],
+    'Ops-Core FAST Helmet-13557-3-4-1757020329.zip': ['archive/pc/mod/scorpion_military_opscore_helmet.archive', 'archive/pc/mod/scorpion_military_opscore_helmet.xl', 'codes.txt', 'r6/tweaks/scorpiontank/scorpion_military_opscore_helmet.yaml'],
+    'Preem Hair (2K) 8223 3.0.0b 2026-10-21T01-21Z RXDpXNNts.zip': ['archive\\pc\\mod\\###-PreemHair.archive'],
+    'Preem Hair (4K) 8223 3.0.0 2026-10-21T01-20Z G5yE5CC3f.zip': ['archive\\pc\\mod\\###-PreemHair.archive'],
+    'Reyes Accessories - Main File-17069-1-1-1741904576.zip': ['archive/pc/mod/rm_acc_rings_reyes.archive', 'archive/pc/mod/rm_acc_rings_reyes.xl', 'archive/pc/mod/rm_acc_wrist_reyesbrac.archive', 'archive/pc/mod/rm_acc_wrist_reyesbrac.xl', 'archive/pc/mod/rm_acc_wrist_reyeswatch.archive', 'archive/pc/mod/rm_acc_wrist_reyeswatch.xl', 'r6/tweaks/raem/rm_acc_rings_reyes.yaml', 'r6/tweaks/raem/rm_acc_wrist_reyesbrac.yaml', 'r6/tweaks/raem/rm_acc_wrist_reyeswatch.yaml'],
+    "V's Bullet Necklace - Main-15076-1-1-1722784499.zip": ['archive/pc/mod/rm_acc_neck_bulletv.archive', 'archive/pc/mod/rm_acc_neck_bulletv.xl', 'r6/tweaks/raem/rm_acc_neck_bulletv.yaml'],
+    'Zenitex Balaclava Pack - Alt. Colors-17411-2-1-1780145354.zip': ['archive/pc/mod/0_scorpion_zenitex_balaclava_pack_addon_alt_colors.archive'],
+    'Zenitex Balaclava Pack - GS-17411-2-1-1780145292.zip': ['archive/pc/mod/0_scorpion_zenitex_balaclava_pack_addon_garment_support.archive'],
+    'Zenitex Balaclava Pack-17411-2-1-1780145222.zip': ['archive/pc/mod/scorpion_zenitex_balaclava_pack.archive', 'archive/pc/mod/scorpion_zenitex_balaclava_pack.xl', 'codes.txt', 'r6/tweaks/scorpiontank/scorpion_zenitex_balaclava_pack.yaml'],
+    'Zenitex Combat Goggles-17049-1-4-1757022742.zip': ['archive/pc/mod/scorpion_military_accessories_zenitex_goggles.archive', 'archive/pc/mod/scorpion_military_accessories_zenitex_goggles.xl', 'codes.txt', 'r6/tweaks/scorpiontank/scorpion_military_accessories_zenitex_goggles.yaml'],
+    'Zenitex Military Backpack-18152-1-5-1757023271.zip': ['archive/pc/mod/scorpion_military_zenitex_backpack.archive', 'archive/pc/mod/scorpion_military_zenitex_backpack.xl', 'codes.txt', 'r6/tweaks/scorpiontank/scorpion_military_zenitex_backpack.yaml'],
+    'Zenitex Underwear-20394-1-5-1757025183.zip': ['archive/pc/mod/scorpion_military_zenitex_underwear.archive', 'archive/pc/mod/scorpion_military_zenitex_underwear.xl', 'codes.txt', 'r6/tweaks/scorpiontank/scorpion_military_zenitex_underwear.yaml'],
+}
+
 
 def placeholder(path, archive):
     """Small stand-in contents for a file of a mod archive, by its type, naming the file and the archive
@@ -471,6 +519,9 @@ def archives(fix):
     for name, paths in ROUND3.items():
         zname = re.sub(r'\.(rar|7z)$', '.zip', name)
         zipdir(f'{fix}/round3/{zname}', {p: placeholder(p, name) for p in paths})
+    for name, paths in ROUND4.items():
+        zname = re.sub(r'\.(rar|7z)$', '.zip', name)
+        zipdir(f'{fix}/round4/{zname}', {p: placeholder(p, name) for p in paths})
 
 # --------------------------------------------------------------------- world
 VDF_LOCALCONFIG = '''"UserLocalConfigStore"

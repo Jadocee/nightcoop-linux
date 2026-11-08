@@ -49,6 +49,7 @@
 #   --without-flight      remove Let There Be Flight again (the mods it needed stay)
 #   --with-mods           also install Virtual Atelier with clothing and item stores and their
 #                         outfits (Zenitex, The RVC00N Dumpster, Nola Dreamer, Street Ninja),
+#                         hairstyles (Preem Hair and packs for the character creator),
 #                         Virtual Car Dealer with car and bike packs, Drive an Aerial Vehicle,
 #                         Vehicle Customizer, Cyber Drift, Impact FX, Immersive Audio Distance,
 #                         Quick Stash and No Intro Videos (download them from Nexus Mods; the
@@ -56,8 +57,9 @@
 #                         Tweaks, Codeware, TweakXL, ArchiveXL, redscript, Mod Settings,
 #                         Audioware, VendorsXL and more); kept up to date
 #   --without-mods        remove those mods again (the frameworks stay)
-#   --with-equipment-ex   also install Equipment-EX (from Nexus Mods), to wear layered outfits;
-#                         every partner in a session needs it too
+#   --with-equipment-ex   also install Equipment-EX (from Nexus Mods), to wear layered outfits,
+#                         and with --with-mods jewellery made for its slots; every partner in a
+#                         session needs it too
 #   --without-equipment-ex remove Equipment-EX again
 #   --mods-from DIR       where the Nexus downloads are (default: your Downloads folder)
 #   --force               reinstall every mod file, even those that already match
@@ -99,11 +101,14 @@ MIN_GAME_FILEVER="3.0.88.46235" MIN_GAME_PATCH="2.5"
 #                           compiles to nothing without it.
 #   mods (--with-mods)      Virtual Atelier with stores of the game's own items and the stores of
 #                           Zenitex, The RVC00N Dumpster 3, Nola Dreamer and Street Ninja with
-#                           their outfits, Virtual Car Dealer with car and bike packs, Drive an Aerial
-#                           Vehicle, Vehicle Customizer, Cyber Drift (Light), Impact FX, Immersive
-#                           Audio Distance, Quick Stash and No Intro Videos, and the frameworks they need.
+#                           their outfits, hairstyles, Virtual Car Dealer with car and bike packs,
+#                           Drive an Aerial Vehicle, Vehicle Customizer, Cyber Drift (Light), Impact
+#                           FX, Immersive Audio Distance, Quick Stash and No Intro Videos, and the
+#                           frameworks they need.
 #   eqex (--with-equipment-ex)  Equipment-EX, which wears clothes in layers. NightCoop sends looks by
 #                           its slots: a partner without it sees other slots.
+#   mods+eqex               Only with both: raem's jewellery, made for Equipment-EX's slots, and
+#                           the store that sells it.
 # A component in both sets is installed once. When its sets are dropped (--without-...), a
 # "mod" is removed and a "lib" stays, since other mods use it too.
 # Source: a GitHub release (archive and pinned SHA-256), or nexus:<mod id>[:<prefer>[:<avoid>,...]]
@@ -213,11 +218,40 @@ Nola_Mini_Dress               2.5 mods        mod  -     -                      
 Nola_Moon_Accessories         2.5 mods        mod  -     -                                                           1.0    nexus:14324
 Nola_Spiked_Collar            2.5 mods        mod  -     -                                                           1.1    nexus:14269
 Nola_Accessories_Store        2.5 mods        mod  -     -                                                           1.8    nexus:14299
+Zenitex_Combat_Armor          2.5 mods        mod  -     -                                                           3.3    nexus:13212:-:alt._colo,garment_support
+Zenitex_FAST_Helmet           2.5 mods        mod  -     -                                                           3.4    nexus:13557:-:alt._colo,garment_support
+Zenitex_Ballistic_Vest        2.5 mods        mod  -     -                                                           3.6    nexus:14348:-:alt._colo,alt._vest,alt._pouches,garment_support
+Zenitex_Combat_Boots          2.5 mods        mod  -     -                                                           3.4    nexus:14781:-:alt._colo,garment_support
+Zenitex_Pistol_Holsters       2.5 mods        mod  -     -                                                           1.5    nexus:18002:-:alt._colo,garment_support
+Zenitex_Military_Backpack     2.5 mods        mod  -     -                                                           1.5    nexus:18152:-:alt._colo,garment_support
+Zenitex_Military_Underwear    2.5 mods        mod  -     -                                                           1.5    nexus:20394:-:alt._colo,garment_support
+Zenitex_Combat_Goggles        2.5 mods        mod  -     -                                                           1.4    nexus:17049:-:alt._colo,garment_support
+Zenitex_Balaclava_Pack        2.5 mods        mod  -     -                                                           2.1    nexus:17411:-:alt._colo,_-_gs
+Nola_Virtual_Boutique         2.5 mods        mod  -     -                                                           7.6    nexus:5114:+female
+Preem_Hair                    2.5 mods        mod  -     -                                                           3.0.0  nexus:8223:+(2k)
+Wolfcut_Messy                 2.5 mods        mod  -     -                                                           2.0    nexus:16697:+messy_wolfcut
+Wolfcut_Emo                   2.5 mods        mod  -     -                                                           2.0    nexus:16697:+emo_wolfcut
+Wolfcut_Hime_Short            2.5 mods        mod  -     -                                                           2.0    nexus:16697:+hime_short
+Wolfcut_Hime_Medium           2.5 mods        mod  -     -                                                           2.0    nexus:16697:+hime_medium
+Wolfcut_Hime_Long             2.5 mods        mod  -     -                                                           2.0    nexus:16697:+hime_long
+Subleader_Hair_Pack           2.5 mods        mod  -     -                                                           1.09   nexus:19268:+allinone
+Hyst_Hair_Collection          2.5 mods        mod  -     -                                                           1.2    nexus:21766:+all_in_one
+Meluminary_Hair_Megapak       2.5 mods        mod  -     -                                                           5.0.0  nexus:19197:+megapak
+Undercut_Slickback            2.5 mods        mod  -     -                                                           1.0    nexus:19907:+hair_01
+Undercut_Sidewave             2.5 mods        mod  -     -                                                           1.0    nexus:19907:+hair_02
+Undercut_ManBun               2.5 mods        mod  -     -                                                           1.0    nexus:19907:+hair_03
+Undercut_Slickback_Braids     2.5 mods        mod  -     -                                                           1.1    nexus:19907:+hair_04
+Bullet_Necklace               2.5 mods+eqex   mod  -     -                                                           1.1    nexus:15076
+Chain_Jewelry                 2.5 mods+eqex   mod  -     -                                                           1.2    nexus:15861:+jewelry_-_main
+Reyes_Accessories             2.5 mods+eqex   mod  -     -                                                           1.1    nexus:17069
+raem_Accessory_Store          2.5 mods+eqex   mod  -     -                                                           2.0    nexus:14210:+accessories_-_main
 "
 # <<< add-on sets
 # What a component needs besides RED4ext: without it, it is not installed (a store without
 # Virtual Atelier would stop redscript from compiling every script, NightCoop's included).
 # A component comes after what it needs in the table above.
+# Phantom_Liberty is the game's expansion (archive/pc/ep1), not a component: without it, what needs
+# it is left out.
 ADDON_NEEDS="Let_There_Be_Flight:redscript,ArchiveXL,TweakXL,Input_Loader
 Mod_Settings:redscript,ArchiveXL Audioware:redscript,Codeware,TweakXL Native_Settings_UI:Cyber_Engine_Tweaks
 Virtual_Atelier:redscript,Codeware,ArchiveXL,Mod_Settings A.G.I.S.:Virtual_Atelier Night_City_Marketplace:Virtual_Atelier
@@ -256,7 +290,16 @@ Street_Ninja_Shop:Virtual_Atelier,Cyber_Engine_Tweaks,Street_Ninja_Remake
 AirPods_Max:ArchiveXL,TweakXL
 Nola_Barbed_Accessories:ArchiveXL,TweakXL Nola_Bracelets:ArchiveXL,TweakXL Nola_Heart_Choker:ArchiveXL,TweakXL
 Nola_Mini_Dress:ArchiveXL,TweakXL Nola_Moon_Accessories:ArchiveXL,TweakXL Nola_Spiked_Collar:ArchiveXL,TweakXL
-Nola_Accessories_Store:Virtual_Atelier"
+Nola_Accessories_Store:Virtual_Atelier
+Zenitex_Combat_Armor:ArchiveXL,TweakXL Zenitex_FAST_Helmet:ArchiveXL,TweakXL,Phantom_Liberty
+Zenitex_Ballistic_Vest:ArchiveXL,TweakXL Zenitex_Combat_Boots:ArchiveXL,TweakXL
+Zenitex_Pistol_Holsters:ArchiveXL,TweakXL,Phantom_Liberty Zenitex_Military_Backpack:ArchiveXL,TweakXL,Phantom_Liberty
+Zenitex_Military_Underwear:ArchiveXL,TweakXL Zenitex_Combat_Goggles:ArchiveXL,TweakXL Zenitex_Balaclava_Pack:ArchiveXL,TweakXL
+Nola_Virtual_Boutique:Virtual_Atelier Wolfcut_Messy:ArchiveXL Wolfcut_Emo:ArchiveXL Wolfcut_Hime_Short:ArchiveXL
+Wolfcut_Hime_Medium:ArchiveXL Wolfcut_Hime_Long:ArchiveXL Subleader_Hair_Pack:ArchiveXL Hyst_Hair_Collection:ArchiveXL
+Meluminary_Hair_Megapak:ArchiveXL Undercut_Slickback:ArchiveXL Undercut_Sidewave:ArchiveXL Undercut_ManBun:ArchiveXL
+Undercut_Slickback_Braids:ArchiveXL Bullet_Necklace:ArchiveXL,TweakXL,Equipment_EX Chain_Jewelry:ArchiveXL,TweakXL,Equipment_EX
+Reyes_Accessories:ArchiveXL,TweakXL,Equipment_EX raem_Accessory_Store:Virtual_Atelier"
 # Outfit mods: in co-op, a partner without the same mod sees a plain game piece in their place.
 OUTFITS="Zenitex_Ballistic_Mask Zenitex_Tactical_Harness Zenitex_Combat_Jacket Zenitex_Armor_Pads Zenitex_Panam_Pants
 Zenitex_Combat_Gloves Comfy_Boots Goliath_Coat Cityfolk_Hoodie Knife_Bandolier Bunny_Slippers Saul_Pants CrystalJock_Bomber
@@ -265,7 +308,12 @@ Stinky_Slashed_Top Stinky_Croptop Yeehaw_Collar_Shirt Chuckwalla_T-Shirt Stinky_
 Stinky_Bootcut_Jeans Stinky_Leather_Jeans David_Martinez_Pants Yeehaw_Spur_Boots Latex_Succubus_Tail Trauma_Team_Jumpsuit
 Dexter_Pants Dexter_Vest Dexter_Shoes PinkyBlume_Croptop Street_Ninja_Remake AirPods_Max
 Nola_Barbed_Accessories Nola_Bracelets Nola_Heart_Choker Nola_Mini_Dress Nola_Moon_Accessories
-Nola_Spiked_Collar"
+Nola_Spiked_Collar Zenitex_Combat_Armor Zenitex_FAST_Helmet Zenitex_Ballistic_Vest Zenitex_Combat_Boots
+Zenitex_Pistol_Holsters Zenitex_Military_Backpack Zenitex_Military_Underwear Zenitex_Combat_Goggles Zenitex_Balaclava_Pack
+Bullet_Necklace Chain_Jewelry Reyes_Accessories"
+# Hairstyles added to the character creator: in co-op, a partner without the same mod sees no hair there.
+HAIRS="Wolfcut_Messy Wolfcut_Emo Wolfcut_Hime_Short Wolfcut_Hime_Medium Wolfcut_Hime_Long Subleader_Hair_Pack
+Hyst_Hair_Collection Meluminary_Hair_Megapak Undercut_Slickback Undercut_Sidewave Undercut_ManBun Undercut_Slickback_Braids"
 # Files a mod writes to while the game runs (its settings, its database, what it has learned):
 # the player's copy stays, and is replaced only when a new release changes the file it ships.
 # "*" is every component; a "*" in a pattern also matches across folders.
@@ -2305,7 +2353,7 @@ do_uninstall() {
 # ---------------------------------------------------------------- install ----
 NC_STATUS="" NC_VER="" NC_URL="" NC_SHA="" NC_GAMES="" NC_PROTO="" NC_R4="" NC_MATCHED="" NC_YANKED="" NC_PRESENT=""
 PLAN_ADDED=0 PLAN_REPLACED=0 PLAN_REMOVED=0 PLAN_SAME=0 PLAN_STALE=() FILES_CHANGE=0 PREFIX_CHANGE=0 STEAM_CHANGE=0 SAVE_AUTO=""
-SETS_ON="" SETS_DROPPED="" ADDON_ROOTS=() ADDON_VERS=() ADDON_STATE_NEW=() ADDON_PLAN=() ADDON_KEEP=() ADDON_DROP=() ADDON_GONE=() ADDON_MISSING=() ADDON_HAVE=" " ADDON_USED=" " PROTECT=()
+SETS_ON="" SETS_DROPPED="" ADDON_ROOTS=() ADDON_VERS=() ADDON_STATE_NEW=() ADDON_PLAN=() ADDON_KEEP=() ADDON_DROP=() ADDON_GONE=() ADDON_NOPL=() ADDON_MISSING=() ADDON_HAVE=" " ADDON_USED=" " PROTECT=()
 NC_ROOT="" NC_DLL_REL="" NC_PLUGIN_DIR="" R4_CHOICE="" R4_FINAL="" RT_WANT="" RT_TARGET="" RV="" RK="" NEED_RT=0
 VCREDIST_VER="" REG_STATE="" LO_STATE="" LO_VALUE="" LO_WINMM="" RESTART_STEAM=0 DLLS="winmm"
 WRAP="" GP_WANT="" GP_WHY="" GP_USED=0 MH_WHY="" MH_MISSING="" MH_USED=0 MH_WRAPPER=0
@@ -2451,7 +2499,16 @@ addon_parts() {   # each component once: name sets kind rule version-file
 name_of() { echo "${1//_/ }"; }   # name_of <component>: its name for people
 set_label() { case "$1" in flight) echo "Let There Be Flight" ;; eqex) echo "Equipment-EX" ;; *) echo "the mod set" ;; esac; }
 listing() { local IFS=,; local s="$*"; echo "${s//,/, }"; }   # listing <items...>: "a, b, c"
-in_sets_on() { local s; for s in ${1//,/ }; do [[ " $SETS_ON " == *" $s "* ]] && return 0; done; return 1; }
+in_sets_on() {   # in_sets_on <sets>: one of its comma-separated sets is on ("mods+eqex": both of them)
+    local s p
+    for s in ${1//,/ }; do
+        for p in ${s//+/ }; do [[ " $SETS_ON " == *" $p "* ]] || continue 2; done
+        return 0
+    done
+    return 1
+}
+has_pl() { findci "$GAME_DIR" archive/pc/ep1 >/dev/null 2>&1; }   # Phantom Liberty is installed
+needs_pl() { [[ " $(needs_of "$1") " == *" Phantom_Liberty "* ]]; }
 recorded_roots() {   # recorded_roots <component>: what the last install put in place for it
     local e; for e in "${ROOTS_REC[@]}"; do if [ "${e%%$'\t'*}" = "$1" ]; then echo "${e#*$'\t'}"; fi; done
 }
@@ -2522,6 +2579,22 @@ nexus_file() {   # nexus_file <component>: which file to download, of a mod with
         Dexter_Shoes) echo "Dexter's Shoes" ;;
         Street_Ninja_Remake) echo "the main file, STREET NINJA REMAKE - MAIN" ;;
         Street_Ninja_Shop) echo "STREET NINJA STREETWEAR SHOP, among the optional files" ;;
+        Nola_Virtual_Boutique) echo "ND_female_virtual_boutique" ;;
+        Preem_Hair) echo "Preem Hair (2K), not the 4K file" ;;
+        Wolfcut_Messy) echo "Messy Wolfcut - CCXL" ;;
+        Wolfcut_Emo) echo "Emo Wolfcut - CCXL" ;;
+        Wolfcut_Hime_Short) echo "Hime Short - CCXL" ;;
+        Wolfcut_Hime_Medium) echo "Hime Medium - CCXL" ;;
+        Wolfcut_Hime_Long) echo "Hime Long Jelly - CCXL" ;;
+        Subleader_Hair_Pack) echo "CCXL Sub Hair Pack - AllInOne" ;;
+        Hyst_Hair_Collection) echo "1. AIO - ALL IN ONE - HYST HAIR COLLECTION" ;;
+        Meluminary_Hair_Megapak) echo "CCXL - HAIR MEGAPAK" ;;
+        Undercut_Slickback) echo "HAIR 01 - Slickback Undercut" ;;
+        Undercut_Sidewave) echo "HAIR 02 - Sidewave Undercut" ;;
+        Undercut_ManBun) echo "HAIR 03 - ManBun Undercut" ;;
+        Undercut_Slickback_Braids) echo "HAIR 04 - Slickback Braids Undercut" ;;
+        Chain_Jewelry) echo "Chain Jewelry - Main" ;;
+        raem_Accessory_Store) echo "Accessories - Main Store, among the optional files" ;;
     esac
 }
 nexus_avoided() {   # nexus_avoided <component>: what a file of it that is never installed is
@@ -2588,6 +2661,7 @@ step_addons() {   # the add-on sets (--with-flight, --with-mods), matched to the
             fi
             continue
         fi
+        if needs_pl "$comp" && ! has_pl; then ADDON_NOPL+=("$(name_of "$comp")"); continue; fi   # needs the expansion
         cands=()   # the archives to try, best first: path, version, and whether it is the preferred file
         case "$src" in
             nexus:*)   # the user's downloads, and the copies kept from earlier runs; ver: the oldest release for the patch
@@ -2615,7 +2689,7 @@ step_addons() {   # the add-on sets (--with-flight, --with-mods), matched to the
                 cands=("$path"$'\x1f'"$ver"$'\x1f'preferred) ;;
         esac
         for r in $(needs_of "$comp"); do   # everything it needs must be here, or it is left out
-            if [[ "$ADDON_HAVE" != *" $r "* ]]; then
+            if [ "$r" != Phantom_Liberty ] && [[ "$ADDON_HAVE" != *" $r "* ]]; then
                 warn "$(name_of "$comp") needs $(name_of "$r"), which is not here; $(name_of "$comp") is left out"
                 if [ -n "$(recorded_roots "$comp")" ]; then keep_recorded "$comp"; fi
                 continue 2
@@ -2663,6 +2737,7 @@ step_addons() {   # the add-on sets (--with-flight, --with-mods), matched to the
     if [ "${#ADDON_PLAN[@]}" -gt 0 ]; then ok "for game ${GAME_VER:-?}: $(listing "${ADDON_PLAN[@]}")"; fi
     if [ "${#ADDON_DROP[@]}" -gt 0 ]; then ok "$(listing "${ADDON_DROP[@]}") will be removed; the frameworks they needed stay, since other mods use them"; fi
     if [ "${#ADDON_GONE[@]}" -gt 0 ]; then ok "$(listing "${ADDON_GONE[@]}") will be removed: no longer part of the set"; fi
+    if [ "${#ADDON_NOPL[@]}" -gt 0 ]; then info "Phantom Liberty is not installed: $(listing "${ADDON_NOPL[@]}"), which need it, are left out"; fi
     if [[ "$ADDON_HAVE" == *" Quick_Stash "* ]]; then
         info "Quick Stash in co-op: a session plays in the host's world, so a guest's stash there is not their own;"
         info "transfer items in your own game, or as the host."
@@ -2684,7 +2759,13 @@ step_addons() {   # the add-on sets (--with-flight, --with-mods), matched to the
         info "Street Ninja's four layers are worn together with Equipment-EX (--with-equipment-ex); without it,"
         info "each piece takes its game slot on its own."
     fi
-    if [[ "$ADDON_HAVE" == *" Nola_Mini_Dress "* ]]; then   # the store sells its glasses, not the dress
+    local hair=0
+    for o in $ADDON_HAVE; do if [[ " ${HAIRS//$'\n'/ } " == *" $o "* ]]; then hair=1; fi; done
+    if [ "$hair" = 1 ]; then
+        info "Hairstyles of mods in co-op: choose them in the character creator, at a mirror or at a ripperdoc. A partner"
+        info "without the same hair mod sees your V without that hairstyle, so keep the mod set the same for everyone."
+    fi
+    if [[ "$ADDON_HAVE" == *" Nola_Mini_Dress "* ]] && [[ "$ADDON_HAVE" != *" Nola_Virtual_Boutique "* ]]; then   # her boutique sells it
         info "No store of the set sells Nola Dreamer's mini dress: add it in Cyber Engine Tweaks' console"
         info "(Game.AddToInventory), with the codes listed on its Nexus Mods page."
     fi
@@ -2724,11 +2805,19 @@ release_of() {   # release_of <component> <file>: the release this script record
     return 0
 }
 addon_rows() {   # check: each add-on set
-    local set comp sets kind rule probe d v mods libs missing
+    local set comp sets kind rule probe d v mods libs missing alt q ok
     for set in flight mods eqex; do
         mods=() libs=() missing=()
         while read -r comp sets kind rule probe; do
-            [[ ",$sets," == *",$set,"* ]] || continue
+            if [[ ",$sets," != *",$set,"* ]]; then   # "mods+eqex" shows with eqex, when all its sets are on
+                ok=0
+                for alt in ${sets//,/ }; do
+                    [[ "$alt" == *"+$set" ]] || continue
+                    ok=1; for q in ${alt//+/ }; do [[ " $SETS_RECORDED " == *" $q "* ]] || ok=0; done
+                done
+                [ "$ok" = 1 ] || continue
+            fi
+            if needs_pl "$comp" && ! has_pl; then continue; fi
             if [ "$probe" != - ]; then d="$(findci "$GAME_DIR" "$probe" 2>/dev/null || true)"; else d="$(present_root "$comp")"; fi
             if [ -z "$d" ]; then missing+=("$(name_of "$comp")"); continue; fi
             v="$(release_of "$comp" "$d")"

@@ -524,9 +524,43 @@ expect "and the run after it changes nothing" '[ $RC = 0 ] && [[ "$OUT" == *"eve
 run uninstall --yes
 expect "uninstall puts the game folder back exactly" '[ $RC = 0 ] && [ "$PRISTINE_RT" = "$(snapshot "$G")" ]' "$(diff <(echo "$PRISTINE_RT") <(snapshot "$G"))"
 newworld eqexonly native; OSR="$T/os-arch"; D="$H/Downloads"; mkdir -p "$D"
-cp "$FIX/round3/Equipment-EX "* "$FIX/round3/EquipmentEx-HideHubButtons-"* "$D/"
+cp "$FIX/round3/Equipment-EX "* "$FIX/round3/EquipmentEx-HideHubButtons-"* "$FIX/round4/V's Bullet Necklace"* "$FIX/round4/Accessories - Main Store"* "$D/"
 run install --yes --with-equipment-ex
 expect "--with-equipment-ex alone brings the frameworks it needs, and nothing of the mod set" '[ $RC = 0 ] && [ -f "$G/r6/scripts/EquipmentEx/EquipmentEx.reds" ] && [ -f "$G/red4ext/Plugins/ArchiveXL/ArchiveXL.dll" ] && [ -f "$G/red4ext/Plugins/TweakXL/TweakXL.dll" ] && [ -f "$G/red4ext/Plugins/Codeware/Codeware.dll" ] && [ -f "$G/engine/tools/scc_lib.dll" ] && [ ! -e "$G/bin/x64/plugins/cyber_engine_tweaks.asi" ]' "$OUT"
+expect "raem's jewellery waits for the mod set too, and is not missing without it" '[ ! -e "$G/r6/tweaks/raem" ] && [ ! -e "$G/r6/scripts/raem" ] && [[ "$OUT" != *"Bullet Necklace"* ]]' "$OUT"
+run check
+expect "check: the Equipment-EX row without the jewellery, and no jewellery missing" '[[ "$OUT" == *"Equipment-EX:"*"Equipment EX 1.2.10 (kept up to date"* ]] && [[ "$OUT" != *"Bullet Necklace"* ]] && [[ "$OUT" != *"raem"* ]]' "$OUT"
+
+# ------------------------------- the fourth round: Zenitex gear, hair and jewellery ----
+section "Mods (--with-mods): Zenitex gear, hairstyles and Nola Dreamer's boutique; raem's jewellery only with Equipment-EX too"
+newworld round4 native; OSR="$T/os-arch"; D="$H/Downloads"; mkdir -p "$D" "$G/archive/pc/ep1"   # a game with Phantom Liberty
+PRISTINE_R4="$(snapshot "$G")"
+R4_DL=("$FIX/nexus/Virtual Atelier 2987 1.6.4 2026-10-25T17-42Z HncQn22j7.zip" "$FIX/style/Zenitex Virtual Atelier 10090 4.13 2026-08-28T15-44Z gMz5MuNQO.zip"
+       "$FIX/round3/ND_Mini_dress_with_glasses_FemV-15704-1-1-1747683086.zip" "$FIX/round3/Equipment-EX 6945 1.2.10 2026-10-25T21-07Z k8Iw8mmPd.zip" "$FIX"/round4/*)
+cp "${R4_DL[@]}" "$D/"
+# later releases of the files two rules pass over: Preem Hair's 4K file, and one of Hyst's single hairs
+cp "$FIX/round4/Preem Hair (4K) 8223 3.0.0 2026-10-21T01-20Z G5yE5CC3f.zip" "$D/Preem Hair (4K) 8223 3.0.1 2026-11-20T09-00Z G5yE5CC3g.zip"
+cp "$FIX/round4/Kim Hair-21766-1-0-1762627938.zip" "$D/Kim Hair 21766 1.3 2026-11-20T09-00Z Co8doe62f.zip"
+run install --yes --with-mods
+expect "the seven Zenitex outfits, its goggles and balaclavas (with Phantom Liberty, the three that need it too), not their GS or Alt. Colors files" '[ $RC = 0 ] && ( for f in military_combat_armor military_opscore_helmet military_armored_ballistic_vest military_combat_boots military_dual_pistol_holsters military_zenitex_backpack military_zenitex_underwear military_accessories_zenitex_goggles zenitex_balaclava_pack; do [ -f "$G/r6/tweaks/scorpiontank/scorpion_$f.yaml" ] || exit 1; done ) && ! ls "$G/archive/pc/mod" | grep -q -i _addon_ && [[ "$OUT" != *"Phantom Liberty is not installed"* ]]' "$OUT"
+expect "hair: Preem Hair's 2K file (a newer 4K file too), the five Wolfcut files for the character creator (not the old replacers), Subleader's and Hyst's all-in-one files, the Megapak out of its folder, the four undercuts" 'came "archive/pc/mod/###-PreemHair.archive" "(2K)" && ( for f in NUT_wolfcut_messy_ccxl NUT_wolfcut_emo_ccxl NUT_hime_short NUT_hime_medium NUT_hime_jelly_ccxl HALK_Hair_SlickBackUndercut HALK_CCXL_Hair_SideWaveUndercut HALK_CCXL_Hair_ManBunUndercut HALK_CCXL_Hair_SlickBackBraidsUndercut; do [ -f "$G/archive/pc/mod/$f.xl" ] || exit 1; done ) && ! ls "$G/archive/pc/mod" | grep -q wolfemo && came archive/pc/mod/CCXL_Sub_HairPack_Wolf.xl AllInOne && came archive/pc/mod/hyst_kim_hair_ccxl.xl "ALL IN ONE" && [ -f "$G/archive/pc/mod/MELUMINARY - CCXL - CAROLINE INVERTED BOB.xl" ] && [ ! -e "$G/CCXL - MEGAPAK" ] && [ ! -e "$G/CCXL - WINONA" ]' "$OUT"
+expect "Nola Dreamer's boutique (its file for Fem V), which sells the mini dress, so no note on it; no jewellery without Equipment-EX; the co-op note on hair" '[ -f "$G/r6/scripts/ND_female_virtual_boutique.reds" ] && [ ! -e "$G/r6/scripts/ND_male_virtual_boutique.reds" ] && [[ "$OUT" != *"No store of the set sells"* ]] && [ ! -e "$G/r6/tweaks/raem" ] && [ ! -e "$G/r6/scripts/raem" ] && [[ "$OUT" == *"Hairstyles of mods in co-op"* ]] && [[ "$OUT" == *"sees your V without that hairstyle"* ]]' "$OUT"
+run update --yes
+expect "a rerun changes nothing" '[ $RC = 0 ] && [[ "$OUT" == *"everything is up to date; nothing to do"* ]]' "$OUT"
+run update --yes --with-equipment-ex
+expect "--with-equipment-ex brings raem's jewellery and the store that sells it, not raem's other stores" '[ $RC = 0 ] && [ -f "$G/r6/scripts/EquipmentEx/EquipmentEx.reds" ] && [ -f "$G/r6/tweaks/raem/rm_acc_neck_bulletv.yaml" ] && [ -f "$G/r6/tweaks/raem/rm_acc_set_doll.yaml" ] && [ -f "$G/archive/pc/mod/rm_acc_rings_reyes.xl" ] && [ -f "$G/r6/scripts/raem/rm_atelier_accessories_main.reds" ] && [ ! -e "$G/r6/scripts/raem/rm_atelier_clothes_main.reds" ] && [ ! -e "$G/r6/scripts/raem/rm_atelier_accessories_pearls.reds" ] && [ ! -e "$G/archive/pc/mod/rm_00_acc_set_doll_MESH_masc_neck 6 higher fit.archive" ]' "$OUT"
+run check
+expect "check: the jewellery in the Equipment-EX row, the hair in the mod set's" '[[ "$OUT" == *"Equipment-EX:"*"Bullet Necklace 1.1"*"(kept up to date by this script)"* ]] && [[ "$OUT" == *"Mods:"*"Preem Hair 3.0.0"*"Undercut Slickback Braids 1.1"* ]]' "$OUT"
+run update --yes --without-equipment-ex
+expect "--without-equipment-ex takes the jewellery out with it; the hair and the Zenitex gear stay" '[ $RC = 0 ] && [ ! -e "$G/r6/tweaks/raem" ] && [ ! -e "$G/r6/scripts/raem" ] && [ -f "$G/archive/pc/mod/NUT_hime_short.xl" ] && [ -f "$G/r6/tweaks/scorpiontank/scorpion_zenitex_balaclava_pack.yaml" ]' "$OUT"
+run uninstall --yes
+expect "uninstall puts the game folder back exactly" '[ $RC = 0 ] && [ "$PRISTINE_R4" = "$(snapshot "$G")" ]' "$(diff <(echo "$PRISTINE_R4") <(snapshot "$G"))"
+newworld round4nopl native; OSR="$T/os-arch"; D="$H/Downloads"; mkdir -p "$D"   # a game without Phantom Liberty
+cp "${R4_DL[@]}" "$D/"
+run install --yes --with-mods
+expect "without Phantom Liberty, the helmet, holsters and backpack that need it are left out, and said so; the rest is installed" '[ $RC = 0 ] && [ ! -e "$G/r6/tweaks/scorpiontank/scorpion_military_opscore_helmet.yaml" ] && [ ! -e "$G/r6/tweaks/scorpiontank/scorpion_military_dual_pistol_holsters.yaml" ] && [ ! -e "$G/r6/tweaks/scorpiontank/scorpion_military_zenitex_backpack.yaml" ] && [ -f "$G/r6/tweaks/scorpiontank/scorpion_military_combat_boots.yaml" ] && [[ "$OUT" == *"Phantom Liberty is not installed: Zenitex FAST Helmet, Zenitex Pistol Holsters, Zenitex Military Backpack, which need it, are left out"* ]]' "$OUT"
+run check
+expect "check does not count them as missing" '[ $RC = 0 ] && [[ "$OUT" != *"FAST Helmet"* ]] && [[ "$OUT" != *"Pistol Holsters"* ]]' "$OUT"
 
 # ------------------------------------------------- Cyber Engine Tweaks ----
 section "Cyber Engine Tweaks installed alongside"

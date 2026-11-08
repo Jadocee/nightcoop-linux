@@ -197,9 +197,9 @@ WINEDLLOVERRIDES="winmm,version=n,b" MANGOHUD=1 game-performance %command% --lau
 | `--steam-root DIR` | Use this Steam installation instead of detecting one. |
 | `--with-flight` | Also install Let There Be Flight and the mods it needs (see below). Later runs keep them up to date. |
 | `--without-flight` | Remove Let There Be Flight again. The mods it needed stay, because other mods use them too. |
-| `--with-mods` | Also install the mod set: Virtual Atelier with clothing and item stores and their outfits (Zenitex, The RVC00N Dumpster, Nola Dreamer, Street Ninja), Virtual Car Dealer with car and bike packs, Drive an Aerial Vehicle, Vehicle Customizer, Cyber Drift, Impact FX, Immersive Audio Distance, Quick Stash, No Intro Videos, and the frameworks they need (see below). Later runs keep it up to date. |
+| `--with-mods` | Also install the mod set: Virtual Atelier with clothing and item stores and their outfits (Zenitex, The RVC00N Dumpster, Nola Dreamer, Street Ninja), hairstyles, Virtual Car Dealer with car and bike packs, Drive an Aerial Vehicle, Vehicle Customizer, Cyber Drift, Impact FX, Immersive Audio Distance, Quick Stash, No Intro Videos, and the frameworks they need (see below). Later runs keep it up to date. |
 | `--without-mods` | Remove the mod set's mods again. The frameworks stay. |
-| `--with-equipment-ex` | Also install Equipment-EX, to wear layered outfits (see below). Every partner in a session needs it too. |
+| `--with-equipment-ex` | Also install Equipment-EX, to wear layered outfits, and with `--with-mods` raem's jewellery made for its slots (see below). Every partner in a session needs it too. |
 | `--without-equipment-ex` | Remove Equipment-EX again. |
 | `--mods-from DIR` | Look for the Nexus Mods downloads in DIR instead of your Downloads folder. |
 
@@ -259,11 +259,26 @@ work with the patch.
 | Iconic Shops | [7215](https://www.nexusmods.com/cyberpunk2077/mods/7215?tab=files) | 3.6.1 or newer | Every iconic item, 74 clothes among them |
 | Zenitex Virtual Atelier | [10090](https://www.nexusmods.com/cyberpunk2077/mods/10090?tab=files) | 4.13 or newer | ScorpionTank's Zenitex military gear |
 | Zenitex Ballistic Mask, Tactical Harness, Combat Jacket, Armor Pads, Panam Pants, Combat Gloves, and Comfy Boots | [12422](https://www.nexusmods.com/cyberpunk2077/mods/12422?tab=files), [9774](https://www.nexusmods.com/cyberpunk2077/mods/9774?tab=files), [19119](https://www.nexusmods.com/cyberpunk2077/mods/19119?tab=files), [12044](https://www.nexusmods.com/cyberpunk2077/mods/12044?tab=files), [10842](https://www.nexusmods.com/cyberpunk2077/mods/10842?tab=files), [19432](https://www.nexusmods.com/cyberpunk2077/mods/19432?tab=files), [11212](https://www.nexusmods.com/cyberpunk2077/mods/11212?tab=files) | 4.1, 4.0, 2.0.1, 4.1, 4.0, 2.0.1, 1.1 | Seven of the outfits the Zenitex store sells: each main file (not Alt. Colors or GS); for Comfy Boots, the Female V and Male V file |
+| Zenitex Military Combat Armor, Ballistic Vest, Combat Boots and Underwear | [13212](https://www.nexusmods.com/cyberpunk2077/mods/13212?tab=files), [14348](https://www.nexusmods.com/cyberpunk2077/mods/14348?tab=files), [14781](https://www.nexusmods.com/cyberpunk2077/mods/14781?tab=files), [20394](https://www.nexusmods.com/cyberpunk2077/mods/20394?tab=files) | 3.3, 3.6, 3.4, 1.5 or newer | Four more Zenitex outfits, each main file (not Garment Support or Alt. Colors) |
+| Zenitex Ops-Core FAST Helmet, Pistol Holsters and Backpack | [13557](https://www.nexusmods.com/cyberpunk2077/mods/13557?tab=files), [18002](https://www.nexusmods.com/cyberpunk2077/mods/18002?tab=files), [18152](https://www.nexusmods.com/cyberpunk2077/mods/18152?tab=files) | 3.4, 1.5, 1.5 or newer | Three more, each main file; they need Phantom Liberty, and are left out without it |
+| Zenitex Combat Goggles and Balaclava Pack | [17049](https://www.nexusmods.com/cyberpunk2077/mods/17049?tab=files), [17411](https://www.nexusmods.com/cyberpunk2077/mods/17411?tab=files) | 1.4, 2.1 or newer | Military accessories: goggles and balaclavas, each main file |
 | The RVC00N Dumpster 3 | [25981](https://www.nexusmods.com/cyberpunk2077/mods/25981?tab=files) | 21.0.0 or newer | PinkyDude's store: on computers, and at its own shop behind Dakota's garage (VendorsXL) |
 | The RVC00N Dumpster: Goliath Coat and Cityfolk Hoodie | [36516](https://www.nexusmods.com/cyberpunk2077/mods/36516?tab=files), [37493](https://www.nexusmods.com/cyberpunk2077/mods/37493?tab=files) | 1.0.0, 1.0.2 or newer | Two of PinkyDude's garments for game 2.5 |
 | The RVC00N Dumpster: the other 24 garments its store sells | [26000](https://www.nexusmods.com/cyberpunk2077/mods/26000?tab=files), [26996](https://www.nexusmods.com/cyberpunk2077/mods/26996?tab=files), [27128](https://www.nexusmods.com/cyberpunk2077/mods/27128?tab=files), [27304](https://www.nexusmods.com/cyberpunk2077/mods/27304?tab=files), [33439](https://www.nexusmods.com/cyberpunk2077/mods/33439?tab=files), [34748](https://www.nexusmods.com/cyberpunk2077/mods/34748?tab=files), [27709](https://www.nexusmods.com/cyberpunk2077/mods/27709?tab=files), [27736](https://www.nexusmods.com/cyberpunk2077/mods/27736?tab=files), [31662](https://www.nexusmods.com/cyberpunk2077/mods/31662?tab=files), [20042](https://www.nexusmods.com/cyberpunk2077/mods/20042?tab=files), [12757](https://www.nexusmods.com/cyberpunk2077/mods/12757?tab=files), [26048](https://www.nexusmods.com/cyberpunk2077/mods/26048?tab=files), [26873](https://www.nexusmods.com/cyberpunk2077/mods/26873?tab=files), [31111](https://www.nexusmods.com/cyberpunk2077/mods/31111?tab=files), [16402](https://www.nexusmods.com/cyberpunk2077/mods/16402?tab=files), [26049](https://www.nexusmods.com/cyberpunk2077/mods/26049?tab=files), [26050](https://www.nexusmods.com/cyberpunk2077/mods/26050?tab=files), [26818](https://www.nexusmods.com/cyberpunk2077/mods/26818?tab=files), [35536](https://www.nexusmods.com/cyberpunk2077/mods/35536?tab=files), [26982](https://www.nexusmods.com/cyberpunk2077/mods/26982?tab=files), [32638](https://www.nexusmods.com/cyberpunk2077/mods/32638?tab=files), [32329](https://www.nexusmods.com/cyberpunk2077/mods/32329?tab=files), [28660](https://www.nexusmods.com/cyberpunk2077/mods/28660?tab=files), [27455](https://www.nexusmods.com/cyberpunk2077/mods/27455?tab=files) | the current file of each | Knife Bandolier, Bunny Slippers, Saul's Pants, Collarless CrystalJock Bomber, Master Chief Evolved Suit, Indiana Jones Outfit, The Fifth Element Collection (its ALL IN ONE file), Cityfolk Short Jacket, Jackie's Jacket, Stinky Burnt Top, Stinky Slashed Top, Stinky Croptop, Yeehaw Collar Shirt, Chuckwalla Tight T-Shirt, Stinky Mechanic Pants, Stinky Quilted Pants, Stinky Bootcut Jeans, Stinky Leather Jeans, David Martinez's Pants, Yeehaw Spur Boots, Latex Succubus Tail, Trauma Team Jumpsuit, Dexter DeShawn's outfit (Pants, Vest and Shoes), PinkyBlume Croptop Shirt |
 | Street Ninja Remake: its MAIN file and its Streetwear Shop | [36978](https://www.nexusmods.com/cyberpunk2077/mods/36978?tab=files) | 1.14.0, 1.12.0 or newer | 652 streetwear pieces for both V, in four layers |
-| Nola Dreamer's Accessories store, with AirPods Max and six accessories | [14299](https://www.nexusmods.com/cyberpunk2077/mods/14299?tab=files), [28288](https://www.nexusmods.com/cyberpunk2077/mods/28288?tab=files), [14371](https://www.nexusmods.com/cyberpunk2077/mods/14371?tab=files), [16722](https://www.nexusmods.com/cyberpunk2077/mods/16722?tab=files), [11685](https://www.nexusmods.com/cyberpunk2077/mods/11685?tab=files), [15704](https://www.nexusmods.com/cyberpunk2077/mods/15704?tab=files), [14324](https://www.nexusmods.com/cyberpunk2077/mods/14324?tab=files), [14269](https://www.nexusmods.com/cyberpunk2077/mods/14269?tab=files) | 1.8, 1.1 and the current file of each | AirPods Max, Barbed accessories, Bracelets collection, heart choker and garters, Mini dress and glasses, Moon accessories, Spiked Collar. The store sells the glasses of Mini dress and glasses; the dress itself is sold by Nola Dreamer Virtual Boutique, which the set does not install, so add it with the codes on its page |
+| Nola Dreamer's Accessories store, with AirPods Max and six accessories | [14299](https://www.nexusmods.com/cyberpunk2077/mods/14299?tab=files), [28288](https://www.nexusmods.com/cyberpunk2077/mods/28288?tab=files), [14371](https://www.nexusmods.com/cyberpunk2077/mods/14371?tab=files), [16722](https://www.nexusmods.com/cyberpunk2077/mods/16722?tab=files), [11685](https://www.nexusmods.com/cyberpunk2077/mods/11685?tab=files), [15704](https://www.nexusmods.com/cyberpunk2077/mods/15704?tab=files), [14324](https://www.nexusmods.com/cyberpunk2077/mods/14324?tab=files), [14269](https://www.nexusmods.com/cyberpunk2077/mods/14269?tab=files) | 1.8, 1.1 and the current file of each | AirPods Max, Barbed accessories, Bracelets collection, heart choker and garters, Mini dress and glasses, Moon accessories, Spiked Collar. The store sells the glasses of Mini dress and glasses; Nola Dreamer Virtual Boutique (below) sells the dress |
+| Nola Dreamer Virtual Boutique: ND_female_virtual_boutique | [5114](https://www.nexusmods.com/cyberpunk2077/mods/5114?tab=files) | 7.6 or newer | Nola Dreamer's clothes store; of what the set installs, it sells the mini dress |
+
+**Hair** (the character creator, a mirror in an apartment, or a ripperdoc)
+
+| Mod | Nexus | For game 2.5 | What it is |
+| --- | --- | --- | --- |
+| Preem Hair: its 2K file | [8223](https://www.nexusmods.com/cyberpunk2077/mods/8223?tab=files) | 3.0.0 or newer | Sharper textures for the game's own hairstyles, V's and NPCs' (it replaces them) |
+| Wolfcut Hair Collection: Messy Wolfcut, Emo Wolfcut, Hime Short, Hime Medium and Hime Long Jelly, each its CCXL file | [16697](https://www.nexusmods.com/cyberpunk2077/mods/16697?tab=files) | 2.0 or newer | 14 wolfcut hairstyles with physics; Messy and Emo for both V, the Hime cuts for Fem V |
+| Subleader Hair Pack: its AllInOne file | [19268](https://www.nexusmods.com/cyberpunk2077/mods/19268?tab=files) | 1.09 or newer | 14 hairstyles for Fem V (a rar archive) |
+| Hyst Hair Collection: its ALL IN ONE file | [21766](https://www.nexusmods.com/cyberpunk2077/mods/21766?tab=files) | 1.2 or newer | 7 hairstyles for Fem V |
+| Original Collection (meluminary): its HAIR MEGAPAK | [19197](https://www.nexusmods.com/cyberpunk2077/mods/19197?tab=files) | 5.0.0 or newer | 20 hairstyles for Fem V |
+| Undercut Hair Collection: HAIR 01 to 04 | [19907](https://www.nexusmods.com/cyberpunk2077/mods/19907?tab=files) | 1.0, 1.0, 1.0, 1.1 or newer | Four undercuts for Masc V |
 
 **Vehicles** (Virtual Car Dealer, on in-game computers)
 
@@ -306,6 +321,16 @@ Every piece of the set is wearable without it, one per game slot. It is a set of
 because NightCoop lists it as a known overlap: NightCoop sends looks by its slots, so a
 partner without it sees other slots, and it overrides photo-mode functions. Use it only if
 everyone you play with does. `--without-equipment-ex` removes it again.
+
+With the mod set too, it brings raem's jewellery, made for Equipment-EX's neck, wrist and
+hand slots (without it, a ring would take the whole torso slot):
+
+| Mod | Nexus | Version | What it adds |
+| --- | --- | --- | --- |
+| V's Bullet Necklace, its main file | [15076](https://www.nexusmods.com/cyberpunk2077/mods/15076?tab=files) | 1.1 or newer | V's bullet necklace, with physics |
+| Chain Jewelry Collection, its main file | [15861](https://www.nexusmods.com/cyberpunk2077/mods/15861?tab=files) | 1.2 or newer | Six chain necklaces and two bracelets |
+| Reyes Accessories, its main file | [17069](https://www.nexusmods.com/cyberpunk2077/mods/17069?tab=files) | 1.1 or newer | Reyes' watch, bracelets and rings |
+| raem's Atelier Store: Accessories - Main Store, among the optional files | [14210](https://www.nexusmods.com/cyberpunk2077/mods/14210?tab=files) | 2.0 or newer | The store that sells them (not raem's other stores, which would stay empty) |
 
 A download older than its minimum is passed over, with the reason. Nexus Mods does not let
 scripts download files (a browser check, and an API that needs each user's key; downloads
@@ -359,8 +384,19 @@ new release of the mod changes the file it ships, and your copy is backed up fir
   only adds its own slots, so that layered pieces can be worn together. NightCoop sends
   looks by the game slot when Equipment-EX is absent. This also holds for the seven Zenitex
   outfits whose pages list Equipment-EX, which earlier versions of this script left out
-  (an earlier note here said ten); you can add them by hand. NC Fashion's store lists
+  (an earlier note here said ten); the set has them now. NC Fashion's store lists
   Equipment-EX as mandatory and is left out.
+- **Hairstyles.** NightCoop draws a partner's V from their character-creator choices, with
+  your game's own files, and leaves out an option your game does not have. Preem Hair
+  replaces the textures of the game's own hairstyles: a partner without it sees the game's.
+  The other hair mods add hairstyles to the character creator (ArchiveXL's CCXL; choose them
+  there, at a mirror or at a ripperdoc), so a partner without the same mod sees your V
+  without that hairstyle. Keep the mod set the same for everyone, and switch V to a game
+  hairstyle before you remove the set.
+- **Phantom Liberty.** Three Zenitex pieces need it: the Ops-Core FAST Helmet, the Pistol
+  Holsters and the Backpack. Without the expansion (no `archive/pc/ep1` in the game folder)
+  the installer leaves them out and says so; a partner without it sees no helmet, and plain
+  game pieces for the others.
 - **The RVC00N Dumpster 3, VendorsXL and Deceptious Quest Core.** VendorsXL places vendors
   in the world. It replaces the game's vendor restocking for every vendor, with a copy that
   raises stock limits; NightCoop does not list that function. Deceptious Quest Core is
@@ -604,8 +640,12 @@ installation. It covers:
     photo-mode clothes passed over;
   - mods that an earlier version installed and the set no longer has, removed on the next
     run, by name;
+- Zenitex's military gear, Nola Dreamer's boutique and the hairstyles, with the
+  files each rule passes over (Preem Hair's 4K file, Garment Support and Alt. Colors files,
+  single hairs beside an all-in-one file, old replacer versions, raem's other stores), and
+  the Zenitex pieces that need Phantom Liberty left out, with the reason, where it is missing;
 - Equipment-EX: only with `--with-equipment-ex`, alone or with the mod set, and removed
-  again with `--without-equipment-ex`;
+  again with `--without-equipment-ex`; raem's jewellery only with both;
 - the fixtures' add-on table matching the installer's, so that a change to one shows;
 - install, update, restore and uninstall back to a byte-identical game folder.
 
