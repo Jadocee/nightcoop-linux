@@ -520,6 +520,13 @@ new release of the mod changes the file it ships, and your copy is backed up fir
   callbacks of player bodies, and partners' bodies are player bodies too, so a partner
   changing view would move yours. A bridge can skip both in a session, through NightCoop's
   SDK; none is shipped until it has been compiled and tried.
+- **Equipment-EX NightCoop Compatibility Bridge is left out.** It replaces NightCoop's
+  plugin (`red4ext/plugins/NightCoop/NightCoop.dll`) with a copy of 0.2.0-beta whose machine
+  code is patched in nine places. It works only with that release and Equipment-EX 1.2.10,
+  every player must install it, and its author lists its current release as untested in
+  game. NightCoop asks mods to ship only their own files. If you install it by hand,
+  `check` reports NightCoop's plugin as changed, and the next run puts the official one back
+  (the other is kept in the backup).
 - **Quick Stash in co-op:** everyone in a session plays in the host's world, so the stash a
   guest opens there is not the guest's own. Move items in your own game, or as the host;
   the script reminds you of this.
