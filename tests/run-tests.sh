@@ -361,6 +361,26 @@ cp "$T/good.zip" "$Z"
 expect "an archive that does not match its SHA-256 is refused before anything changes" '[ $RC != 0 ] && [[ "$OUT" == *"SHA-256 mismatch for TweakXL-1.12.0.zip"* ]] && [ "$BEFORE" = "$(snapshot "$G")" ]' "$OUT"
 
 # ----------------------------------------------------------------- mods ----
+section "A GitHub download that fails (GitHub answers 504 for redscript's releases at times)"
+newworld ghdown native; OSR="$T/os-arch"; D="$H/Downloads"; mkdir -p "$D"
+RS="redscript-v0.5.32-windows.zip"
+sed "s#file://$FIX/gh/$RS#file://$FIX/gh-unreachable/$RS#" "$NI" > "$T/ni-ghdown.sh"   # its download fails, as GitHub's 504 does
+NI_NOW="$NI"; NI="$T/ni-ghdown.sh"
+run install --yes --with-flight
+expect "the run goes on: NightCoop installs, redscript is listed to download in a browser, and what needs it waits" '[ $RC = 0 ] && [ -f "$G/red4ext/Plugins/NightCoop/NightCoop.dll" ] && [ ! -e "$G/engine/tools/scc_lib.dll" ] && [ ! -e "$G/red4ext/Plugins/let_there_be_flight" ] && [[ "$OUT" == *"could not be downloaded (see above): download each in a browser into $H/Downloads"*"redscript: file://$FIX/gh-unreachable/$RS"* ]] && [[ "$OUT" == *"Let There Be Flight needs redscript, which is not here"* ]]' "$OUT"
+printf 'not redscript' > "$D/$RS"
+run update --yes
+expect "a file of that name with another SHA-256 is not taken" '[ $RC = 0 ] && [ ! -e "$G/engine/tools/scc_lib.dll" ] && [[ "$OUT" == *"redscript: file://$FIX/gh-unreachable/$RS"* ]]' "$OUT"
+cp "$FIX/gh/$RS" "$D/$RS"
+run update --yes
+expect "the copy downloaded in a browser is taken from the Downloads folder (its SHA-256 matching), and what needs it follows" '[ $RC = 0 ] && grep -q "redscript lib 0.5.32" "$G/engine/tools/scc_lib.dll" && [ -f "$G/red4ext/Plugins/let_there_be_flight/let_there_be_flight.dll" ] && [[ "$OUT" != *"could not be downloaded"* ]] && [ -f "$H/.cache/nightcoop-linux/mods/$RS" ]' "$OUT"
+rm "$D/$RS"
+run update --yes
+expect "later runs use the script's own copy, and an installed redscript stays when its download fails" '[ $RC = 0 ] && [[ "$OUT" == *"everything is up to date; nothing to do"* ]]' "$OUT"
+rm "$H/.cache/nightcoop-linux/mods/$RS"; run update --yes
+expect "with no copy at all, the installed redscript stays, said so" '[ $RC = 0 ] && grep -q "redscript lib 0.5.32" "$G/engine/tools/scc_lib.dll" && [[ "$OUT" == *"keeping the installed redscript: its download failed"* ]]' "$OUT"
+NI="$NI_NOW"
+
 section "Mods (--with-mods): Virtual Atelier and its stores, Virtual Car Dealer, Drive an Aerial Vehicle, Cyber Drift and more"
 newworld mods native; OSR="$T/os-arch"
 D="$H/Downloads"; mkdir -p "$D"; NX="$FIX/nexus"

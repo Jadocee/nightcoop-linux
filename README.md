@@ -224,6 +224,7 @@ WINEDLLOVERRIDES="winmm,version=n,b" MANGOHUD=1 game-performance %command% --lau
 | `--save-nexus-key` | Ask for your Nexus Mods API key (it is not shown) and keep it in `~/.config/nightcoop-linux/nexus-api-key`, readable by you alone. With a Premium account's key, this run and later ones download the Nexus mods themselves (see [Downloads through the Nexus Mods API](#downloads-through-the-nexus-mods-api)). |
 | `--nexus-key-file FILE` | Read the key from FILE this time. Without this option the key comes from `NEXUS_API_KEY`, or else from the file above. |
 | `--no-nexus-api` | Do not use a Nexus Mods API key this time. |
+| `--no-github-downloads` | Download nothing from GitHub: take RED4ext and the frameworks' release archives (redscript, ArchiveXL, TweakXL and the rest) from your Downloads folder, or the `--mods-from` folder, under their release names. Each is checked against the SHA-256 the script pins; the run lists the links of any it does not find. |
 
 When Steam is running, its two settings are not written, but the registry override alone
 lets the mod load. The script then prints the launch options and the Proton choice for you
@@ -665,6 +666,13 @@ Start with `check`.
   NightCoop bundles, and leaves the mod sets as they are.
 - **A mod of the set is not installed.** `check` lists it as missing. Download it from the
   page the script prints, keeping Nexus's file name, and run the script again.
+- **A download from GitHub fails** (GitHub answers 504 for redscript's releases at
+  times, while a browser gets the file). The run goes on without that framework and the
+  mods that need it, and lists its link: download the file in a browser into your
+  Downloads folder (or the `--mods-from` folder), keeping its name, and run the script
+  again. It takes the file only when its SHA-256 matches the one the script pins, and keeps
+  a copy in `~/.cache/nightcoop-linux/mods` for later runs. With `--no-github-downloads`
+  the script does not try GitHub at all and takes these files from that folder only.
 - **"Nexus Mods does not accept the API key (401)".** The key was revoked or mistyped:
   make a new one on the [API keys page](https://next.nexusmods.com/settings/api-keys) and
   run the script with `--save-nexus-key`.
