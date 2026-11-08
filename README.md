@@ -71,8 +71,8 @@ The main menu then shows a **Co-op** entry ("Совместная игра" in R
    places:
    - It adds `winmm = native,builtin` for `Cyberpunk2077.exe` to the prefix's registry.
      This works while Steam is open.
-   - When Steam is closed, it also merges `WINEDLLOVERRIDES="winmm=n,b"` into the game's
-     launch options, keeping every other option.
+   - When Steam is closed, it also writes the game's launch options, starting with
+     `WINEDLLOVERRIDES="winmm=n,b"` (see [Launch options](#launch-options)).
 
    If Cyber Engine Tweaks is installed, by you or with the mod set, its `version.dll`
    loader gets the same override.
@@ -130,14 +130,16 @@ prefix to another Proton version, it replaces only Wine's own files.
 ## Launch options
 
 Steam's launch options take the form `[variables] [wrappers] %command% [game arguments]`.
-The script merges its parts into what is already there and keeps everything else, such as
-`gamemoderun`, `prime-run` or `gamescope … --`.
+The script writes the whole line from the parts below and nothing else: other variables,
+wrappers (`gamemoderun`, `prime-run`, `gamescope … --`) and game arguments are replaced.
+The earlier line is kept in the run's backup folder (`launch-options.txt`), and the script
+says so; add anything you need back under Properties after the run.
 
 | Part | Added | What it does |
 | --- | --- | --- |
 | `WINEDLLOVERRIDES="winmm=n,b"` | Always. It becomes `winmm,version` once Cyber Engine Tweaks is installed. | Required: without it, Wine ignores RED4ext's loader (and Cyber Engine Tweaks'). |
 | `game-performance` | When it can run: native Steam, CachyOS's `game-performance`, and `powerprofilesctl` (power-profiles-daemon). A newer `game-performance` that supports TLP's `tlpctl` can use that instead; cachyos-settings 1.4.1 does not. | Runs the game in the performance power profile, and restores the previous profile when the game exits. It goes last, right before `%command%`. |
-| `MANGOHUD=1` | Only with `--mangohud`, and only when MangoHud is installed. | Shows MangoHud's overlay in the game. |
+| `MANGOHUD=1` | With `--mangohud`, or when the line had MangoHud already; only where MangoHud is installed. | Shows MangoHud's overlay in the game. |
 | `--launcher-skip` | Unless `--no-launcher-skip` is given. | Starts the game without CDPR's launcher window, which adds nothing under Proton. |
 
 Nothing else is required. No mod in the sets is a REDmod, so `-modded` is not needed, and
@@ -157,8 +159,8 @@ Audioware, Mod Settings and the other frameworks need no variables.
     The wrapper sets it too, along with an OpenGL hook the game does not use. Unlike the
     wrapper, the variable cannot stop the game from starting if MangoHud is removed later.
   - It is not added on SteamOS, whose own performance overlay (Quick Access menu >
-    Performance) shows the same. Nor is it added when the game runs in gamescope, where
-    MangoHud's overlay is not supported; use gamescope's `--mangoapp` instead.
+    Performance) shows the same.
+  - Once in the line, it stays on later runs while MangoHud can run there.
   - Flatpak Steam needs the `org.freedesktop.Platform.VulkanLayer.MangoHud` extension for
     Steam's runtime; the script names the one to install.
   - `--no-mangohud` takes MangoHud out again, including the `mangohud` wrapper.
@@ -510,7 +512,8 @@ new release of the mod changes the file it ships, and your copy is backed up fir
 - **Remove NightCoop completely:** run `uninstall`. This restores the game folder
   exactly, keeping other RED4ext plugins you installed yourself, and puts back the
   prefix runtime and registry. Steam's launch options and Proton choice are left as they
-  are; change them under Properties if you wish. Saves are never touched.
+  are; change them under Properties if you wish (the line from before the first install is
+  in its backup folder, `launch-options.txt`). Saves are never touched.
 - Backups made by the earlier Bazzite script (`~/nightcoop-backup-*`) can still be
   restored.
 

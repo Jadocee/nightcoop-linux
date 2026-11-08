@@ -975,79 +975,35 @@ def lo_uses(s):
     return used
 
 
-def lo_wish_met(s, wish):
-    """wish: +game-performance, -game-performance, +mangohud or -mangohud."""
-    used = lo_uses(s)
-    on = 'game-performance' in used if wish[1:] == 'game-performance' else bool({'mangohud', 'MANGOHUD=1'} & set(used))
-    return on == (wish[0] == '+')
-
-
-def lo_wrap(s, wrap):
-    """Apply the wishes to the words before %command%. game-performance goes last, right
-    before %command% (CachyOS's order); MANGOHUD=1 goes after the DLL overrides."""
-    i = s.index('%command%')
-    words, rest = lo_prefix(s), s[i:]
-    for wish in [w for w in wrap.split(',') if w]:
-        if lo_wish_met(' '.join(words + [rest]), wish):
-            continue
-        op, name = wish[0], wish[1:]
-        if name == 'game-performance':
-            words = words + [name] if op == '+' else [w for w in words if lo_name(w) != name]
-        elif op == '-':   # the wrapper (with its --dlsym) and the variable
-            kept, after = [], False
-            for w in words:
-                if not (after and w == '--dlsym') and lo_name(w) != 'mangohud' and not w.startswith('MANGOHUD='):
-                    kept.append(w)
-                after = lo_name(w) == 'mangohud'
-            words = kept
-        else:
-            k = next((j for j, w in enumerate(words) if w.startswith('MANGOHUD=')), None)
-            if k is not None:
-                words[k] = 'MANGOHUD=1'
-            else:
-                k = next((j for j, w in enumerate(words) if w.startswith('WINEDLLOVERRIDES=')), -1)
-                words.insert(k + 1, 'MANGOHUD=1')
-    return ' '.join(words + [rest])
+def lo_build(dlls='winmm', args='', wrap=''):
+    """The whole launch option line the script writes: the DLL overrides native-first, MANGOHUD=1 and
+    game-performance when wished (game-performance right before %command%, CachyOS's order), %command%
+    and the game arguments. It replaces what was there."""
+    wishes = [w for w in wrap.split(',') if w]
+    words = ['WINEDLLOVERRIDES="%s=n,b"' % ','.join(d for d in dlls.split(',') if d)]
+    if '+mangohud' in wishes:
+        words.append('MANGOHUD=1')
+    if '+game-performance' in wishes:
+        words.append('game-performance')
+    return ' '.join(words + ['%command%'] + args.split())
 
 
 def lo_state(s, dlls='winmm', args='', wrap=''):
-    """ok: every DLL in dlls is native-first before %command%, every argument is present and
-    every wrapper wish is met; broken: the override sits after %command% (Steam passes it to
-    the game as an argument); missing: anything else."""
-    s, dlls = s or '', [d for d in dlls.split(',') if d]
-    m, modes = wdo_modes(s)
-    if not m or any(not modes.get(d, '').startswith('n') for d in dlls):
-        return 'missing'
-    if '%command%' not in s or m.start() > s.index('%command%'):
+    """ok: the line is the one the script writes (lo_build); broken: the DLL override sits after
+    %command% (Steam passes it to the game as an argument); missing: anything else."""
+    s = (s or '').strip()
+    if ' '.join(s.split()) == lo_build(dlls, args, wrap):
+        return 'ok'
+    m, _ = wdo_modes(s)
+    if m and '%command%' in s and m.start() > s.index('%command%'):
         return 'broken'
-    if not all(a in s.split() for a in args.split()):
-        return 'missing'
-    return 'ok' if all(lo_wish_met(s, w) for w in wrap.split(',') if w) else 'missing'
+    return 'missing'
 
 
 def lo_merge(s, dlls='winmm', args='', wrap=''):
-    """Make the DLLs native-first, add the game arguments and apply the wrapper wishes,
-    keeping every other override, variable, wrapper (gamemoderun, gamescope, ...) and argument."""
-    s, dlls = (s or '').strip(), [d for d in dlls.split(',') if d]
-    m, _ = wdo_modes(s)
-    keep = []
-    for e in m.group(1).strip('"\'').split(';') if m else []:
-        names, eq, md = e.partition('=')
-        rest = [n for n in names.split(',') if n.strip() and dll_names(n)[0] not in dlls]
-        if rest:
-            keep.append(','.join(rest) + eq + md)
-    tok = 'WINEDLLOVERRIDES="' + ';'.join(keep + [','.join(dlls) + '=n,b']) + '"'
-    if m and '%command%' in s and m.start() < s.index('%command%'):
-        s = s[:m.start()] + tok + s[m.end():]
-    else:
-        if m:
-            s = re.sub(r'\s+', ' ', (s[:m.start()] + ' ' + s[m.end():]).strip())
-        s = tok + ' ' + s if '%command%' in s else (tok + ' %command% ' + s).strip()
-    for a in args.split():
-        if a not in s.split():
-            i = s.index('%command%') + len('%command%')
-            s = s[:i] + ' ' + a + s[i:]
-    return lo_wrap(s.strip(), wrap) if wrap else s.strip()
+    """The line to write: the script's own (lo_build). Other variables, wrappers and arguments that
+    were there are not kept: the script writes the whole line."""
+    return lo_build(dlls, args, wrap)
 
 
 def lo_files(root):
@@ -2025,10 +1981,11 @@ wrap_plan() {   # wrap_plan <launch options>: WRAP, the wrapper wishes for the l
     GP_WANT="${GP_OPT:-$(setting game-performance)}"
     GP_WHY="$(gp_problem)" MH_MISSING="$(mh_missing)"
     MH_WHY="$MH_MISSING"
-    [[ "$used" != *" gamescope "* ]] || MH_WHY="the launch options run the game in gamescope, where MangoHud's own overlay is not supported (gamescope's --mangoapp option shows it)"
     [ "$OS_FAMILY" != steamos ] || MH_WHY="SteamOS has its own performance overlay (Quick Access menu > Performance)"
     if [ "$GP_WANT" = off ] || [ -n "$GP_WHY" ]; then WRAP="-game-performance"; else WRAP="+game-performance"; fi
-    case "$MH_OPT" in on) [ -n "$MH_WHY" ] || WRAP+=",+mangohud" ;; off) WRAP+=",-mangohud" ;; esac
+    # the script writes the whole line: MangoHud stays when it was there and can run, or when asked for
+    local mh="$MH_OPT"; [ -n "$mh" ] || [ "$MH_USED" = 0 ] || mh=on
+    case "$mh" in on) [ -n "$MH_WHY" ] || WRAP+=",+mangohud" ;; off) WRAP+=",-mangohud" ;; esac
 }
 wrap_notes() {   # install: what happens to game-performance and MangoHud in the launch options
     if [ "$GP_USED" = 1 ] && [ -n "$GP_WHY" ]; then
@@ -2042,13 +1999,14 @@ wrap_notes() {   # install: what happens to game-performance and MangoHud in the
         info "game-performance is not added: $GP_WHY"
     fi
     case "$MH_OPT" in
-        on) if [ "$MH_USED" = 1 ]; then ok "MangoHud is already in the launch options"
+        on) if [ -n "$MH_WHY" ] && [ "$MH_USED" = 1 ]; then info "MangoHud: taken out of the launch options: $MH_WHY"
             elif [ -n "$MH_WHY" ]; then info "MangoHud is not added: $MH_WHY"
+            elif [ "$MH_USED" = 1 ]; then ok "MangoHud is already in the launch options"
             else info "MangoHud: MANGOHUD=1 shows its overlay in the game (--no-mangohud takes it out)"; fi ;;
         off) if [ "$MH_USED" = 1 ]; then info "MangoHud: taken out of the launch options (--no-mangohud)"
              else info "--no-mangohud: MangoHud is not in the launch options"; fi ;;
-        *) if [ "$MH_WRAPPER" = 1 ] && [ -n "$MH_MISSING" ]; then
-               warn "the launch options run mangohud, but $MH_MISSING: the game will not start; install it, or run this again with --no-mangohud"
+        *) if [ "$MH_USED" = 1 ] && [ -n "$MH_WHY" ]; then
+               info "MangoHud: taken out of the launch options: $MH_WHY"
            elif [ "$MH_USED" = 0 ] && [ -z "$MH_WHY" ]; then
                info "MangoHud is installed: --mangohud shows its overlay in the game"
            fi ;;
@@ -2064,7 +2022,7 @@ wrap_rows() {   # check: game-performance and MangoHud
     fi
     if [ "$MH_WRAPPER" = 1 ] && [ -n "$MH_MISSING" ]; then
         row "MangoHud" "in the launch options, but $MH_MISSING"
-        warn "the game will not start this way; install MangoHud, or run '$0 --no-mangohud' with Steam closed"
+        warn "the game will not start this way; install MangoHud, or run '$0' with Steam closed to take it out"
     elif [ "$MH_USED" = 1 ]; then row "MangoHud" "in the launch options"
     elif [ -z "$MH_WHY" ]; then row "MangoHud" "installed; '$0 --mangohud' shows its overlay in the game"
     fi
@@ -3104,6 +3062,10 @@ apply_steam_settings() {
     fi
     case "$LO_STATE" in missing|broken) ;; *) return 0 ;; esac
     bold "Writing Steam launch options"
+    if [ -n "$LO_VALUE" ]; then   # the script writes the whole line: the earlier one, for reference
+        mkdir -p "$BACKUP" && printf '%s\n' "$LO_VALUE" > "$BACKUP/launch-options.txt"
+        info "the launch options are replaced as a whole; the earlier ones are kept in $BACKUP/launch-options.txt"
+    fi
     while IFS=$'\x1f' read -r f res; do info "user $(basename "$(dirname "$(dirname "$f")")"): $res"; done \
         < <(py lo-set "$STEAM_ROOT" "$APPID" "$DLLS" "$GAME_ARGS" "$WRAP")
     IFS=$'\x1f' read -r LO_STATE LO_VALUE LO_WINMM < <(py lo-status "$STEAM_ROOT" "$APPID" "$DLLS" "$GAME_ARGS" "$WRAP") || true

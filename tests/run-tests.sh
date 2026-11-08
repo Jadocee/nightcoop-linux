@@ -95,29 +95,20 @@ tool() { hp ct-get "$STEAM" 1091500 | cut -d$'\x1f' -f1; }
 newest_backup() { find "$H/.local/share/nightcoop-linux/backups" -mindepth 1 -maxdepth 1 -type d | sort | tail -n1 | sed "s,$,/,"; }
 
 # ---------------------------------------------------------------- helpers ----
-section "Launch option merging"
+section "Launch options: the script writes the whole line"
 lo() { hp lo-merge "$1" "${3:-winmm}" "${4:-}" "${5:-}" | cut -d$'\x1f' -f"$2"; }   # lo <line> <field> [dlls] [args] [wrappers]
 expect "empty"                       '[ "$(lo "" 2)" = "WINEDLLOVERRIDES=\"winmm=n,b\" %command%" ]'
-expect "arguments only"              '[ "$(lo "--launcher-skip" 2)" = "WINEDLLOVERRIDES=\"winmm=n,b\" %command% --launcher-skip" ]'
-expect "CachyOS wrapper kept"        '[ "$(lo "game-performance %command%" 2)" = "WINEDLLOVERRIDES=\"winmm=n,b\" game-performance %command%" ]'
-expect "other overrides kept"        '[ "$(lo "WINEDLLOVERRIDES=\"version=n,b\" %command%" 2)" = "WINEDLLOVERRIDES=\"version=n,b;winmm=n,b\" %command%" ]'
-expect "builtin winmm corrected"     '[ "$(lo "WINEDLLOVERRIDES=winmm=b mangohud %command%" 2)" = "WINEDLLOVERRIDES=\"winmm=n,b\" mangohud %command%" ]'
-expect "combined entry recognised"   '[ "$(lo "WINEDLLOVERRIDES=\"winmm,version=n,b\" %command%" 1)" = ok ]'
-expect "override after %command%"    '[ "$(lo "%command% WINEDLLOVERRIDES=winmm=n,b" 1)" = broken ]'
-expect "moved before %command%"      '[ "$(lo "%command% WINEDLLOVERRIDES=winmm=n,b" 2)" = "WINEDLLOVERRIDES=\"winmm=n,b\" %command%" ]'
-expect "--launcher-skip added after %command%" '[ "$(lo "game-performance %command% -skipStartScreen" 2 winmm --launcher-skip)" = "WINEDLLOVERRIDES=\"winmm=n,b\" game-performance %command% --launcher-skip -skipStartScreen" ]'
-expect "missing argument means not done" '[ "$(lo "WINEDLLOVERRIDES=\"winmm=n,b\" %command%" 1 winmm --launcher-skip)" = missing ]'
+expect "with the game arguments it adds" '[ "$(lo "" 2 winmm --launcher-skip)" = "WINEDLLOVERRIDES=\"winmm=n,b\" %command% --launcher-skip" ]'
+expect "everything else is replaced: other overrides, variables, wrappers and arguments" '[ "$(lo "WINEDLLOVERRIDES=\"dxgi=n,b\" DXVK_HUD=fps gamemoderun %command% -skipStartScreen" 2 winmm --launcher-skip)" = "WINEDLLOVERRIDES=\"winmm=n,b\" %command% --launcher-skip" ]'
 expect "Cyber Engine Tweaks loader joins" '[ "$(lo "WINEDLLOVERRIDES=\"winmm=n,b\" %command%" 2 winmm,version)" = "WINEDLLOVERRIDES=\"winmm,version=n,b\" %command%" ]'
-expect "game-performance goes last, right before %command%" '[ "$(lo "prime-run %command%" 2 winmm "" +game-performance)" = "WINEDLLOVERRIDES=\"winmm=n,b\" prime-run game-performance %command%" ]'
-expect "game-performance not doubled" '[ "$(lo "WINEDLLOVERRIDES=\"winmm=n,b\" game-performance %command%" 1 winmm "" +game-performance)" = ok ]'
-expect "game-performance taken out"  '[ "$(lo "WINEDLLOVERRIDES=\"winmm=n,b\" game-performance %command% --launcher-skip" 2 winmm --launcher-skip -game-performance)" = "WINEDLLOVERRIDES=\"winmm=n,b\" %command% --launcher-skip" ]'
-expect "a game argument of that name is not a wrapper" '[ "$(lo "WINEDLLOVERRIDES=\"winmm=n,b\" %command% game-performance" 1 winmm "" -game-performance)" = ok ]'
-expect "nor is a variable set to a path of that name" '[ "$(lo "WINEDLLOVERRIDES=\"winmm=n,b\" TOOL=/opt/x/game-performance %command%" 1 winmm "" -game-performance)" = ok ]'
-expect "MANGOHUD=1 after the overrides" '[ "$(lo "gamemoderun %command%" 2 winmm "" +mangohud)" = "WINEDLLOVERRIDES=\"winmm=n,b\" MANGOHUD=1 gamemoderun %command%" ]'
-expect "the mangohud wrapper counts as MangoHud" '[ "$(lo "WINEDLLOVERRIDES=\"winmm=n,b\" mangohud %command%" 1 winmm "" +mangohud)" = ok ]'
-expect "MANGOHUD=0 turned on"        '[ "$(lo "MANGOHUD=0 %command%" 2 winmm "" +mangohud)" = "WINEDLLOVERRIDES=\"winmm=n,b\" MANGOHUD=1 %command%" ]'
-expect "MangoHud taken out: wrapper, its --dlsym and the variable" '[ "$(lo "MANGOHUD=1 mangohud --dlsym game-performance %command%" 2 winmm "" -mangohud)" = "WINEDLLOVERRIDES=\"winmm=n,b\" game-performance %command%" ]'
-expect "a quoted value is one word, its spacing kept" '[ "$(lo "DXVK_HUD=\"fps,  memory\" %command%" 2 winmm "" +game-performance)" = "WINEDLLOVERRIDES=\"winmm=n,b\" DXVK_HUD=\"fps,  memory\" game-performance %command%" ]'
+expect "MANGOHUD=1 after the overrides, game-performance right before %command%" '[ "$(lo "prime-run %command%" 2 winmm --launcher-skip +game-performance,+mangohud)" = "WINEDLLOVERRIDES=\"winmm=n,b\" MANGOHUD=1 game-performance %command% --launcher-skip" ]'
+expect "unwished, they are left out (the mangohud wrapper and its --dlsym too)" '[ "$(lo "MANGOHUD=1 mangohud --dlsym game-performance %command%" 2 winmm "" -game-performance,-mangohud)" = "WINEDLLOVERRIDES=\"winmm=n,b\" %command%" ]'
+expect "the line the script writes is ok" '[ "$(lo "WINEDLLOVERRIDES=\"winmm=n,b\" game-performance %command% --launcher-skip" 1 winmm --launcher-skip +game-performance)" = ok ]'
+expect "anything more is not" '[ "$(lo "WINEDLLOVERRIDES=\"winmm=n,b\" gamemoderun %command% --launcher-skip" 1 winmm --launcher-skip)" = missing ]'
+expect "nor anything less" '[ "$(lo "WINEDLLOVERRIDES=\"winmm=n,b\" %command%" 1 winmm --launcher-skip)" = missing ]'
+expect "an override after %command% is broken" '[ "$(lo "%command% WINEDLLOVERRIDES=winmm=n,b" 1)" = broken ]'
+expect "what a line runs: wrappers before %command%, not game arguments or variables" '[ "$(hp lo-uses "MANGOHUD=1 TOOL=/opt/x/game-performance gamescope -- %command% game-performance")" = "MANGOHUD=1 gamescope" ]'
+expect "a quoted value is one word" '[ "$(hp lo-uses "DXVK_HUD=\"fps,  game-performance\" mangohud --dlsym %command%")" = mangohud ]'
 
 section "The fixtures' add-on table"
 rows() { awk -v n="$2" 'NF == n { $NF = ""; if (n == 9) $(NF - 1) = ""; print }' "$1" | sort; }   # rows <file> <fields>: without source and SHA-256
@@ -184,7 +175,7 @@ expect "runtime upgraded to 14.51"    '[ "$(hp pever "$PFX/drive_c/windows/syste
 expect "installer run with runinprefix" 'grep -q "^runinprefix .*vc_redist.x64.exe /install /quiet /norestart" "$PFX/../fake-proton.log"'
 expect "newest installer chosen over Steamworks 14.44" '[[ "$OUT" == *"installer: $H/.cache/nightcoop-linux/vc_redist.x64.exe (14.51.36247.0)"* ]]' "$OUT"
 expect "registry override written"    '[ "$(hp reg-get "$PFX/user.reg" "$REG_KEY" winmm)" = native,builtin ]'
-expect "launch options merged"        '[ "$(launch_opts)" = "WINEDLLOVERRIDES=\\\"winmm=n,b\\\" gamemoderun %command% --launcher-skip" ]' "$(launch_opts)"
+expect "launch options written whole, the earlier line kept in the backup" '[ "$(launch_opts)" = "WINEDLLOVERRIDES=\\\"winmm=n,b\\\" %command% --launcher-skip" ] && [ "$(cat "$H"/.local/share/nightcoop-linux/backups/*/launch-options.txt)" = "gamemoderun %command% --launcher-skip" ] && [[ "$OUT" == *"the launch options are replaced as a whole; the earlier ones are kept in"* ]]' "$(launch_opts)"
 expect "Proton Experimental chosen for the game" '[ "$(tool)" = proton_experimental ] && [[ "$OUT" == *"Proton for the game:"*"proton_experimental (chosen in Steam)"* ]]' "$OUT"
 expect "saves backed up"              '[ -f "$(newest_backup)Saved Games/ManualSave-0/sav.dat" ]'
 expect "check reports NightCoop"      '[[ "$OUT" == *"NightCoop:"*"0.2.0.0"*"release 0.2.0-beta"* ]]' "$OUT"
@@ -232,14 +223,14 @@ run install --yes
 expect "install succeeds with Steam open" '[ $RC = 0 ]' "$OUT"
 expect "Steam's files not touched"    '[ "$(launch_opts)" = "gamemoderun %command% --launcher-skip" ] && [ -z "$(tool)" ]'
 expect "registry override still set"  '[ "$(hp reg-get "$PFX/user.reg" "$REG_KEY" winmm)" = native,builtin ]'
-expect "launch options recommended"   '[[ "$OUT" == *"Recommended (the prefix override already lets the mod load)"*"WINEDLLOVERRIDES=\"winmm=n,b\" gamemoderun %command% --launcher-skip"* ]]' "$OUT"
+expect "launch options recommended"   '[[ "$OUT" == *"Recommended (the prefix override already lets the mod load)"*"WINEDLLOVERRIDES=\"winmm=n,b\" %command% --launcher-skip"* ]]' "$OUT"
 expect "Proton choice explained"      '[[ "$OUT" == *"Properties > Compatibility"*"choose Proton Experimental"* ]]' "$OUT"
 expect "no 'manual step' demanded"    '[[ "$OUT" != *"One manual step left"* ]]' "$OUT"
 run install --yes
 kill "$STEAM_PID" 2>/dev/null; wait "$STEAM_PID" 2>/dev/null
 expect "rerun with Steam still open only repeats the recommendations" '[ $RC = 0 ] && [[ "$OUT" == *"nothing to replace"* ]] && [[ "$OUT" == *"Recommended (the prefix override already lets the mod load)"* ]] && [[ "$OUT" != *"Backing up"* ]]' "$OUT"
 run install --yes
-expect "rerun with Steam closed writes only Steam's settings" '[ $RC = 0 ] && [ "$(launch_opts)" = "WINEDLLOVERRIDES=\\\"winmm=n,b\\\" gamemoderun %command% --launcher-skip" ] && [ "$(tool)" = proton_experimental ] && [[ "$OUT" != *"Backing up"* ]]' "$OUT"
+expect "rerun with Steam closed writes only Steam's settings" '[ $RC = 0 ] && [ "$(launch_opts)" = "WINEDLLOVERRIDES=\\\"winmm=n,b\\\" %command% --launcher-skip" ] && [ "$(tool)" = proton_experimental ] && [[ "$OUT" != *"Backing up"* ]]' "$OUT"
 
 # ---------------------------------------------------------- Flatpak Steam ----
 section "Flatpak Steam (sandbox paths in Steam's files)"
@@ -566,7 +557,7 @@ expect "check does not count them as missing" '[ $RC = 0 ] && [[ "$OUT" != *"FAS
 section "Cyber Engine Tweaks installed alongside"
 newworld cet native cet; OSR="$T/os-arch"
 run install --yes
-expect "version.dll override added too" '[ $RC = 0 ] && [ "$(hp reg-get "$PFX/user.reg" "$REG_KEY" version)" = native,builtin ] && [ "$(launch_opts)" = "WINEDLLOVERRIDES=\\\"winmm,version=n,b\\\" gamemoderun %command% --launcher-skip" ]' "$OUT"
+expect "version.dll override added too" '[ $RC = 0 ] && [ "$(hp reg-get "$PFX/user.reg" "$REG_KEY" version)" = native,builtin ] && [ "$(launch_opts)" = "WINEDLLOVERRIDES=\\\"winmm,version=n,b\\\" %command% --launcher-skip" ]' "$OUT"
 
 # ------------------------------------------------ newer RED4ext installed ----
 section "A newer RED4ext is already installed"
@@ -590,25 +581,25 @@ set_lo "%command% -skipStartScreen"
 run check
 expect "check: game-performance and MangoHud are installed, neither in use yet" '[[ "$OUT" == *"game-performance:"*"installed; run"*"to start the game with it"* ]] && [[ "$OUT" == *"MangoHud:"*"installed;"*"--mangohud"* ]]' "$OUT"
 run install --yes
-expect "CachyOS: game-performance goes in right before %command%; MangoHud only when asked" '[ $RC = 0 ] && [ "$(launch_opts)" = "WINEDLLOVERRIDES=\\\"winmm=n,b\\\" game-performance %command% --launcher-skip -skipStartScreen" ] && [[ "$OUT" == *"game-performance found: the game will run in the performance power profile"* ]] && [[ "$OUT" == *"MangoHud is installed: --mangohud shows its overlay in the game"* ]]' "$OUT"
+expect "CachyOS: game-performance goes in right before %command%; MangoHud only when asked; the line is replaced whole" '[ $RC = 0 ] && [ "$(launch_opts)" = "WINEDLLOVERRIDES=\\\"winmm=n,b\\\" game-performance %command% --launcher-skip" ] && [[ "$OUT" == *"game-performance found: the game will run in the performance power profile"* ]] && [[ "$OUT" == *"MangoHud is installed: --mangohud shows its overlay in the game"* ]]' "$OUT"
 run install --yes --mangohud
-expect "--mangohud adds MANGOHUD=1 after the DLL overrides" '[ $RC = 0 ] && [ "$(launch_opts)" = "WINEDLLOVERRIDES=\\\"winmm=n,b\\\" MANGOHUD=1 game-performance %command% --launcher-skip -skipStartScreen" ] && [[ "$OUT" == *"MANGOHUD=1 shows its overlay"* ]]' "$OUT"
+expect "--mangohud adds MANGOHUD=1 after the DLL overrides" '[ $RC = 0 ] && [ "$(launch_opts)" = "WINEDLLOVERRIDES=\\\"winmm=n,b\\\" MANGOHUD=1 game-performance %command% --launcher-skip" ] && [[ "$OUT" == *"MANGOHUD=1 shows its overlay"* ]]' "$OUT"
 run install --yes
-expect "a later run keeps both and has nothing to do" '[ $RC = 0 ] && [[ "$(launch_opts)" == *"MANGOHUD=1 game-performance %command%"* ]] && [[ "$OUT" == *"everything is up to date; nothing to do"* ]]' "$OUT"
+expect "a later run keeps both (MangoHud without --mangohud too) and has nothing to do" '[ $RC = 0 ] && [[ "$(launch_opts)" == *"MANGOHUD=1 game-performance %command%"* ]] && [[ "$OUT" == *"everything is up to date; nothing to do"* ]]' "$OUT"
 run check
 expect "check: both in use" '[[ "$OUT" == *"game-performance:"*"in the launch options"* ]] && [[ "$OUT" == *"MangoHud:"*"in the launch options"* ]] && [[ "$OUT" != *"will not start"* ]]' "$OUT"
 run install --yes --no-mangohud --no-game-performance
-expect "--no-mangohud and --no-game-performance take both out" '[ $RC = 0 ] && [ "$(launch_opts)" = "WINEDLLOVERRIDES=\\\"winmm=n,b\\\" %command% --launcher-skip -skipStartScreen" ] && [[ "$OUT" == *"game-performance: taken out of the launch options"* ]] && [[ "$OUT" == *"MangoHud: taken out of the launch options"* ]]' "$OUT"
+expect "--no-mangohud and --no-game-performance take both out" '[ $RC = 0 ] && [ "$(launch_opts)" = "WINEDLLOVERRIDES=\\\"winmm=n,b\\\" %command% --launcher-skip" ] && [[ "$OUT" == *"game-performance: taken out of the launch options"* ]] && [[ "$OUT" == *"MangoHud: taken out of the launch options"* ]]' "$OUT"
 run install --yes
 expect "--no-game-performance is remembered" '[ $RC = 0 ] && [[ "$(launch_opts)" != *game-performance* ]] && [[ "$OUT" == *"game-performance: left out of the launch options"* ]] && [[ "$OUT" == *"everything is up to date; nothing to do"* ]]' "$OUT"
 run install --yes --dry-run --game-performance
 run install --yes
 expect "a dry run does not change what is remembered" '[[ "$(launch_opts)" != *game-performance* ]]' "$(launch_opts)"
 run install --yes --game-performance
-expect "--game-performance puts it back" '[ $RC = 0 ] && [ "$(launch_opts)" = "WINEDLLOVERRIDES=\\\"winmm=n,b\\\" game-performance %command% --launcher-skip -skipStartScreen" ]' "$(launch_opts)"
+expect "--game-performance puts it back" '[ $RC = 0 ] && [ "$(launch_opts)" = "WINEDLLOVERRIDES=\\\"winmm=n,b\\\" game-performance %command% --launcher-skip" ]' "$(launch_opts)"
 set_lo "gamescope -W 1920 -H 1080 -- %command%"
 run install --yes --mangohud
-expect "in gamescope, --mangohud points to its --mangoapp, and game-performance goes inside it" '[ $RC = 0 ] && [ "$(launch_opts)" = "WINEDLLOVERRIDES=\\\"winmm=n,b\\\" gamescope -W 1920 -H 1080 -- game-performance %command% --launcher-skip" ] && [[ "$OUT" == *"MangoHud is not added: the launch options run the game in gamescope"*"--mangoapp"* ]]' "$OUT"
+expect "a gamescope wrapper is replaced too, so MangoHud and game-performance go in" '[ $RC = 0 ] && [ "$(launch_opts)" = "WINEDLLOVERRIDES=\\\"winmm=n,b\\\" MANGOHUD=1 game-performance %command% --launcher-skip" ] && [[ "$OUT" != *"gamescope"* ]]' "$OUT"
 
 newworld wrapgp native; OSR="$T/os-cachyos"; TOOLS="$T/tools-gp"
 set_lo "game-performance %command%"
@@ -645,10 +636,16 @@ expect "with the extension only for an older runtime, --mangohud names the one t
 
 newworld wraparch native; OSR="$T/os-arch"
 run install --yes --mangohud
-expect "Arch without MangoHud: --mangohud says how to install it; other wrappers stay" '[ $RC = 0 ] && [ "$(launch_opts)" = "WINEDLLOVERRIDES=\\\"winmm=n,b\\\" gamemoderun %command% --launcher-skip" ] && [[ "$OUT" == *"MangoHud is not added: it is not installed (sudo pacman -S mangohud)"* ]]' "$OUT"
+expect "Arch without MangoHud: --mangohud says how to install it; other wrappers go" '[ $RC = 0 ] && [ "$(launch_opts)" = "WINEDLLOVERRIDES=\\\"winmm=n,b\\\" %command% --launcher-skip" ] && [[ "$OUT" == *"MangoHud is not added: it is not installed (sudo pacman -S mangohud)"* ]]' "$OUT"
 set_lo "mangohud %command%"
 run check
-expect "check: the mangohud wrapper without MangoHud stops the game" '[[ "$OUT" == *"MangoHud:"*"in the launch options, but it is not installed (sudo pacman -S mangohud)"* ]] && [[ "$OUT" == *"install MangoHud, or run"*"--no-mangohud"* ]]' "$OUT"
+expect "check: the mangohud wrapper without MangoHud stops the game" '[[ "$OUT" == *"MangoHud:"*"in the launch options, but it is not installed (sudo pacman -S mangohud)"* ]] && [[ "$OUT" == *"install MangoHud, or run"*"with Steam closed to take it out"* ]]' "$OUT"
+run install --yes --mangohud
+expect "--mangohud with the wrapper but no MangoHud: taken out, saying why" '[ $RC = 0 ] && [ "$(launch_opts)" = "WINEDLLOVERRIDES=\\\"winmm=n,b\\\" %command% --launcher-skip" ] && [[ "$OUT" == *"MangoHud: taken out of the launch options: it is not installed (sudo pacman -S mangohud)"* ]] && [[ "$OUT" != *"already in the launch options"* ]]' "$OUT"
+set_lo "mangohud %command%"
+run install --yes
+expect "a plain run takes it out too" '[ $RC = 0 ] && [ "$(launch_opts)" = "WINEDLLOVERRIDES=\\\"winmm=n,b\\\" %command% --launcher-skip" ] && [[ "$OUT" == *"MangoHud: taken out of the launch options: it is not installed"* ]]' "$OUT"
+set_lo "mangohud %command%"
 run install --yes --no-mangohud
 expect "--no-mangohud takes the wrapper out" '[ $RC = 0 ] && [ "$(launch_opts)" = "WINEDLLOVERRIDES=\\\"winmm=n,b\\\" %command% --launcher-skip" ]' "$(launch_opts)"
 
