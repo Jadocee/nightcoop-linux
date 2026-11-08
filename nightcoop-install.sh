@@ -48,13 +48,13 @@
 #                         supports in co-op, with what it needs; kept up to date afterwards
 #   --without-flight      remove Let There Be Flight again (the mods it needed stay)
 #   --with-mods           also install Virtual Atelier with clothing and item stores and their
-#                         outfits (Zenitex, The RVC00N Dumpster, Nola Dreamer, Veegee, Street
-#                         Ninja, Dolly Go-Go), Virtual Car Dealer with car and bike packs, Drive an
-#                         Aerial Vehicle, Vehicle Customizer, Cyber Drift, Impact FX, Immersive
-#                         Audio Distance, Quick Stash and No Intro Videos (download them from
-#                         Nexus Mods; the installer lists them), with the frameworks they need
-#                         (Cyber Engine Tweaks, Codeware, TweakXL, ArchiveXL, redscript, Mod
-#                         Settings, Audioware, VendorsXL and more); kept up to date
+#                         outfits (Zenitex, The RVC00N Dumpster, Nola Dreamer, Street Ninja),
+#                         Virtual Car Dealer with car and bike packs, Drive an Aerial Vehicle,
+#                         Vehicle Customizer, Cyber Drift, Impact FX, Immersive Audio Distance,
+#                         Quick Stash and No Intro Videos (download them from Nexus Mods; the
+#                         installer lists them), with the frameworks they need (Cyber Engine
+#                         Tweaks, Codeware, TweakXL, ArchiveXL, redscript, Mod Settings,
+#                         Audioware, VendorsXL and more); kept up to date
 #   --without-mods        remove those mods again (the frameworks stay)
 #   --with-equipment-ex   also install Equipment-EX (from Nexus Mods), to wear layered outfits;
 #                         every partner in a session needs it too
@@ -98,7 +98,7 @@ MIN_GAME_FILEVER="3.0.88.46235" MIN_GAME_PATCH="2.5"
 #                           archive ships the port (r6/scripts/NightCoopFlight), which
 #                           compiles to nothing without it.
 #   mods (--with-mods)      Virtual Atelier with stores of the game's own items and the stores of
-#                           Zenitex, The RVC00N Dumpster 3, Nola Dreamer, Veegee and Street Ninja with
+#                           Zenitex, The RVC00N Dumpster 3, Nola Dreamer and Street Ninja with
 #                           their outfits, Virtual Car Dealer with car and bike packs, Drive an Aerial
 #                           Vehicle, Vehicle Customizer, Cyber Drift (Light), Impact FX, Immersive
 #                           Audio Distance, Quick Stash and No Intro Videos, and the frameworks they need.
@@ -203,12 +203,8 @@ Dexter_Vest                   2.5 mods        mod  -     -                      
 Dexter_Shoes                  2.5 mods        mod  -     -                                                           1      nexus:28660:+shoes
 PinkyBlume_Croptop            2.5 mods        mod  -     -                                                           1      nexus:27455
 RVC00N_Dumpster_3             2.5 mods        mod  -     -                                                           21.0.0 nexus:25981
-Urban_Techwear_Outfit         2.5 mods        mod  -     -                                                           1.0    nexus:25512
-Veegee_Shop_3                 2.5 mods        mod  -     -                                                           1.5.2  nexus:18890
 Street_Ninja_Remake           2.5 mods        mod  -     -                                                           1.14.0 nexus:36978:+main
 Street_Ninja_Shop             2.5 mods        mod  -     -                                                           1.12.0 nexus:36978:+shop
-Dolly_GoGo_Minidresses        2.5 mods        mod  -     -                                                           2      nexus:37279:+minidresses
-Dolly_GoGo_Fur_Set            2.5 mods        mod  -     -                                                           1      nexus:37279:+fur_set
 AirPods_Max                   2.5 mods        mod  -     -                                                           1.1    nexus:28288
 Nola_Barbed_Accessories       2.5 mods        mod  -     -                                                           1.0    nexus:14371
 Nola_Bracelets                2.5 mods        mod  -     -                                                           1.0    nexus:16722
@@ -255,10 +251,9 @@ Stinky_Bootcut_Jeans:ArchiveXL,TweakXL Stinky_Leather_Jeans:ArchiveXL,TweakXL
 David_Martinez_Pants:ArchiveXL,TweakXL Yeehaw_Spur_Boots:ArchiveXL,TweakXL
 Latex_Succubus_Tail:ArchiveXL,TweakXL Trauma_Team_Jumpsuit:ArchiveXL,TweakXL Dexter_Pants:ArchiveXL,TweakXL
 Dexter_Vest:ArchiveXL,TweakXL Dexter_Shoes:ArchiveXL,TweakXL PinkyBlume_Croptop:ArchiveXL,TweakXL
-RVC00N_Dumpster_3:Virtual_Atelier,ArchiveXL,TweakXL,VendorsXL Urban_Techwear_Outfit:ArchiveXL,TweakXL
-Veegee_Shop_3:Virtual_Atelier Street_Ninja_Remake:redscript,Codeware,ArchiveXL,TweakXL
+RVC00N_Dumpster_3:Virtual_Atelier,ArchiveXL,TweakXL,VendorsXL Street_Ninja_Remake:redscript,Codeware,ArchiveXL,TweakXL
 Street_Ninja_Shop:Virtual_Atelier,Cyber_Engine_Tweaks,Street_Ninja_Remake
-Dolly_GoGo_Minidresses:ArchiveXL,TweakXL Dolly_GoGo_Fur_Set:ArchiveXL,TweakXL AirPods_Max:ArchiveXL,TweakXL
+AirPods_Max:ArchiveXL,TweakXL
 Nola_Barbed_Accessories:ArchiveXL,TweakXL Nola_Bracelets:ArchiveXL,TweakXL Nola_Heart_Choker:ArchiveXL,TweakXL
 Nola_Mini_Dress:ArchiveXL,TweakXL Nola_Moon_Accessories:ArchiveXL,TweakXL Nola_Spiked_Collar:ArchiveXL,TweakXL
 Nola_Accessories_Store:Virtual_Atelier"
@@ -268,8 +263,8 @@ Zenitex_Combat_Gloves Comfy_Boots Goliath_Coat Cityfolk_Hoodie Knife_Bandolier B
 Master_Chief_Suit Indiana_Jones_Outfit Fifth_Element_Collection Cityfolk_Short_Jacket Jackies_Jacket Stinky_Burnt_Top
 Stinky_Slashed_Top Stinky_Croptop Yeehaw_Collar_Shirt Chuckwalla_T-Shirt Stinky_Mechanic_Pants Stinky_Quilted_Pants
 Stinky_Bootcut_Jeans Stinky_Leather_Jeans David_Martinez_Pants Yeehaw_Spur_Boots Latex_Succubus_Tail Trauma_Team_Jumpsuit
-Dexter_Pants Dexter_Vest Dexter_Shoes PinkyBlume_Croptop Urban_Techwear_Outfit Street_Ninja_Remake Dolly_GoGo_Minidresses
-Dolly_GoGo_Fur_Set AirPods_Max Nola_Barbed_Accessories Nola_Bracelets Nola_Heart_Choker Nola_Mini_Dress Nola_Moon_Accessories
+Dexter_Pants Dexter_Vest Dexter_Shoes PinkyBlume_Croptop Street_Ninja_Remake AirPods_Max
+Nola_Barbed_Accessories Nola_Bracelets Nola_Heart_Choker Nola_Mini_Dress Nola_Moon_Accessories
 Nola_Spiked_Collar"
 # Files a mod writes to while the game runs (its settings, its database, what it has learned):
 # the player's copy stays, and is replaced only when a new release changes the file it ships.
@@ -2310,7 +2305,7 @@ do_uninstall() {
 # ---------------------------------------------------------------- install ----
 NC_STATUS="" NC_VER="" NC_URL="" NC_SHA="" NC_GAMES="" NC_PROTO="" NC_R4="" NC_MATCHED="" NC_YANKED="" NC_PRESENT=""
 PLAN_ADDED=0 PLAN_REPLACED=0 PLAN_REMOVED=0 PLAN_SAME=0 PLAN_STALE=() FILES_CHANGE=0 PREFIX_CHANGE=0 STEAM_CHANGE=0 SAVE_AUTO=""
-SETS_ON="" SETS_DROPPED="" ADDON_ROOTS=() ADDON_VERS=() ADDON_STATE_NEW=() ADDON_PLAN=() ADDON_KEEP=() ADDON_DROP=() ADDON_MISSING=() ADDON_HAVE=" " ADDON_USED=" " PROTECT=()
+SETS_ON="" SETS_DROPPED="" ADDON_ROOTS=() ADDON_VERS=() ADDON_STATE_NEW=() ADDON_PLAN=() ADDON_KEEP=() ADDON_DROP=() ADDON_GONE=() ADDON_MISSING=() ADDON_HAVE=" " ADDON_USED=" " PROTECT=()
 NC_ROOT="" NC_DLL_REL="" NC_PLUGIN_DIR="" R4_CHOICE="" R4_FINAL="" RT_WANT="" RT_TARGET="" RV="" RK="" NEED_RT=0
 VCREDIST_VER="" REG_STATE="" LO_STATE="" LO_VALUE="" LO_WINMM="" RESTART_STEAM=0 DLLS="winmm"
 WRAP="" GP_WANT="" GP_WHY="" GP_USED=0 MH_WHY="" MH_MISSING="" MH_USED=0 MH_WRAPPER=0
@@ -2463,6 +2458,14 @@ recorded_roots() {   # recorded_roots <component>: what the last install put in 
 present_root() {   # present_root <component>: the first of its recorded files or folders still in the game folder
     local r d; while IFS= read -r r; do d="$(findci "$GAME_DIR" "${r%/}" 2>/dev/null || true)"; if [ -n "$d" ]; then echo "$d"; return 0; fi; done < <(recorded_roots "$1")
 }
+gone_parts() {   # components an earlier version installed that the table no longer has (their files go as stale)
+    local e c known=" " seen=" "
+    while read -r c _; do known+="$c "; done < <(addon_parts)
+    for e in "${ROOTS_REC[@]}"; do
+        c="${e%%$'\t'*}"
+        if [[ "$known$seen" != *" $c "* ]]; then seen+="$c "; echo "$c"; fi
+    done
+}
 needs_of() { local e; for e in $ADDON_NEEDS; do if [ "${e%%:*}" = "$1" ]; then tr ',' ' ' <<<"${e#*:}"; fi; done; }
 restage() {   # restage <root>...: these files and folders as the game folder has them, so the plan finds
     # them unchanged and the new manifest still counts them as this script's (a later drop removes them)
@@ -2519,8 +2522,6 @@ nexus_file() {   # nexus_file <component>: which file to download, of a mod with
         Dexter_Shoes) echo "Dexter's Shoes" ;;
         Street_Ninja_Remake) echo "the main file, STREET NINJA REMAKE - MAIN" ;;
         Street_Ninja_Shop) echo "STREET NINJA STREETWEAR SHOP, among the optional files" ;;
-        Dolly_GoGo_Minidresses) echo "FAIRYEXE DOLLY GOGO MINIDRESSES" ;;
-        Dolly_GoGo_Fur_Set) echo "0 FAIRYEXE DOLLY GOGO FUR SET" ;;
     esac
 }
 nexus_avoided() {   # nexus_avoided <component>: what a file of it that is never installed is
@@ -2570,8 +2571,10 @@ step_addons() {   # the add-on sets (--with-flight, --with-mods), matched to the
     [ -n "$SETS_ON$SETS_RECORDED" ] || return 0
     bold "Add-ons${SETS_ON:+: ${SETS_ON// /, }}"
     lines="$(addon_lines)"
+    while read -r comp; do if [ -n "$comp" ]; then ADDON_GONE+=("$(name_of "$comp")"); fi; done < <(gone_parts)
     if [ -z "$lines" ]; then   # a game patch the table does not know: what is there stays as it is
         warn "no add-on builds are known for game ${GAME_VER:-?}; what is installed is left as it is"
+        if [ "${#ADDON_GONE[@]}" -gt 0 ]; then ok "$(listing "${ADDON_GONE[@]}") will be removed: no longer part of the set"; fi
         while read -r comp _; do keep_recorded "$comp"; done < <(addon_parts)
         SETS_ON="$SETS_RECORDED"
         return 0
@@ -2659,6 +2662,7 @@ step_addons() {   # the add-on sets (--with-flight, --with-mods), matched to the
     done <<<"$lines"
     if [ "${#ADDON_PLAN[@]}" -gt 0 ]; then ok "for game ${GAME_VER:-?}: $(listing "${ADDON_PLAN[@]}")"; fi
     if [ "${#ADDON_DROP[@]}" -gt 0 ]; then ok "$(listing "${ADDON_DROP[@]}") will be removed; the frameworks they needed stay, since other mods use them"; fi
+    if [ "${#ADDON_GONE[@]}" -gt 0 ]; then ok "$(listing "${ADDON_GONE[@]}") will be removed: no longer part of the set"; fi
     if [[ "$ADDON_HAVE" == *" Quick_Stash "* ]]; then
         info "Quick Stash in co-op: a session plays in the host's world, so a guest's stash there is not their own;"
         info "transfer items in your own game, or as the host."
@@ -2670,22 +2674,19 @@ step_addons() {   # the add-on sets (--with-flight, --with-mods), matched to the
     local o outfit=0 layered=0
     for o in $ADDON_HAVE; do
         if [[ " ${OUTFITS//$'\n'/ } " == *" $o "* ]]; then outfit=1; fi
-        case "$o" in Street_Ninja_Remake|Dolly_GoGo_*) layered=1 ;; esac
+        if [ "$o" = Street_Ninja_Remake ]; then layered=1; fi
     done
     if [ "$outfit" = 1 ]; then
         info "Outfits of mods in co-op: a partner without the same outfit mod sees a plain game piece for that body"
         info "part (head, face and accessories stay empty), so share the outfit mods with everyone you play with."
     fi
     if [ "$layered" = 1 ] && [[ "$ADDON_HAVE" != *" Equipment_EX "* ]]; then
-        info "Street Ninja's four layers, and Dolly Go-Go's fur bodice over a dress or fur hem over its shorts,"
-        info "are worn together with Equipment-EX (--with-equipment-ex); without it, each piece takes its game slot."
+        info "Street Ninja's four layers are worn together with Equipment-EX (--with-equipment-ex); without it,"
+        info "each piece takes its game slot on its own."
     fi
-    local coded=""   # clothes that no store of the set sells
-    if [[ "$ADDON_HAVE" == *" Dolly_GoGo_"* ]]; then coded="Dolly Go-Go's pieces"; fi
-    if [[ "$ADDON_HAVE" == *" Nola_Mini_Dress "* ]]; then coded="${coded:+$coded and }Nola Dreamer's mini dress"; fi
-    if [ -n "$coded" ]; then
-        info "No store of the set sells $coded: add the items in Cyber Engine Tweaks' console"
-        info "(Game.AddToInventory), with the codes listed on their Nexus Mods pages."
+    if [[ "$ADDON_HAVE" == *" Nola_Mini_Dress "* ]]; then   # the store sells its glasses, not the dress
+        info "No store of the set sells Nola Dreamer's mini dress: add it in Cyber Engine Tweaks' console"
+        info "(Game.AddToInventory), with the codes listed on its Nexus Mods page."
     fi
     if [[ "$ADDON_HAVE" == *" Equipment_EX "* ]]; then
         info "Equipment-EX in co-op: every partner needs it too. NightCoop sends looks by its slots, so a partner"
@@ -2914,6 +2915,7 @@ print_plan() {
         if [ "${#ADDON_PLAN[@]}" -gt 0 ]; then info "add-ons         $(listing "${ADDON_PLAN[@]}") (for game ${GAME_VER:-?})"; fi
         if [ "${#ADDON_KEEP[@]}" -gt 0 ]; then info "keep            $(listing "${ADDON_KEEP[@]}") (installed, newer)"; fi
         if [ "${#ADDON_DROP[@]}" -gt 0 ]; then info "remove          $(listing "${ADDON_DROP[@]}"); the frameworks they needed stay"; fi
+        if [ "${#ADDON_GONE[@]}" -gt 0 ]; then info "remove          $(listing "${ADDON_GONE[@]}") (no longer part of the set)"; fi
     fi
     [ "$NEED_RT" = 1 ] && info "run             VC_redist.x64.exe ${VCREDIST_VER} quietly in the game's Proton prefix"
     [ "$REG_STATE" = missing ] && info "registry        $DLLS = native,builtin for Cyberpunk2077.exe"

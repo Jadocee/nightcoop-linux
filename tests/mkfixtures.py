@@ -129,10 +129,11 @@ GAME = {   # patch: (Cyberpunk2077.exe file version, fixed product version), as 
 }
 
 
-# The third round of the mod set (cars, the clothes of The RVC00N Dumpster 3, Nola Dreamer, Veegee,
-# Street Ninja and Dolly Go-Go, Impact FX, Immersive Audio Distance) and Equipment-EX: each download's
-# real file name and entries, read from the archive itself (or, for a .rar or .7z, its Nexus manifest),
-# with the files a rule must pass over. Contents are stand-ins (see placeholder).
+# The third round of the mod set (cars, the clothes of The RVC00N Dumpster 3, Nola Dreamer and Street
+# Ninja, Impact FX, Immersive Audio Distance) and Equipment-EX: each download's real file name and
+# entries, read from the archive itself (or, for a .rar or .7z, its Nexus manifest), with the files a
+# rule must pass over. Veegee's and Dolly Go-Go's clothes, made for photo mode, are downloads the set
+# passes over (and that an earlier table installed). Contents are stand-ins (see placeholder).
 ROUND3 = {
     '0 FAIRYEXE DOLLY GOGO FUR SET 37279 1 2026-11-04T19-01Z PYMIYqW21.zip': ['0_FAIRYEXE_DOLLY_GOGO_FUR_SET/Dolly Go-Go Fur - Codes.txt', '0_FAIRYEXE_DOLLY_GOGO_FUR_SET/archive/pc/mod/FAIRYEXE_DOLLY_GOGO_FUR_SET.archive', '0_FAIRYEXE_DOLLY_GOGO_FUR_SET/archive/pc/mod/fairyexe_dolly_gogo_fur_set.xl', '0_FAIRYEXE_DOLLY_GOGO_FUR_SET/r6/tweaks/fairyexe/fairyexe_dolly_gogo_fur_set.yaml'],
     'ALL IN ONE - Fifth Element Collection 27709 1.1.0 2026-10-17T10-38Z Z0ER0BBOy.zip': ['archive/pc/mod/PinkyDude_Clothes_TFEC_KorbenJacket.archive', 'archive/pc/mod/PinkyDude_Clothes_TFEC_KorbenJacket.xl', 'archive/pc/mod/PinkyDude_Clothes_TFEC_KorbenTanktop.archive', 'archive/pc/mod/PinkyDude_Clothes_TFEC_KorbenTanktop.xl', 'archive/pc/mod/PinkyDude_Clothes_TFEC_LeelooCroptop.archive', 'archive/pc/mod/PinkyDude_Clothes_TFEC_LeelooCroptop.xl', 'archive/pc/mod/PinkyDude_Clothes_TFEC_LeelooPants.archive', 'archive/pc/mod/PinkyDude_Clothes_TFEC_LeelooPants.xl', 'archive/pc/mod/PinkyDude_Clothes_TFEC_LeelooRuuberSuspenders.archive', 'archive/pc/mod/PinkyDude_Clothes_TFEC_LeelooRuuberSuspenders.xl', 'archive/pc/mod/PinkyDude_Clothes_TFEC_LeelooStrapBodysuit.archive', 'archive/pc/mod/PinkyDude_Clothes_TFEC_LeelooStrapBodysuit.xl', 'r6/tweaks/PinkyDude_TheRVC00NDumpster3/PinkyDude_Clothes_TFEC_KorbenJacket.yaml', 'r6/tweaks/PinkyDude_TheRVC00NDumpster3/PinkyDude_Clothes_TFEC_KorbenTanktop.yaml', 'r6/tweaks/PinkyDude_TheRVC00NDumpster3/PinkyDude_Clothes_TFEC_LeelooCroptop.yaml', 'r6/tweaks/PinkyDude_TheRVC00NDumpster3/PinkyDude_Clothes_TFEC_LeelooPants.yaml', 'r6/tweaks/PinkyDude_TheRVC00NDumpster3/PinkyDude_Clothes_TFEC_LeelooRuuberSuspenders.yaml', 'r6/tweaks/PinkyDude_TheRVC00NDumpster3/PinkyDude_Clothes_TFEC_LeelooStrapBodysuit.yaml'],
