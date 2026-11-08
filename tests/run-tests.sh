@@ -448,9 +448,10 @@ else
 fi
 
 section "Mods (--with-mods): clothing stores and outfits, car and bike packs, Vehicle Customizer"
-newworld style native; OSR="$T/os-arch"; D="$H/Downloads"; mkdir -p "$D"
+newworld style native; OSR="$T/os-arch"; D="$H/Downloads"; mkdir -p "$D" "$G/archive/pc/ep1"   # Iconic Shops needs Phantom Liberty
 P="$G/red4ext/Plugins"; VC="$G/bin/x64/plugins/cyber_engine_tweaks/mods/VehicleCustomizerSVE"; PRISTINE_STYLE="$(snapshot "$G")"
-cp "$FIX/nexus/Virtual Atelier 2987 1.6.4 2026-10-25T17-42Z HncQn22j7.zip" "$FIX/nexus/Virtual Car Dealer 4454 2.3.0 2026-10-25T11-18Z lcXrcZZMt.zip" "$FIX"/style/* "$D/"
+ZCORE="$FIX/round5/Zenitex Core Dependency 16356 5.1.8 2026-08-21T11-39Z JSKWSQkA8.zip"   # every Zenitex outfit needs it
+cp "$FIX/nexus/Virtual Atelier 2987 1.6.4 2026-10-25T17-42Z HncQn22j7.zip" "$FIX/nexus/Virtual Car Dealer 4454 2.3.0 2026-10-25T11-18Z lcXrcZZMt.zip" "$FIX"/style/* "$ZCORE" "$D/"
 run install --yes --with-mods
 expect "the clothing stores, and the Zenitex outfits by their main files only (no Alt. Colors, GS or Gymfiend file)" '[ $RC = 0 ] && [ -f "$G/r6/scripts/AllVanillaClothes/store.reds" ] && [ -f "$G/r6/scripts/iconicshop/shops/top.reds" ] && [ -f "$G/r6/scripts/ScorpionTank/scorpion_zenitex_virtual_atelier.reds" ] && ( for i in mask harness jacket pads pants gloves; do [ -f "$G/r6/tweaks/scorpiontank/zenitex_$i.yaml" ] && [ ! -e "$G/r6/tweaks/scorpiontank/zenitex_${i}_gs.yaml" ] || exit 1; done ) && [ ! -e "$G/r6/tweaks/scorpiontank/zenitex_mask_alt.yaml" ] && [ -f "$G/r6/tweaks/scorpiontank/comfy_boots.yaml" ] && [ ! -e "$G/r6/tweaks/scorpiontank/comfy_boots_gymfiend.yaml" ] && [ ! -e "$G/codes.txt" ]' "$OUT"
 expect "both car packs of one Nexus mod, the bikes' main file only, the Supra and the Porsche with what they need" '[ -f "$G/r6/tweaks/VirtualCarDealer/car_pack_1.yaml" ] && [ -f "$G/r6/tweaks/VirtualCarDealer/car_pack_2.yaml" ] && [ -f "$G/r6/tweaks/Methodd/Methodd_Edge/mthdd_Methodd_Edge.yaml" ] && [ -f "$G/archive/pc/mod/BDF_DRe_ArchV4.archive" ] && [ ! -e "$G/archive/pc/mod/BDF_DRe_ArchV4_Mirrors.archive" ] && [ ! -e "$G/archive/pc/mod/dre_cyberhelmets.archive" ] && [ -f "$G/r6/tweaks/VehicleExitFix/exit.yaml" ] && [ -f "$G/r6/tweaks/krnlnik/supra.yaml" ] && [ ! -e "$G/r6/tweaks/krnlnik/supra_colors.yaml" ] && [ -f "$G/r6/scripts/VMF/vmf.reds" ] && [ -f "$G/archive/pc/mod/porsche_gt3rs.archive" ] && [ ! -e "$G/archive/pc/mod/porsche_gt3rs_grey_red.archive" ] && [ -f "$G/archive/pc/mod/MaterialTextureOverride.archive" ] && [ ! -e "$G/mods/MaterialTextureOverride" ]' "$OUT"
@@ -460,7 +461,7 @@ printf '{"Quadra": "b"}\n' > "$VC/saved.json"   # a customisation saved while pl
 run update --yes
 expect "Vehicle Customizer's saved customisations stay; a rerun changes nothing" '[ $RC = 0 ] && grep -q Quadra "$VC/saved.json" && [ "$(cat "$VC/init.lua")" = "-- vehicle customizer 3.1" ] && [[ "$OUT" == *"everything is up to date; nothing to do"* ]]' "$OUT"
 run update --yes --without-mods
-expect "--without-mods removes the clothing and vehicles; Material and Texture Override stays as a framework" '[ $RC = 0 ] && [ ! -e "$G/r6/scripts/iconicshop" ] && [ ! -e "$G/r6/tweaks/scorpiontank" ] && [ ! -e "$G/r6/tweaks/VirtualCarDealer" ] && [ ! -e "$G/archive/pc/mod/porsche_gt3rs.archive" ] && [ ! -e "$VC" ] && [ -f "$G/archive/pc/mod/MaterialTextureOverride.archive" ]' "$OUT"
+expect "--without-mods removes the clothing and vehicles; Material and Texture Override and Zenitex Core Dependency stay as frameworks" '[ $RC = 0 ] && [ ! -e "$G/r6/scripts/iconicshop" ] && [ ! -e "$G/r6/tweaks/scorpiontank/zenitex_mask.yaml" ] && [ -f "$G/r6/tweaks/scorpiontank/#_scorpion_zenitex_core_dependency.yaml" ] && [ ! -e "$G/r6/tweaks/VirtualCarDealer" ] && [ ! -e "$G/archive/pc/mod/porsche_gt3rs.archive" ] && [ ! -e "$VC" ] && [ -f "$G/archive/pc/mod/MaterialTextureOverride.archive" ]' "$OUT"
 run uninstall --yes
 expect "uninstall puts the game folder back exactly" '[ $RC = 0 ] && [ "$PRISTINE_STYLE" = "$(snapshot "$G")" ]' "$(diff <(echo "$PRISTINE_STYLE") <(snapshot "$G"))"
 newworld stylepack native; OSR="$T/os-arch"; D="$H/Downloads"; mkdir -p "$D"
@@ -490,7 +491,7 @@ expect "a rerun changes nothing, and names nothing as gone from the set" '[ $RC 
 run update --yes --with-equipment-ex
 expect "--with-equipment-ex adds its main file, not the Hide Hub Buttons patch, and says partners need it too" '[ $RC = 0 ] && [ -f "$G/r6/scripts/EquipmentEx/EquipmentEx.reds" ] && [ ! -e "$G/r6/scripts/EquipmentEx/EquipmentEx.HideHubButtons.reds" ] && [[ "$OUT" == *"Equipment-EX in co-op: every partner needs it too"* ]] && [[ "$OUT" != *"worn together with Equipment-EX"* ]]' "$OUT"
 run check
-expect "check: Equipment-EX is kept up to date" '[[ "$OUT" == *"Equipment-EX:"*"Equipment EX 1.2.10 (kept up to date by this script)"* ]]' "$OUT"
+expect "check: Equipment-EX is kept up to date, with its frameworks" '[[ "$OUT" == *"Equipment-EX:"*"Equipment EX 1.2.10, with redscript 0.5.32, ArchiveXL 1.28.6, TweakXL 1.12.0, Codeware 1.21.2 (kept up to date by this script)"* ]]' "$OUT"
 run update --yes --without-equipment-ex
 expect "--without-equipment-ex takes it out again; the mods stay" '[ $RC = 0 ] && [ ! -e "$G/r6/scripts/EquipmentEx" ] && [ -f "$G/r6/tweaks/StreetNinja20_Collection.yaml" ]' "$OUT"
 run update --yes --without-mods
@@ -520,14 +521,15 @@ run install --yes --with-equipment-ex
 expect "--with-equipment-ex alone brings the frameworks it needs, and nothing of the mod set" '[ $RC = 0 ] && [ -f "$G/r6/scripts/EquipmentEx/EquipmentEx.reds" ] && [ -f "$G/red4ext/Plugins/ArchiveXL/ArchiveXL.dll" ] && [ -f "$G/red4ext/Plugins/TweakXL/TweakXL.dll" ] && [ -f "$G/red4ext/Plugins/Codeware/Codeware.dll" ] && [ -f "$G/engine/tools/scc_lib.dll" ] && [ ! -e "$G/bin/x64/plugins/cyber_engine_tweaks.asi" ]' "$OUT"
 expect "raem's jewellery waits for the mod set too, and is not missing without it" '[ ! -e "$G/r6/tweaks/raem" ] && [ ! -e "$G/r6/scripts/raem" ] && [[ "$OUT" != *"Bullet Necklace"* ]]' "$OUT"
 run check
-expect "check: the Equipment-EX row without the jewellery, and no jewellery missing" '[[ "$OUT" == *"Equipment-EX:"*"Equipment EX 1.2.10 (kept up to date"* ]] && [[ "$OUT" != *"Bullet Necklace"* ]] && [[ "$OUT" != *"raem"* ]]' "$OUT"
+expect "check: the Equipment-EX row without the jewellery, and no jewellery missing" '[[ "$OUT" == *"Equipment-EX:"*"Equipment EX 1.2.10, with redscript 0.5.32, ArchiveXL 1.28.6, TweakXL 1.12.0, Codeware 1.21.2 (kept up to date"* ]] && [[ "$OUT" != *"Bullet Necklace"* ]] && [[ "$OUT" != *"Palette"* ]] && [[ "$OUT" != *"raem"* ]]' "$OUT"
 
 # ------------------------------- the fourth round: Zenitex gear, hair and jewellery ----
 section "Mods (--with-mods): Zenitex gear, hairstyles and Nola Dreamer's boutique; raem's jewellery only with Equipment-EX too"
 newworld round4 native; OSR="$T/os-arch"; D="$H/Downloads"; mkdir -p "$D" "$G/archive/pc/ep1"   # a game with Phantom Liberty
 PRISTINE_R4="$(snapshot "$G")"
 R4_DL=("$FIX/nexus/Virtual Atelier 2987 1.6.4 2026-10-25T17-42Z HncQn22j7.zip" "$FIX/style/Zenitex Virtual Atelier 10090 4.13 2026-08-28T15-44Z gMz5MuNQO.zip"
-       "$FIX/round3/ND_Mini_dress_with_glasses_FemV-15704-1-1-1747683086.zip" "$FIX/round3/Equipment-EX 6945 1.2.10 2026-10-25T21-07Z k8Iw8mmPd.zip" "$FIX"/round4/*)
+       "$FIX/round3/ND_Mini_dress_with_glasses_FemV-15704-1-1-1747683086.zip" "$FIX/round3/Equipment-EX 6945 1.2.10 2026-10-25T21-07Z k8Iw8mmPd.zip" "$FIX"/round4/*
+       "$FIX/round5/Zenitex Core Dependency 16356 5.1.8 2026-08-21T11-39Z JSKWSQkA8.zip" "$FIX/round5/The Community Palette Project-10437-1-1-1710101546.zip")
 cp "${R4_DL[@]}" "$D/"
 # later releases of the files two rules pass over: Preem Hair's 4K file, and one of Hyst's single hairs
 cp "$FIX/round4/Preem Hair (4K) 8223 3.0.0 2026-10-21T01-20Z G5yE5CC3f.zip" "$D/Preem Hair (4K) 8223 3.0.1 2026-11-20T09-00Z G5yE5CC3g.zip"
@@ -549,9 +551,45 @@ expect "uninstall puts the game folder back exactly" '[ $RC = 0 ] && [ "$PRISTIN
 newworld round4nopl native; OSR="$T/os-arch"; D="$H/Downloads"; mkdir -p "$D"   # a game without Phantom Liberty
 cp "${R4_DL[@]}" "$D/"
 run install --yes --with-mods
-expect "without Phantom Liberty, the helmet, holsters and backpack that need it are left out, and said so; the rest is installed" '[ $RC = 0 ] && [ ! -e "$G/r6/tweaks/scorpiontank/scorpion_military_opscore_helmet.yaml" ] && [ ! -e "$G/r6/tweaks/scorpiontank/scorpion_military_dual_pistol_holsters.yaml" ] && [ ! -e "$G/r6/tweaks/scorpiontank/scorpion_military_zenitex_backpack.yaml" ] && [ -f "$G/r6/tweaks/scorpiontank/scorpion_military_combat_boots.yaml" ] && [[ "$OUT" == *"Phantom Liberty is not installed: Zenitex FAST Helmet, Zenitex Pistol Holsters, Zenitex Military Backpack, which need it, are left out"* ]]' "$OUT"
+expect "without Phantom Liberty, the helmet, holsters and backpack that need it are left out, and said so; the rest is installed" '[ $RC = 0 ] && [ ! -e "$G/r6/tweaks/scorpiontank/scorpion_military_opscore_helmet.yaml" ] && [ ! -e "$G/r6/tweaks/scorpiontank/scorpion_military_dual_pistol_holsters.yaml" ] && [ ! -e "$G/r6/tweaks/scorpiontank/scorpion_military_zenitex_backpack.yaml" ] && [ -f "$G/r6/tweaks/scorpiontank/scorpion_military_combat_boots.yaml" ] && [[ "$OUT" == *"Phantom Liberty is not installed: Iconic Shops, Zenitex FAST Helmet, Zenitex Pistol Holsters, Zenitex Military Backpack, which need it, are left out"* ]]' "$OUT"
 run check
 expect "check does not count them as missing" '[ $RC = 0 ] && [[ "$OUT" != *"FAST Helmet"* ]] && [[ "$OUT" != *"Pistol Holsters"* ]]' "$OUT"
+
+# ------------------------ the fifth round: what the mods need, and four more mods ----
+section "Mods (--with-mods): Zenitex Core Dependency and The Community Palette Project; Immersive First Person, Katana Pack 2, Browser Extension, Curbside"
+R5_DL=("$FIX/nexus/Virtual Atelier 2987 1.6.4 2026-10-25T17-42Z HncQn22j7.zip" "$FIX/style/IconicShops 7215 3.6.2 2026-11-04T06-43Z FKtYKrCFm.zip"
+       "$FIX/round4/Zenitex Balaclava Pack-17411-2-1-1780145222.zip" "$FIX/round3/Equipment-EX 6945 1.2.10 2026-10-25T21-07Z k8Iw8mmPd.zip"
+       "$FIX/round4/Chain Jewelry - Main-15861-1-2-1728769757.zip" "$FIX/round4/Reyes Accessories - Main File-17069-1-1-1741904576.zip")
+newworld round5 native; OSR="$T/os-arch"; D="$H/Downloads"; mkdir -p "$D" "$G/archive/pc/ep1"
+PRISTINE_R5="$(snapshot "$G")"
+cp "${R5_DL[@]}" "$FIX"/round5/* "$D/"
+# newer files that the rules pass over: a colour set of Zenitex Core, one blade of Katana Pack 2, Browser Extension's example
+cp "$FIX/round5/Zenitex Core Dependency - Verdant Set-16356-4-1-3-1766449434.zip" "$D/Zenitex Core Dependency - Verdant Set 16356 5.2 2026-11-20T09-00Z Co8doe62g.zip"
+cp "$FIX/round5/Nagakiba 36164 1.1 2026-11-07T04-36Z JSKWSQsh2.zip" "$D/Nagakiba 36164 1.2 2026-11-20T09-00Z Co8doe62h.zip"
+cp "$FIX/round5/BrowserExtensionExample-10038-0-9-1697377093.zip" "$D/BrowserExtensionExample 10038 0.9.8 2026-11-20T09-00Z Co8doe62i.zip"
+run install --yes --with-mods --with-equipment-ex
+expect "Zenitex Core Dependency by its main file (not a newer colour set), so the balaclavas install" '[ $RC = 0 ] && [ -f "$G/r6/tweaks/scorpiontank/#_scorpion_zenitex_core_dependency.yaml" ] && [ -f "$G/archive/pc/mod/#_scorpion_zenitex_core_dependency.xl" ] && ! ls "$G/archive/pc/mod" | grep -q -i verdant && [ -f "$G/r6/tweaks/scorpiontank/scorpion_zenitex_balaclava_pack.yaml" ]' "$OUT"
+expect "The Community Palette Project, a bare .archive, goes into archive/pc/mod; Chain Jewelry and Reyes Accessories follow" '[ -f "$G/archive/pc/mod/TheCommunityPaletteProject_MLTemplateResource.archive" ] && [ ! -e "$G/TheCommunityPaletteProject_MLTemplateResource.archive" ] && [ ! -e "$G/.bare-files" ] && [ -f "$G/r6/tweaks/raem/rm_acc_set_doll.yaml" ] && [ -f "$G/archive/pc/mod/rm_acc_rings_reyes.xl" ]' "$OUT"
+expect "Immersive First Person (CET mod, plugin, scripts), not its file for Immersive Third Person, which it passes over quietly" '[ -f "$G/bin/x64/plugins/cyber_engine_tweaks/mods/ImmersiveFirstPerson/init.lua" ] && [ -f "$G/red4ext/Plugins/ImmersiveFirstPerson/ImmersiveFirstPerson.dll" ] && [ -f "$G/r6/scripts/ImmersiveFirstPerson/LookAt.reds" ] && [ ! -e "$G/archive/pc/mod/0_ImmersiveFirstPerson_ITP_Compat.archive" ] && [[ "$OUT" != *"ITP Compatibility"* ]]' "$OUT"
+expect "Katana Pack 2 by its file with every blade (not a newer single blade), Browser Extension's framework (not its newer example), Curbside" '[ -f "$G/archive/pc/mod/Katana_Pack_2.archive" ] && [ -f "$G/r6/scripts/KatanaPack2_Scripts/KatanaCyberfang.reds" ] && [ -f "$G/r6/audioware/KatanaPack2Sounds/SwordOfNight.yml" ] && [ ! -e "$G/archive/pc/mod/Katana_Nagakiba.archive" ] && [ -f "$G/r6/scripts/BrowserExtension/BrowserExtension.System.reds" ] && [ ! -e "$G/r6/scripts/CustomSiteExample" ] && [ ! -e "$G/archive/pc/mod/CustomSiteExample.archive" ] && [ -f "$G/r6/scripts/Curbside/CBS_Run.reds" ]' "$OUT"
+expect "Iconic Shops with Phantom Liberty there; the co-op note on Katana Pack 2" '[ -f "$G/r6/scripts/iconicshop/shops/top.reds" ] && [[ "$OUT" != *"Phantom Liberty is not installed"* ]] && [[ "$OUT" == *"Katana Pack 2 in co-op: a partner without it sees a game blade of the same kind in your hands"* ]]' "$OUT"
+run update --yes
+expect "a rerun changes nothing" '[ $RC = 0 ] && [[ "$OUT" == *"everything is up to date; nothing to do"* ]]' "$OUT"
+run check
+expect "check: Zenitex Core Dependency and the four mods in the mod set's row, The Community Palette Project in Equipment-EX's" '[[ "$OUT" == *"Mods:"*"Immersive First Person 2.2.0, Katana Pack 2 1.1, Curbside 1.0.1"*"Zenitex Core Dependency 5.1.8"*"Browser Extension 0.9.7"* ]] && [[ "$OUT" == *"Equipment-EX:"*"The Community Palette Project 1.1"* ]]' "$OUT"
+run uninstall --yes
+expect "uninstall puts the game folder back exactly" '[ $RC = 0 ] && [ "$PRISTINE_R5" = "$(snapshot "$G")" ]' "$(diff <(echo "$PRISTINE_R5") <(snapshot "$G"))"
+newworld round5needs native; OSR="$T/os-arch"; D="$H/Downloads"; mkdir -p "$D"   # no Phantom Liberty, no Zenitex Core, no palette
+cp "${R5_DL[@]}" "$D/"
+cp "$FIX/round5/Zenitex Core Dependency - Verdant Set-16356-4-1-3-1766449434.zip" "$D/Zenitex Core Dependency - Verdant Set 16356 5.2 2026-11-20T09-00Z Co8doe62g.zip"
+run install --yes --with-mods --with-equipment-ex
+expect "without Zenitex Core Dependency the balaclavas are left out; its colour set is not taken for it, and its page is named" '[ $RC = 0 ] && [ ! -e "$G/r6/tweaks/scorpiontank/scorpion_zenitex_balaclava_pack.yaml" ] && ! ls "$G/archive/pc/mod" | grep -q -i verdant && [[ "$OUT" == *"Zenitex Balaclava Pack needs Zenitex Core Dependency, which is not here"* ]] && [[ "$OUT" == *"Verdant Set 16356 5.2 2026-11-20T09-00Z Co8doe62g.zip is not installed: it is another file of Zenitex Core Dependency than the one this script takes (the main file, not No Camo, Black Decals or a colour set)"* ]] && [[ "$OUT" == *"Zenitex Core Dependency (the main file, not No Camo, Black Decals or a colour set): https://www.nexusmods.com/cyberpunk2077/mods/16356?tab=files"* ]]' "$OUT"
+expect "without The Community Palette Project, Chain Jewelry and Reyes Accessories are left out" '[ ! -e "$G/r6/tweaks/raem/rm_acc_set_doll.yaml" ] && [ ! -e "$G/archive/pc/mod/rm_acc_rings_reyes.xl" ] && [[ "$OUT" == *"Reyes Accessories needs The Community Palette Project, which is not here"* ]] && [[ "$OUT" == *"The Community Palette Project: https://www.nexusmods.com/cyberpunk2077/mods/10437?tab=files"* ]]' "$OUT"
+expect "without Phantom Liberty, Iconic Shops is left out, and said so" '[ ! -e "$G/r6/scripts/iconicshop" ] && [[ "$OUT" == *"Phantom Liberty is not installed: Iconic Shops, "* ]]' "$OUT"
+mkdir -p "$T/bare-two/One" "$T/bare-two/Two"; printf 'RDAR one' > "$T/bare-two/One/palette.archive"; printf 'RDAR two' > "$T/bare-two/Two/palette.archive"
+(cd "$T/bare-two" && python3 -I -m zipfile -c "$D/The Community Palette Project 10437 1.2 2026-11-20T09-00Z Co8doe62j.zip" One Two)
+run update --yes
+expect "a download of bare .archive files in two folders (versions to choose from) is not installed" '[ $RC = 0 ] && [[ "$OUT" == *"Co8doe62j.zip has no game folders (r6, archive, bin, red4ext) or .archive files in it"* ]] && [ ! -e "$G/archive/pc/mod/palette.archive" ] && [[ "$OUT" == *"The Community Palette Project is left out: none of its downloads can be used"* ]]' "$OUT"
 
 # ------------------------------------------------- Cyber Engine Tweaks ----
 section "Cyber Engine Tweaks installed alongside"

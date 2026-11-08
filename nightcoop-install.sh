@@ -51,11 +51,12 @@
 #                         outfits (Zenitex, The RVC00N Dumpster, Nola Dreamer, Street Ninja),
 #                         hairstyles (Preem Hair and packs for the character creator),
 #                         Virtual Car Dealer with car and bike packs, Drive an Aerial Vehicle,
-#                         Vehicle Customizer, Cyber Drift, Impact FX, Immersive Audio Distance,
-#                         Quick Stash and No Intro Videos (download them from Nexus Mods; the
-#                         installer lists them), with the frameworks they need (Cyber Engine
-#                         Tweaks, Codeware, TweakXL, ArchiveXL, redscript, Mod Settings,
-#                         Audioware, VendorsXL and more); kept up to date
+#                         Vehicle Customizer, Curbside, Cyber Drift, Impact FX, Immersive Audio
+#                         Distance, Immersive First Person, Katana Pack 2, Quick Stash and No
+#                         Intro Videos (download them from Nexus Mods; the installer lists them),
+#                         with the frameworks they need (Cyber Engine Tweaks, Codeware, TweakXL,
+#                         ArchiveXL, redscript, Mod Settings, Audioware, VendorsXL, Zenitex Core
+#                         Dependency, Browser Extension and more); kept up to date
 #   --without-mods        remove those mods again (the frameworks stay)
 #   --with-equipment-ex   also install Equipment-EX (from Nexus Mods), to wear layered outfits,
 #                         and with --with-mods jewellery made for its slots; every partner in a
@@ -102,13 +103,13 @@ MIN_GAME_FILEVER="3.0.88.46235" MIN_GAME_PATCH="2.5"
 #   mods (--with-mods)      Virtual Atelier with stores of the game's own items and the stores of
 #                           Zenitex, The RVC00N Dumpster 3, Nola Dreamer and Street Ninja with
 #                           their outfits, hairstyles, Virtual Car Dealer with car and bike packs,
-#                           Drive an Aerial Vehicle, Vehicle Customizer, Cyber Drift (Light), Impact
-#                           FX, Immersive Audio Distance, Quick Stash and No Intro Videos, and the
-#                           frameworks they need.
+#                           Drive an Aerial Vehicle, Vehicle Customizer, Curbside, Cyber Drift (Light),
+#                           Impact FX, Immersive Audio Distance, Immersive First Person, Katana Pack 2,
+#                           Quick Stash and No Intro Videos, and the frameworks they need.
 #   eqex (--with-equipment-ex)  Equipment-EX, which wears clothes in layers. NightCoop sends looks by
 #                           its slots: a partner without it sees other slots.
-#   mods+eqex               Only with both: raem's jewellery, made for Equipment-EX's slots, and
-#                           the store that sells it.
+#   mods+eqex               Only with both: raem's jewellery, made for Equipment-EX's slots, the
+#                           store that sells it, and The Community Palette Project, which it needs.
 # A component in both sets is installed once. When its sets are dropped (--without-...), a
 # "mod" is removed and a "lib" stays, since other mods use it too.
 # Source: a GitHub release (archive and pinned SHA-256), or nexus:<mod id>[:<prefer>[:<avoid>,...]]
@@ -148,6 +149,7 @@ Drive_an_Aerial_Vehicle       2.5 mods        mod  -     -                      
 All_Vanilla_Clothes           2.5 mods        mod  -     -                                                           1.0    nexus:5544
 Iconic_Shops                  2.5 mods        mod  -     -                                                           3.6.1  nexus:7215
 Zenitex_Virtual_Atelier       2.5 mods        mod  -     -                                                           4.13   nexus:10090
+Zenitex_Core_Dependency       2.5 mods        lib  -     -                                                           5.1.8  nexus:16356:-:_-_
 Zenitex_Ballistic_Mask        2.5 mods        mod  -     -                                                           4.1    nexus:12422:-:alt._colo,_-_gs
 Zenitex_Tactical_Harness      2.5 mods        mod  -     -                                                           4.0    nexus:9774:-:alt._colo,_-_gs
 Zenitex_Combat_Jacket         2.5 mods        mod  -     -                                                           2.0.1  nexus:19119:-:alt._colo,_-_gs
@@ -241,10 +243,15 @@ Undercut_Slickback            2.5 mods        mod  -     -                      
 Undercut_Sidewave             2.5 mods        mod  -     -                                                           1.0    nexus:19907:+hair_02
 Undercut_ManBun               2.5 mods        mod  -     -                                                           1.0    nexus:19907:+hair_03
 Undercut_Slickback_Braids     2.5 mods        mod  -     -                                                           1.1    nexus:19907:+hair_04
+The_Community_Palette_Project 2.5 mods+eqex   lib  -     -                                                           1.1    nexus:10437
 Bullet_Necklace               2.5 mods+eqex   mod  -     -                                                           1.1    nexus:15076
 Chain_Jewelry                 2.5 mods+eqex   mod  -     -                                                           1.2    nexus:15861:+jewelry_-_main
 Reyes_Accessories             2.5 mods+eqex   mod  -     -                                                           1.1    nexus:17069
 raem_Accessory_Store          2.5 mods+eqex   mod  -     -                                                           2.0    nexus:14210:+accessories_-_main
+Browser_Extension             2.5 mods        lib  -     -                                                           0.9.7  nexus:10038:+browserextensionframework
+Immersive_First_Person        2.5 mods        mod  -     -                                                           2.2.0  nexus:2675:-:~itp_compatibility
+Katana_Pack_2                 2.5 mods        mod  -     -                                                           1.1    nexus:36164:+katana_pack_2
+Curbside                      2.5 mods        mod  -     -                                                           1.0.1  nexus:35922
 "
 # <<< add-on sets
 # What a component needs besides RED4ext: without it, it is not installed (a store without
@@ -252,22 +259,27 @@ raem_Accessory_Store          2.5 mods+eqex   mod  -     -                      
 # A component comes after what it needs in the table above.
 # Phantom_Liberty is the game's expansion (archive/pc/ep1), not a component: without it, what needs
 # it is left out.
-ADDON_NEEDS="Let_There_Be_Flight:redscript,ArchiveXL,TweakXL,Input_Loader
-Mod_Settings:redscript,ArchiveXL Audioware:redscript,Codeware,TweakXL Native_Settings_UI:Cyber_Engine_Tweaks
-Virtual_Atelier:redscript,Codeware,ArchiveXL,Mod_Settings A.G.I.S.:Virtual_Atelier Night_City_Marketplace:Virtual_Atelier
-Virtual_Car_Dealer:redscript,Codeware,ArchiveXL,TweakXL Quick_Stash:Cyber_Engine_Tweaks Cyber_Drift:Cyber_Engine_Tweaks
+ADDON_NEEDS="Let_There_Be_Flight:redscript,ArchiveXL,TweakXL,Input_Loader Mod_Settings:redscript,ArchiveXL
+Audioware:redscript,Codeware,TweakXL Native_Settings_UI:Cyber_Engine_Tweaks
+Virtual_Atelier:redscript,Codeware,ArchiveXL,Mod_Settings A.G.I.S.:Virtual_Atelier
+Night_City_Marketplace:Virtual_Atelier Virtual_Car_Dealer:redscript,Codeware,ArchiveXL,TweakXL
+Quick_Stash:Cyber_Engine_Tweaks Cyber_Drift:Cyber_Engine_Tweaks
 Drive_an_Aerial_Vehicle:redscript,Codeware,TweakXL,Cyber_Engine_Tweaks,Native_Settings_UI
-All_Vanilla_Clothes:Virtual_Atelier Iconic_Shops:Virtual_Atelier,TweakXL Zenitex_Virtual_Atelier:Virtual_Atelier
-Zenitex_Ballistic_Mask:ArchiveXL,TweakXL Zenitex_Tactical_Harness:ArchiveXL,TweakXL Zenitex_Combat_Jacket:ArchiveXL,TweakXL
-Zenitex_Armor_Pads:ArchiveXL,TweakXL Zenitex_Panam_Pants:ArchiveXL,TweakXL Zenitex_Combat_Gloves:ArchiveXL,TweakXL
-Comfy_Boots:ArchiveXL,TweakXL Vehicle_Pack_Basic_1:Virtual_Car_Dealer Vehicle_Pack_Basic_2:Virtual_Car_Dealer
-Cyberpunk_Bikes_Edge:ArchiveXL,TweakXL Bikes_of_the_Dark_Future:ArchiveXL,TweakXL,Cyber_Engine_Tweaks,redscript,Vehicle_Exit_Fix
+All_Vanilla_Clothes:Virtual_Atelier Iconic_Shops:Virtual_Atelier,TweakXL,Phantom_Liberty
+Zenitex_Virtual_Atelier:Virtual_Atelier Zenitex_Core_Dependency:ArchiveXL,TweakXL
+Zenitex_Ballistic_Mask:ArchiveXL,TweakXL,Zenitex_Core_Dependency
+Zenitex_Tactical_Harness:ArchiveXL,TweakXL,Zenitex_Core_Dependency
+Zenitex_Combat_Jacket:ArchiveXL,TweakXL,Zenitex_Core_Dependency
+Zenitex_Armor_Pads:ArchiveXL,TweakXL,Zenitex_Core_Dependency
+Zenitex_Panam_Pants:ArchiveXL,TweakXL,Zenitex_Core_Dependency
+Zenitex_Combat_Gloves:ArchiveXL,TweakXL,Zenitex_Core_Dependency Comfy_Boots:ArchiveXL,TweakXL Vehicle_Exit_Fix:redscript
+Vehicle_Pack_Basic_1:Virtual_Car_Dealer Vehicle_Pack_Basic_2:Virtual_Car_Dealer Cyberpunk_Bikes_Edge:ArchiveXL,TweakXL
+Bikes_of_the_Dark_Future:ArchiveXL,TweakXL,Cyber_Engine_Tweaks,redscript,Vehicle_Exit_Fix
 Toyota_Supra_HKS:ArchiveXL,TweakXL,Cyber_Engine_Tweaks,redscript,Vehicle_Manufacturer_Fix
 Porsche_911_GT3_RS:ArchiveXL,TweakXL,Cyber_Engine_Tweaks,Material_and_Texture_Override,Virtual_Car_Dealer
-Vehicle_Customizer:Cyber_Engine_Tweaks Vehicle_Customizer_update:Vehicle_Customizer
-Deceptious_Quest_Core:ArchiveXL VendorsXL:redscript,Codeware,ArchiveXL,TweakXL,Deceptious_Quest_Core
-Equipment_EX:redscript,Codeware,ArchiveXL,TweakXL Impact_FX:redscript,Codeware,TweakXL
-Immersive_Audio_Distance:redscript,Codeware
+Vehicle_Customizer:Cyber_Engine_Tweaks Vehicle_Customizer_update:Vehicle_Customizer Deceptious_Quest_Core:ArchiveXL
+VendorsXL:redscript,Codeware,ArchiveXL,TweakXL,Deceptious_Quest_Core Equipment_EX:redscript,Codeware,ArchiveXL,TweakXL
+Impact_FX:redscript,Codeware,TweakXL Immersive_Audio_Distance:redscript,Codeware
 Apollo_Intensa_Emozione:redscript,Codeware,ArchiveXL,TweakXL,Cyber_Engine_Tweaks,Virtual_Car_Dealer
 Countach_LPI_800-4:redscript,Codeware,ArchiveXL,TweakXL,Cyber_Engine_Tweaks,Virtual_Car_Dealer
 Countach_Liberty_Walk:redscript,Codeware,ArchiveXL,TweakXL,Cyber_Engine_Tweaks,Virtual_Car_Dealer
@@ -276,30 +288,35 @@ Toyota_GR_Yaris:ArchiveXL,TweakXL,Virtual_Car_Dealer Toyota_GR_Yaris_Rocket_Bunn
 Nissan_Silvia_S14:redscript,ArchiveXL,TweakXL,Vehicle_Manufacturers_Resource,Virtual_Car_Dealer
 Goliath_Coat:ArchiveXL,TweakXL Cityfolk_Hoodie:ArchiveXL,TweakXL Knife_Bandolier:ArchiveXL,TweakXL
 Bunny_Slippers:ArchiveXL,TweakXL Saul_Pants:ArchiveXL,TweakXL CrystalJock_Bomber:ArchiveXL,TweakXL
-Master_Chief_Suit:ArchiveXL,TweakXL Indiana_Jones_Outfit:ArchiveXL,TweakXL
-Fifth_Element_Collection:ArchiveXL,TweakXL Cityfolk_Short_Jacket:ArchiveXL,TweakXL
-Jackies_Jacket:ArchiveXL,TweakXL Stinky_Burnt_Top:ArchiveXL,TweakXL Stinky_Slashed_Top:ArchiveXL,TweakXL
-Stinky_Croptop:ArchiveXL,TweakXL Yeehaw_Collar_Shirt:ArchiveXL,TweakXL Chuckwalla_T-Shirt:ArchiveXL,TweakXL
-Stinky_Mechanic_Pants:ArchiveXL,TweakXL Stinky_Quilted_Pants:ArchiveXL,TweakXL
-Stinky_Bootcut_Jeans:ArchiveXL,TweakXL Stinky_Leather_Jeans:ArchiveXL,TweakXL
-David_Martinez_Pants:ArchiveXL,TweakXL Yeehaw_Spur_Boots:ArchiveXL,TweakXL
-Latex_Succubus_Tail:ArchiveXL,TweakXL Trauma_Team_Jumpsuit:ArchiveXL,TweakXL Dexter_Pants:ArchiveXL,TweakXL
-Dexter_Vest:ArchiveXL,TweakXL Dexter_Shoes:ArchiveXL,TweakXL PinkyBlume_Croptop:ArchiveXL,TweakXL
-RVC00N_Dumpster_3:Virtual_Atelier,ArchiveXL,TweakXL,VendorsXL Street_Ninja_Remake:redscript,Codeware,ArchiveXL,TweakXL
-Street_Ninja_Shop:Virtual_Atelier,Cyber_Engine_Tweaks,Street_Ninja_Remake
-AirPods_Max:ArchiveXL,TweakXL
+Master_Chief_Suit:ArchiveXL,TweakXL Indiana_Jones_Outfit:ArchiveXL,TweakXL Fifth_Element_Collection:ArchiveXL,TweakXL
+Cityfolk_Short_Jacket:ArchiveXL,TweakXL Jackies_Jacket:ArchiveXL,TweakXL Stinky_Burnt_Top:ArchiveXL,TweakXL
+Stinky_Slashed_Top:ArchiveXL,TweakXL Stinky_Croptop:ArchiveXL,TweakXL Yeehaw_Collar_Shirt:ArchiveXL,TweakXL
+Chuckwalla_T-Shirt:ArchiveXL,TweakXL Stinky_Mechanic_Pants:ArchiveXL,TweakXL Stinky_Quilted_Pants:ArchiveXL,TweakXL
+Stinky_Bootcut_Jeans:ArchiveXL,TweakXL Stinky_Leather_Jeans:ArchiveXL,TweakXL David_Martinez_Pants:ArchiveXL,TweakXL
+Yeehaw_Spur_Boots:ArchiveXL,TweakXL Latex_Succubus_Tail:ArchiveXL,TweakXL Trauma_Team_Jumpsuit:ArchiveXL,TweakXL
+Dexter_Pants:ArchiveXL,TweakXL Dexter_Vest:ArchiveXL,TweakXL Dexter_Shoes:ArchiveXL,TweakXL
+PinkyBlume_Croptop:ArchiveXL,TweakXL RVC00N_Dumpster_3:Virtual_Atelier,ArchiveXL,TweakXL,VendorsXL
+Street_Ninja_Remake:redscript,Codeware,ArchiveXL,TweakXL
+Street_Ninja_Shop:Virtual_Atelier,Cyber_Engine_Tweaks,Street_Ninja_Remake AirPods_Max:ArchiveXL,TweakXL
 Nola_Barbed_Accessories:ArchiveXL,TweakXL Nola_Bracelets:ArchiveXL,TweakXL Nola_Heart_Choker:ArchiveXL,TweakXL
 Nola_Mini_Dress:ArchiveXL,TweakXL Nola_Moon_Accessories:ArchiveXL,TweakXL Nola_Spiked_Collar:ArchiveXL,TweakXL
-Nola_Accessories_Store:Virtual_Atelier
-Zenitex_Combat_Armor:ArchiveXL,TweakXL Zenitex_FAST_Helmet:ArchiveXL,TweakXL,Phantom_Liberty
-Zenitex_Ballistic_Vest:ArchiveXL,TweakXL Zenitex_Combat_Boots:ArchiveXL,TweakXL
-Zenitex_Pistol_Holsters:ArchiveXL,TweakXL,Phantom_Liberty Zenitex_Military_Backpack:ArchiveXL,TweakXL,Phantom_Liberty
-Zenitex_Military_Underwear:ArchiveXL,TweakXL Zenitex_Combat_Goggles:ArchiveXL,TweakXL Zenitex_Balaclava_Pack:ArchiveXL,TweakXL
-Nola_Virtual_Boutique:Virtual_Atelier Wolfcut_Messy:ArchiveXL Wolfcut_Emo:ArchiveXL Wolfcut_Hime_Short:ArchiveXL
-Wolfcut_Hime_Medium:ArchiveXL Wolfcut_Hime_Long:ArchiveXL Subleader_Hair_Pack:ArchiveXL Hyst_Hair_Collection:ArchiveXL
+Nola_Accessories_Store:Virtual_Atelier Zenitex_Combat_Armor:ArchiveXL,TweakXL,Zenitex_Core_Dependency
+Zenitex_FAST_Helmet:ArchiveXL,TweakXL,Zenitex_Core_Dependency,Phantom_Liberty
+Zenitex_Ballistic_Vest:ArchiveXL,TweakXL,Zenitex_Core_Dependency
+Zenitex_Combat_Boots:ArchiveXL,TweakXL,Zenitex_Core_Dependency
+Zenitex_Pistol_Holsters:ArchiveXL,TweakXL,Zenitex_Core_Dependency,Phantom_Liberty
+Zenitex_Military_Backpack:ArchiveXL,TweakXL,Zenitex_Core_Dependency,Phantom_Liberty
+Zenitex_Military_Underwear:ArchiveXL,TweakXL,Zenitex_Core_Dependency
+Zenitex_Combat_Goggles:ArchiveXL,TweakXL,Zenitex_Core_Dependency
+Zenitex_Balaclava_Pack:ArchiveXL,TweakXL,Zenitex_Core_Dependency Nola_Virtual_Boutique:Virtual_Atelier
+Wolfcut_Messy:ArchiveXL Wolfcut_Emo:ArchiveXL Wolfcut_Hime_Short:ArchiveXL Wolfcut_Hime_Medium:ArchiveXL
+Wolfcut_Hime_Long:ArchiveXL Subleader_Hair_Pack:ArchiveXL Hyst_Hair_Collection:ArchiveXL
 Meluminary_Hair_Megapak:ArchiveXL Undercut_Slickback:ArchiveXL Undercut_Sidewave:ArchiveXL Undercut_ManBun:ArchiveXL
-Undercut_Slickback_Braids:ArchiveXL Bullet_Necklace:ArchiveXL,TweakXL,Equipment_EX Chain_Jewelry:ArchiveXL,TweakXL,Equipment_EX
-Reyes_Accessories:ArchiveXL,TweakXL,Equipment_EX raem_Accessory_Store:Virtual_Atelier"
+Undercut_Slickback_Braids:ArchiveXL Bullet_Necklace:ArchiveXL,TweakXL,Equipment_EX
+Chain_Jewelry:ArchiveXL,TweakXL,Equipment_EX,The_Community_Palette_Project
+Reyes_Accessories:ArchiveXL,TweakXL,Equipment_EX,The_Community_Palette_Project raem_Accessory_Store:Virtual_Atelier
+Browser_Extension:redscript,Codeware Immersive_First_Person:Cyber_Engine_Tweaks,redscript
+Katana_Pack_2:redscript,Codeware,ArchiveXL,TweakXL,Audioware Curbside:redscript"
 # Outfit mods: in co-op, a partner without the same mod sees a plain game piece in their place.
 OUTFITS="Zenitex_Ballistic_Mask Zenitex_Tactical_Harness Zenitex_Combat_Jacket Zenitex_Armor_Pads Zenitex_Panam_Pants
 Zenitex_Combat_Gloves Comfy_Boots Goliath_Coat Cityfolk_Hoodie Knife_Bandolier Bunny_Slippers Saul_Pants CrystalJock_Bomber
@@ -1540,9 +1557,60 @@ def cmd_roots(top):
         out(r)
 
 
+# An archive with no game folders may hold only archive/pc/mod's files, as mod managers take it;
+# besides them it may hold notes and pictures, nothing else.
+BARE_EXTS = ('.archive', '.xl')
+NOTE_EXTS = ('', '.txt', '.md', '.pdf', '.png', '.jpg', '.jpeg', '.webp', '.gif', '.url', '.html', '.htm')   # '': LICENSE, README
+
+
+def bare_files(top):
+    """The .archive and .xl files of an unpacked archive with no game folders, when they lie at its
+    root or in one folder below it, all in the same folder, and nothing else is there but notes. A
+    fomod installer, files in several folders (versions to choose from) or another kind of file
+    (a script, whose place cannot be told): none."""
+    found = []
+    for dp, dns, fns in os.walk(top):
+        rel = os.path.relpath(dp, top)
+        if 'fomod' in (n.lower() for n in dns + [os.path.basename(dp)]):
+            return []
+        dns[:] = [n for n in dns if n.lower() != '__macosx']
+        for fn in fns:
+            ext = os.path.splitext(fn)[1].lower()
+            if ext in BARE_EXTS:
+                found.append((rel, os.path.join(dp, fn)))
+            elif ext not in NOTE_EXTS:
+                return []
+    if not found or len({r for r, _ in found}) > 1 or found[0][0].count(os.sep) > 0:
+        return []
+    return sorted(p for _, p in found)
+
+
+def cmd_split_roots(addons, *entries):
+    """The roots of each component (entries "component<TAB>root"), with a folder that more than one
+    component puts files in replaced, for each of them, by its own files there (from <addons>/
+    <component>.files, its unpacked game folders), so that keeping one does not keep the others'."""
+    owners = {}
+    for e in entries:
+        c, r = e.split('\t', 1)
+        if r.endswith('/'):
+            owners.setdefault(r.lower(), set()).add(c)
+    for e in entries:
+        c, r = e.split('\t', 1)
+        top = os.path.join(addons, c + '.files', r)
+        if len(owners.get(r.lower(), ())) < 2 or not os.path.isdir(top):
+            out(e)
+            continue
+        for dp, dns, fns in os.walk(top):
+            dns.sort()
+            for fn in sorted(fns):
+                out(c + '\t' + r + os.path.relpath(os.path.join(dp, fn), top).replace(os.sep, '/'))
+
+
 def cmd_modroot(top):
     """The folder in an unpacked mod archive that holds the game folders (r6, archive, bin,
-    red4ext, engine, mods): the archive root, or a folder at most two levels below it."""
+    red4ext, engine, mods): the archive root, or a folder at most two levels below it. With none,
+    an archive of bare .archive and .xl files (see bare_files) is moved into a new folder's
+    archive/pc/mod, and that folder is the root."""
     level = [top]
     for _ in range(3):
         for d in level:
@@ -1551,7 +1619,15 @@ def cmd_modroot(top):
                 return
         level = [os.path.join(d, n) for d in level for n in sorted(os.listdir(d))
                  if os.path.isdir(os.path.join(d, n)) and n.lower() not in ('fomod', '__macosx')]
-    die('no game folders (r6, archive, bin, red4ext, engine, mods) in the archive')
+    bare = bare_files(top)
+    if bare:
+        root = os.path.join(top, '.bare-files')
+        os.makedirs(os.path.join(root, 'archive', 'pc', 'mod'), exist_ok=True)
+        for p in bare:
+            os.replace(p, os.path.join(root, 'archive', 'pc', 'mod', os.path.basename(p)))
+        out(root)
+        return
+    die('no game folders (r6, archive, bin, red4ext, engine, mods) or .archive files in the archive')
 
 
 # How Nexus Mods names a download: <file name>-<mod id>-<version>-<upload time>.<ext> until 2026
@@ -1660,7 +1736,7 @@ def cmd_keep_state(files, game, recorded, *patterns):
 
 
 CMDS = {
-    'roots': cmd_roots, 'modroot': cmd_modroot, 'nexus-find': cmd_nexus_find, 'keep-state': cmd_keep_state,
+    'roots': cmd_roots, 'split-roots': cmd_split_roots, 'modroot': cmd_modroot, 'nexus-find': cmd_nexus_find, 'keep-state': cmd_keep_state,
     'pever': cmd_pever, 'gamever': cmd_gamever, 'r4ok': cmd_r4ok, 'pestr': cmd_pestr, 'vge': cmd_vge, 'builtin': cmd_builtin, 'pecrt': cmd_pecrt,
     'libs': cmd_libs, 'proton': cmd_proton, 'slr': cmd_slr,
     'ct-get': cmd_ct_get, 'ct-list': cmd_ct_list, 'ct-pick': cmd_ct_pick, 'ct-set': cmd_ct_set,
@@ -2515,6 +2591,7 @@ nexus_file() {   # nexus_file <component>: which file to download, of a mod with
         No_Intro_Videos) echo "the archive file" ;;
         Cyber_Drift) echo "the Light file" ;;
         Zenitex_Virtual_Atelier) ;;
+        Zenitex_Core_Dependency) echo "the main file, not No Camo, Black Decals or a colour set" ;;
         Zenitex_*_*) echo "the main file, not Alt. Colors or GS" ;;
         Comfy_Boots) echo "the Female V and Male V file" ;;
         Vehicle_Pack_Basic_1) echo "Car Pack 1" ;;
@@ -2553,6 +2630,9 @@ nexus_file() {   # nexus_file <component>: which file to download, of a mod with
         Undercut_Slickback_Braids) echo "HAIR 04 - Slickback Braids Undercut" ;;
         Chain_Jewelry) echo "Chain Jewelry - Main" ;;
         raem_Accessory_Store) echo "Accessories - Main Store, among the optional files" ;;
+        Browser_Extension) echo "the main file, BrowserExtensionFramework" ;;
+        Immersive_First_Person) echo "the main file, not ITP Compatibility" ;;
+        Katana_Pack_2) echo "Katana Pack 2, the main file with every blade" ;;
     esac
 }
 nexus_avoided() {   # nexus_avoided <component>: what a file of it that is never installed is
@@ -2661,7 +2741,7 @@ step_addons() {   # the add-on sets (--with-flight, --with-mods), matched to the
             if ! why="$(unpack_any "$path" "$dir")"; then warn "could not unpack $(basename "$path"): ${why:-unknown error}"; continue; fi
             find "$dir" -type l -delete   # nothing that points out of the game folder
             if root="$(py modroot "$dir" 2>/dev/null)"; then break; fi
-            warn "$(basename "$path") has no game folders (r6, archive, bin, red4ext) in it"
+            warn "$(basename "$path") has no game folders (r6, archive, bin, red4ext) or .archive files in it"
         done
         if [ -z "$root" ]; then
             if [ -n "$(recorded_roots "$comp")" ]; then
@@ -2692,6 +2772,9 @@ step_addons() {   # the add-on sets (--with-flight, --with-mods), matched to the
         if [ -n "$ours" ]; then e="$(sha256sum "$ours" | cut -d' ' -f1)"; else e=-; fi
         ADDON_VERS+=("$comp"$'\t'"$ver"$'\t'"$e")
     done <<<"$lines"
+    # a folder that several components put files in (Zenitex Core Dependency's and the outfits'
+    # r6/tweaks/scorpiontank) is recorded file by file: a framework kept later keeps only its own
+    if [ "${#ADDON_ROOTS[@]}" -gt 0 ]; then mapfile -t ADDON_ROOTS < <(py split-roots "$TMP/addons" "${ADDON_ROOTS[@]}"); fi
     if [ "${#ADDON_PLAN[@]}" -gt 0 ]; then ok "for game ${GAME_VER:-?}: $(listing "${ADDON_PLAN[@]}")"; fi
     if [ "${#ADDON_DROP[@]}" -gt 0 ]; then ok "$(listing "${ADDON_DROP[@]}") will be removed; the frameworks they needed stay, since other mods use them"; fi
     if [ "${#ADDON_GONE[@]}" -gt 0 ]; then ok "$(listing "${ADDON_GONE[@]}") will be removed: no longer part of the set"; fi
@@ -2703,6 +2786,10 @@ step_addons() {   # the add-on sets (--with-flight, --with-mods), matched to the
     if [[ "$ADDON_HAVE" == *" Virtual_Car_Dealer "* ]] || [[ "$ADDON_HAVE" == *" Drive_an_Aerial_Vehicle "* ]]; then
         info "Cars and AVs in co-op: partners see a car of a mod (one Virtual Car Dealer sells, an AV of Drive an"
         info "Aerial Vehicle) only when they have that mod too; otherwise NightCoop shows a game car with as many seats."
+    fi
+    if [[ "$ADDON_HAVE" == *" Katana_Pack_2 "* ]]; then
+        info "Katana Pack 2 in co-op: a partner without it sees a game blade of the same kind in your hands, and the"
+        info "blades' charge effects show only on your screen; their hits count for everyone."
     fi
     local o outfit=0 layered=0
     for o in $ADDON_HAVE; do
@@ -2788,7 +2875,7 @@ addon_rows() {   # check: each add-on set
             elif [ -n "$v" ]; then row "Let There Be Flight" "$v (installed by hand; --with-flight keeps it and what it needs up to date)"
             else row "Let There Be Flight" "not installed; NightCoop supports it in co-op (add --with-flight)"; fi
         elif [ "$set" = eqex ]; then
-            if [[ " $SETS_RECORDED " == *" eqex "* ]]; then row "Equipment-EX" "$(listing "${mods[@]:-missing}") (kept up to date by this script)"
+            if [[ " $SETS_RECORDED " == *" eqex "* ]]; then row "Equipment-EX" "$(listing "${mods[@]:-missing}"), with $(listing "${libs[@]:-nothing}") (kept up to date by this script)"
             else row "Equipment-EX" "not installed by this script (add --with-equipment-ex to wear layered outfits)"; missing=(); fi
         elif [[ " $SETS_RECORDED " == *" mods "* ]]; then
             row "Mods" "$(listing "${mods[@]:-none yet}"), with $(listing "${libs[@]:-nothing}") (kept up to date by this script)"

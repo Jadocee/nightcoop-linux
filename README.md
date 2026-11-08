@@ -309,12 +309,19 @@ work with the patch.
 | Native Settings UI | [3518](https://www.nexusmods.com/cyberpunk2077/mods/3518?tab=files) | 1.97 or newer | The settings pages of Drive an Aerial Vehicle and Cyber Drift |
 | Impact FX | [36631](https://www.nexusmods.com/cyberpunk2077/mods/36631?tab=files) | 0.8.3.3 or newer | Dust, smoke and debris that linger after a gunfight |
 | Immersive Audio Distance, its file for 2.5 | [36809](https://www.nexusmods.com/cyberpunk2077/mods/36809?tab=files) | 1.2.0 or newer | Voices, TVs, adverts and radios fade with distance |
+| Immersive First Person, its main file | [2675](https://www.nexusmods.com/cyberpunk2077/mods/2675?tab=files) | 2.2.0 or newer | A first-person camera that shows more of V's body, FreeLook (look around without turning V), and a height slider in Cyber Engine Tweaks' overlay |
+| Katana Pack 2, its file with every blade | [36164](https://www.nexusmods.com/cyberpunk2077/mods/36164?tab=files) | 1.1 or newer | Seventeen katanas and swords, some with charged attacks (a RAR archive) |
+| Curbside | [35922](https://www.nexusmods.com/cyberpunk2077/mods/35922?tab=files) | 1.0.1 or newer | A summoned car or bike comes to your level, stops beside you, and follows you if you walk off |
 
 **Frameworks**, downloaded from GitHub by the script: Mod Settings 0.2.28 (which Virtual
 Atelier needs), Audioware 1.11.1 (mods' own sounds), Cyber Engine Tweaks 1.38.1 (Lua mods),
 Codeware 1.21.2, TweakXL 1.12.0, ArchiveXL 1.28.6 and redscript 0.5.32 (the script mods,
 NightCoop's included). From Nexus Mods: VendorsXL 2.2.0 and Deceptious Quest Core 3.3.3, which
-The RVC00N Dumpster 3's shop in the world needs.
+The RVC00N Dumpster 3's shop in the world needs; Zenitex Core Dependency 5.1.8 ([16356](https://www.nexusmods.com/cyberpunk2077/mods/16356?tab=files), its
+main file, not No Camo, Black Decals or a colour set), whose stats and class bonuses every
+Zenitex outfit refers to; and Browser Extension 0.9.7 ([10038](https://www.nexusmods.com/cyberpunk2077/mods/10038?tab=files), its
+BrowserExtensionFramework file), which lists every site, Virtual Atelier's among them, on
+the in-game browser's home page.
 
 **Equipment-EX** (`--with-equipment-ex`, from Nexus Mods,
 [6945](https://www.nexusmods.com/cyberpunk2077/mods/6945?tab=files), 1.2.10 or newer, its main file)
@@ -332,6 +339,7 @@ hand slots (without it, a ring would take the whole torso slot):
 | V's Bullet Necklace, its main file | [15076](https://www.nexusmods.com/cyberpunk2077/mods/15076?tab=files) | 1.1 or newer | V's bullet necklace, with physics |
 | Chain Jewelry Collection, its main file | [15861](https://www.nexusmods.com/cyberpunk2077/mods/15861?tab=files) | 1.2 or newer | Six chain necklaces and two bracelets |
 | Reyes Accessories, its main file | [17069](https://www.nexusmods.com/cyberpunk2077/mods/17069?tab=files) | 1.1 or newer | Reyes' watch, bracelets and rings |
+| The Community Palette Project | [10437](https://www.nexusmods.com/cyberpunk2077/mods/10437?tab=files) | 1.1 or newer | The colours Chain Jewelry and Reyes Accessories use: a bare `.archive`, installed into `archive/pc/mod` |
 | raem's Atelier Store: Accessories - Main Store, among the optional files | [14210](https://www.nexusmods.com/cyberpunk2077/mods/14210?tab=files) | 2.0 or newer | The store that sells them (not raem's other stores, which would stay empty) |
 
 A download older than its minimum is passed over, with the reason. Nexus Mods does not let
@@ -354,7 +362,10 @@ so you download the Nexus mods yourself:
 
 Each archive's game folders (`archive`, `bin`, `engine`, `mods`, `r6`, `red4ext`) are
 installed, without read-me files or installer data, also when an archive wraps them in a
-folder of its own. Zip archives need nothing extra; 7z and RAR archives are unpacked with
+folder of its own. An archive without game folders that holds only `.archive` and `.xl` files
+(and notes), at its root or in one folder, is installed into `archive/pc/mod`, as mod
+managers do; one with such files in several folders (versions to choose from) is passed
+over. Zip archives need nothing extra; 7z and RAR archives are unpacked with
 `bsdtar` from libarchive, which SteamOS, CachyOS and Arch include. A download the script
 cannot use (damaged, without game folders, or a 7z or RAR archive with no `bsdtar`) is
 reported and passed over for an older copy, if there is one. A mod whose requirement is
@@ -396,9 +407,14 @@ new release of the mod changes the file it ships, and your copy is backed up fir
   without that hairstyle. Keep the mod set the same for everyone, and switch V to a game
   hairstyle before you remove the set.
 - **Phantom Liberty.** Three Zenitex pieces need it: the Ops-Core FAST Helmet, the Pistol
-  Holsters and the Backpack. Without the expansion (no `archive/pc/ep1` in the game folder)
-  the installer leaves them out and says so; a partner without it sees no helmet, and plain
-  game pieces for the others.
+  Holsters and the Backpack. So does Iconic Shops, which sells the expansion's iconic items
+  too. Without the expansion (no `archive/pc/ep1` in the game folder) the installer leaves
+  them out and says so; a partner without it sees no helmet, and plain game pieces for the
+  others.
+- **Zenitex Core Dependency** holds the stats and class bonuses that every Zenitex outfit's
+  items refer to (checked in each outfit's TweakXL files; eight of their pages list it).
+  Earlier versions of this script installed the outfits without it; they are now left out
+  until it is downloaded.
 - **The RVC00N Dumpster 3, VendorsXL and Deceptious Quest Core.** VendorsXL places vendors
   in the world. It replaces the game's vendor restocking for every vendor, with a copy that
   raises stock limits; NightCoop does not list that function. Deceptious Quest Core is
@@ -455,13 +471,38 @@ new release of the mod changes the file it ships, and your copy is backed up fir
 - **No Intro Videos**: the archive file replaces the start-up videos rather than hooking
   the game. The script never installs its redscript file, which hooks the start-up where
   NightCoop skips the intro itself.
-- **Browser Extension is left out.** It adds Virtual Atelier to the in-game browser, but
-  players report it broken since patch 2.3, and no update for 2.5 was found. Virtual
-  Atelier's stores open from in-game computers without it.
+- **Browser Extension** only adds to the in-game browser: its hooks wrap the browser's
+  functions and call the originals, and none is in NightCoop's tables. An earlier note
+  here said players report it broken since patch 2.3 and left it out; that was wrong for
+  2.3, which its 0.9.6 fixed. Its last release (0.9.7, September 2025) predates patch 2.5,
+  and its page names 2.31 as tested, though players report it working on 2.5 and
+  Fullscreen Browser's 2.5 release requires it. Try it once.
+- **Immersive First Person** changes only your own camera. Its hooks observe or wrap game
+  functions and call the originals. Its plugin hooks one native function, which is not
+  among those NightCoop detours. NPCs look at your V's face rather than its chest;
+  partners' bodies keep the game's aim. Its height slider is at 0 cm until you move it; a
+  partner without the mod sees your V at the game's height.
+- **Katana Pack 2.** A partner without it sees a game blade of the same kind in your hands
+  (NightCoop's fallback for weapons), and the charge effects show only on your screen. The
+  hits count for everyone, as damage claims. Its scripts wrap the game's melee, charge and
+  damage functions and call the originals; none is in NightCoop's tables. One blade, the
+  Cyberfang, can also shock enemies hit by bullets it deflects. In co-op that shock would
+  show only on your screen for NPCs a partner leads, but its chance is 0 as shipped.
+- **Curbside** drives only your own summoned car. A partner sees it arrive through
+  NightCoop's car sync, including the jumps it makes when it moves a car out of sight.
 - **CPU Optimization (and its Plus edition) is left out.** It makes crowds spawn and
   despawn around V, while in co-op the host leads the crowd for every player, so NPCs
   would pop in and vanish near partners. The Plus edition also needs the Ultra Plus
-  graphics mod.
+  graphics mod. Its v3 is no different: each of its four files turns pedestrians off, lets
+  crowds spawn in view (NightCoop keeps them from popping in where any player looks), and
+  changes how police cars chase, which the host leads too.
+- **Cyberware-EX and Immersive Third Person are left out for now**: each needs a small
+  bridge first. Cyberware-EX replaces the function that starts focus-mode slow motion
+  (NightCoop's "time and pause" table) and starts it while a Sandevistan runs, which in a
+  session would slow the shared world. Immersive Third Person switches the camera from
+  callbacks of player bodies, and partners' bodies are player bodies too, so a partner
+  changing view would move yours. A bridge can skip both in a session, through NightCoop's
+  SDK; none is shipped until it has been compiled and tried.
 - **Quick Stash in co-op:** everyone in a session plays in the host's world, so the stash a
   guest opens there is not the guest's own. Move items in your own game, or as the host;
   the script reminds you of this.
@@ -649,6 +690,11 @@ installation. It covers:
   the Zenitex pieces that need Phantom Liberty left out, with the reason, where it is missing;
 - Equipment-EX: only with `--with-equipment-ex`, alone or with the mod set, and removed
   again with `--without-equipment-ex`; raem's jewellery only with both;
+- what the mods need: Zenitex Core Dependency for the Zenitex outfits (not its colour sets),
+  The Community Palette Project for the jewellery (a bare `.archive` installed into
+  `archive/pc/mod`, and bare files in two folders passed over), Phantom Liberty for Iconic
+  Shops; Immersive First Person (not its file for Immersive Third Person), Katana Pack 2's
+  file with every blade, Browser Extension's framework file and Curbside;
 - the fixtures' add-on table matching the installer's, so that a change to one shows;
 - install, update, restore and uninstall back to a byte-identical game folder.
 
