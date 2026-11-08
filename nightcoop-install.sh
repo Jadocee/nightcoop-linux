@@ -39,6 +39,8 @@
 #                         launch options when it can run); remembered, --game-performance undoes it
 #   --mangohud            show MangoHud's overlay in the game (MANGOHUD=1 in the launch options;
 #                         not on SteamOS, which has its own); --no-mangohud takes it out again
+#   --redmod              start the game with -modded, which loads REDmod mods (mods/, after a
+#                         REDmod deploy); remembered, --no-redmod takes it out again
 #   --close-steam         close Steam to write its settings, then reopen it
 #   --nightcoop-zip FILE  use a downloaded NightCoop archive instead of the latest
 #   --red4ext-zip FILE    use a downloaded RED4ext release archive
@@ -47,13 +49,21 @@
 #   --with-flight         also install Let There Be Flight (flying cars), which NightCoop
 #                         supports in co-op, with what it needs; kept up to date afterwards
 #   --without-flight      remove Let There Be Flight again (the mods it needed stay)
-#   --with-mods           also install Virtual Atelier with clothing and item stores and seven
-#                         Zenitex outfits, Virtual Car Dealer with car and bike packs, Drive an
-#                         Aerial Vehicle, Vehicle Customizer, Cyber Drift, Quick Stash and No
+#   --with-mods           also install Virtual Atelier with clothing and item stores and their
+#                         outfits (Zenitex, The RVC00N Dumpster, Nola Dreamer, Street Ninja),
+#                         hairstyles (Preem Hair and packs for the character creator),
+#                         Virtual Car Dealer with car and bike packs, Drive an Aerial Vehicle,
+#                         Vehicle Customizer, Curbside, Cyber Drift, Impact FX, Immersive Audio
+#                         Distance, Immersive First Person, Katana Pack 2, Quick Stash and No
 #                         Intro Videos (download them from Nexus Mods; the installer lists them),
 #                         with the frameworks they need (Cyber Engine Tweaks, Codeware, TweakXL,
-#                         ArchiveXL, redscript, Mod Settings, Audioware and more); kept up to date
+#                         ArchiveXL, redscript, Mod Settings, Audioware, VendorsXL, Zenitex Core
+#                         Dependency, Browser Extension and more); kept up to date
 #   --without-mods        remove those mods again (the frameworks stay)
+#   --with-equipment-ex   also install Equipment-EX (from Nexus Mods), to wear layered outfits,
+#                         and with --with-mods jewellery made for its slots; every partner in a
+#                         session needs it too
+#   --without-equipment-ex remove Equipment-EX again
 #   --mods-from DIR       where the Nexus downloads are (default: your Downloads folder)
 #   --force               reinstall every mod file, even those that already match
 #   --backup-saves        copy the save games first (the default on a first install)
@@ -68,7 +78,7 @@
 # SPDX-License-Identifier: MIT
 set -euo pipefail
 
-SCRIPT_VERSION="3.3.0"
+SCRIPT_VERSION="3.4.0"
 APPID=1091500
 GAME_EXE_REL="bin/x64/Cyberpunk2077.exe"
 RED4EXT_VER="1.31.0"
@@ -92,10 +102,16 @@ MIN_GAME_FILEVER="3.0.88.46235" MIN_GAME_PATCH="2.5"
 #   flight (--with-flight)  Let There Be Flight, which NightCoop supports in co-op: its
 #                           archive ships the port (r6/scripts/NightCoopFlight), which
 #                           compiles to nothing without it.
-#   mods (--with-mods)      Virtual Atelier with stores of the game's own items and the Zenitex
-#                           store with seven of its outfits, Virtual Car Dealer with car and bike
-#                           packs, Drive an Aerial Vehicle, Vehicle Customizer, Cyber Drift (Light),
+#   mods (--with-mods)      Virtual Atelier with stores of the game's own items and the stores of
+#                           Zenitex, The RVC00N Dumpster 3, Nola Dreamer and Street Ninja with
+#                           their outfits, hairstyles, Virtual Car Dealer with car and bike packs,
+#                           Drive an Aerial Vehicle, Vehicle Customizer, Curbside, Cyber Drift (Light),
+#                           Impact FX, Immersive Audio Distance, Immersive First Person, Katana Pack 2,
 #                           Quick Stash and No Intro Videos, and the frameworks they need.
+#   eqex (--with-equipment-ex)  Equipment-EX, which wears clothes in layers. NightCoop sends looks by
+#                           its slots: a partner without it sees other slots.
+#   mods+eqex               Only with both: raem's jewellery, made for Equipment-EX's slots, the
+#                           store that sells it, and The Community Palette Project, which it needs.
 # A component in both sets is installed once. When its sets are dropped (--without-...), a
 # "mod" is removed and a "lib" stays, since other mods use it too.
 # Source: a GitHub release (archive and pinned SHA-256), or nexus:<mod id>[:<prefer>[:<avoid>,...]]
@@ -114,12 +130,12 @@ MIN_GAME_FILEVER="3.0.88.46235" MIN_GAME_PATCH="2.5"
 #   component                   patch sets        kind rule  version file  version  source  SHA-256
 # >>> add-on sets
 ADDON_SETS="
-redscript                     2.5 flight,mods lib  -     engine/tools/scc_lib.dll                                    0.5.32 https://github.com/jac3km4/redscript/releases/download/v0.5.32/redscript-v0.5.32-windows.zip 882c57a80b07e453bc8a34cd8430f460aceed789581de8743638e19dcfb7936f
-ArchiveXL                     2.5 flight,mods lib  minor red4ext/plugins/ArchiveXL/ArchiveXL.dll                     1.28.6 https://github.com/psiberx/cp2077-archive-xl/releases/download/v1.28.6/ArchiveXL-1.28.6.zip 25d0493a1b3e8ec4c26b7144a4d8f1a1def4d6dc840fff94b4c91c908583da09
-TweakXL                       2.5 flight,mods lib  minor red4ext/plugins/TweakXL/TweakXL.dll                         1.12.0 https://github.com/psiberx/cp2077-tweak-xl/releases/download/v1.12.0/TweakXL-1.12.0.zip a7c39b769e6c51d9f27412a101fb87e6a1fb8452f0e37ee0d1d1f3f44e656fa8
+redscript                     2.5 flight,mods,eqex lib  -     engine/tools/scc_lib.dll                                    0.5.32 https://github.com/jac3km4/redscript/releases/download/v0.5.32/redscript-v0.5.32-windows.zip 882c57a80b07e453bc8a34cd8430f460aceed789581de8743638e19dcfb7936f
+ArchiveXL                     2.5 flight,mods,eqex lib  minor red4ext/plugins/ArchiveXL/ArchiveXL.dll                     1.28.6 https://github.com/psiberx/cp2077-archive-xl/releases/download/v1.28.6/ArchiveXL-1.28.6.zip 25d0493a1b3e8ec4c26b7144a4d8f1a1def4d6dc840fff94b4c91c908583da09
+TweakXL                       2.5 flight,mods,eqex lib  minor red4ext/plugins/TweakXL/TweakXL.dll                         1.12.0 https://github.com/psiberx/cp2077-tweak-xl/releases/download/v1.12.0/TweakXL-1.12.0.zip a7c39b769e6c51d9f27412a101fb87e6a1fb8452f0e37ee0d1d1f3f44e656fa8
 Input_Loader                  2.5 flight      lib  game  red4ext/plugins/input_loader/input_loader.dll               0.2.6  https://github.com/jackhumbert/cyberpunk2077-input-loader/releases/download/v0.2.6/input_loader_v0.2.6.zip 6b420ba1e27b2e13c275a576a37a17d48771a0d35e52731f08e3584444a3e2b9
 Let_There_Be_Flight           2.5 flight      mod  game  red4ext/plugins/let_there_be_flight/let_there_be_flight.dll 0.3.20 https://github.com/jackhumbert/let_there_be_flight/releases/download/v0.3.20/let_there_be_flight_v0.3.20.zip b265d3c6a711f0647d34835374652f5a84b7f3110df944e6d9059aaa7cbfa243
-Codeware                      2.5 mods        lib  minor red4ext/plugins/Codeware/Codeware.dll                       1.21.2 https://github.com/psiberx/cp2077-codeware/releases/download/v1.21.2/Codeware-1.21.2.zip 269b65b8b97d26ea85d4516f5eb34c01a19dc85e299be57fb4f764e16c164dd2
+Codeware                      2.5 mods,eqex   lib  minor red4ext/plugins/Codeware/Codeware.dll                       1.21.2 https://github.com/psiberx/cp2077-codeware/releases/download/v1.21.2/Codeware-1.21.2.zip 269b65b8b97d26ea85d4516f5eb34c01a19dc85e299be57fb4f764e16c164dd2
 Cyber_Engine_Tweaks           2.5 mods        lib  minor bin/x64/plugins/cyber_engine_tweaks.asi                     1.38.1 https://github.com/maximegmd/CyberEngineTweaks/releases/download/v1.38.1/cet_1_38_1.zip 2e52be4ed431fad787e64ecbf75db346b4224577d2b89894912bc3f159020e73
 Mod_Settings                  2.5 mods        lib  game  red4ext/plugins/mod_settings/mod_settings.dll               0.2.28 https://github.com/jackhumbert/mod_settings/releases/download/v0.2.28/mod_settings_v0.2.28.zip b9488daa7da85c0430853df4570dbf94dd768d11c4dabee97d732072746d40e7
 Audioware                     2.5 mods        lib  -     red4ext/plugins/audioware/audioware.dll                     1.11.1 https://github.com/cyb3rpsych0s1s/audioware/releases/download/v1.11.1/Audioware-windows-v1.11.1.zip 3831c9f931323a7462d84b8c391dded43288acf98af356a2d4ad4695c0603789
@@ -135,6 +151,7 @@ Drive_an_Aerial_Vehicle       2.5 mods        mod  -     -                      
 All_Vanilla_Clothes           2.5 mods        mod  -     -                                                           1.0    nexus:5544
 Iconic_Shops                  2.5 mods        mod  -     -                                                           3.6.1  nexus:7215
 Zenitex_Virtual_Atelier       2.5 mods        mod  -     -                                                           4.13   nexus:10090
+Zenitex_Core_Dependency       2.5 mods        lib  -     -                                                           5.1.8  nexus:16356:-:_-_
 Zenitex_Ballistic_Mask        2.5 mods        mod  -     -                                                           4.1    nexus:12422:-:alt._colo,_-_gs
 Zenitex_Tactical_Harness      2.5 mods        mod  -     -                                                           4.0    nexus:9774:-:alt._colo,_-_gs
 Zenitex_Combat_Jacket         2.5 mods        mod  -     -                                                           2.0.1  nexus:19119:-:alt._colo,_-_gs
@@ -153,24 +170,169 @@ Material_and_Texture_Override 2.5 mods        lib  -     -                      
 Porsche_911_GT3_RS            2.5 mods        mod  -     -                                                           1.2    nexus:11180:+main_file
 Vehicle_Customizer            2.5 mods        mod  -     -                                                           3.0    nexus:9034:+3dot0
 Vehicle_Customizer_update     2.5 mods        mod  -     -                                                           3.1    nexus:9034:+3dot1
+Deceptious_Quest_Core         2.5 mods        lib  -     -                                                           3.3.3  nexus:7831
+VendorsXL                     2.5 mods        lib  -     -                                                           2.2.0  nexus:19679:+vendorsxl
+Vehicle_Manufacturers_Resource 2.5 mods        lib  -     -                                                           1.1    nexus:7855
+Equipment_EX                  2.5 eqex        mod  -     -                                                           1.2.10 nexus:6945:+equipment-ex
+Impact_FX                     2.5 mods        mod  -     -                                                           0.8.3.3 nexus:36631
+Immersive_Audio_Distance      2.5 mods        mod  -     -                                                           1.2.0  nexus:36809:+(2.5)
+Apollo_Intensa_Emozione       2.5 mods        mod  -     -                                                           1      nexus:37233
+Countach_LPI_800-4            2.5 mods        mod  -     -                                                           1      nexus:37234
+Countach_Liberty_Walk         2.5 mods        mod  -     -                                                           1      nexus:37235
+VAZ_Oka_Yozakura              2.5 mods        mod  -     -                                                           4      nexus:36381
+Toyota_GR_Yaris               2.5 mods        mod  -     -                                                           3.3    nexus:34357:+all_purpose
+Toyota_GR_Yaris_Rocket_Bunny  2.5 mods        mod  -     -                                                           3.2    nexus:34357:+rocket_bunny
+Nissan_Silvia_S14             2.5 mods        mod  -     -                                                           1.1    nexus:25997:+main_files
+Goliath_Coat                  2.5 mods        mod  -     -                                                           1.0.0  nexus:36516
+Cityfolk_Hoodie               2.5 mods        mod  -     -                                                           1.0.2  nexus:37493
+Knife_Bandolier               2.5 mods        mod  -     -                                                           1.0.2  nexus:26000
+Bunny_Slippers                2.5 mods        mod  -     -                                                           1.0.1  nexus:26996
+Saul_Pants                    2.5 mods        mod  -     -                                                           1.0.3  nexus:27128
+CrystalJock_Bomber            2.5 mods        mod  -     -                                                           1.1.2  nexus:27304
+Master_Chief_Suit             2.5 mods        mod  -     -                                                           1.1.0  nexus:33439
+Indiana_Jones_Outfit          2.5 mods        mod  -     -                                                           1.0.0  nexus:34748
+Fifth_Element_Collection      2.5 mods        mod  -     -                                                           1.1.0  nexus:27709:+all_in_one
+Cityfolk_Short_Jacket         2.5 mods        mod  -     -                                                           1.2.0  nexus:27736
+Jackies_Jacket                2.5 mods        mod  -     -                                                           1.0.0  nexus:31662
+Stinky_Burnt_Top              2.5 mods        mod  -     -                                                           2.1.0  nexus:20042
+Stinky_Slashed_Top            2.5 mods        mod  -     -                                                           2.1.0  nexus:12757
+Stinky_Croptop                2.5 mods        mod  -     -                                                           1.1.0  nexus:26048
+Yeehaw_Collar_Shirt           2.5 mods        mod  -     -                                                           1.3.0  nexus:26873
+Chuckwalla_T-Shirt            2.5 mods        mod  -     -                                                           1.0.1  nexus:31111
+Stinky_Mechanic_Pants         2.5 mods        mod  -     -                                                           2.0.2  nexus:16402
+Stinky_Quilted_Pants          2.5 mods        mod  -     -                                                           1.0.1  nexus:26049
+Stinky_Bootcut_Jeans          2.5 mods        mod  -     -                                                           1.0.1  nexus:26050
+Stinky_Leather_Jeans          2.5 mods        mod  -     -                                                           1.0.1  nexus:26818
+David_Martinez_Pants          2.5 mods        mod  -     -                                                           1.0.1  nexus:35536
+Yeehaw_Spur_Boots             2.5 mods        mod  -     -                                                           1.0.1  nexus:26982
+Latex_Succubus_Tail           2.5 mods        mod  -     -                                                           1.0.0  nexus:32638
+Trauma_Team_Jumpsuit          2.5 mods        mod  -     -                                                           1.0.0  nexus:32329
+Dexter_Pants                  2.5 mods        mod  -     -                                                           1.2.0  nexus:28660:+pants
+Dexter_Vest                   2.5 mods        mod  -     -                                                           1.2.0  nexus:28660:+vest
+Dexter_Shoes                  2.5 mods        mod  -     -                                                           1      nexus:28660:+shoes
+PinkyBlume_Croptop            2.5 mods        mod  -     -                                                           1      nexus:27455
+RVC00N_Dumpster_3             2.5 mods        mod  -     -                                                           21.0.0 nexus:25981
+Street_Ninja_Remake           2.5 mods        mod  -     -                                                           1.14.0 nexus:36978:+main
+Street_Ninja_Shop             2.5 mods        mod  -     -                                                           1.12.0 nexus:36978:+shop
+AirPods_Max                   2.5 mods        mod  -     -                                                           1.1    nexus:28288
+Nola_Barbed_Accessories       2.5 mods        mod  -     -                                                           1.0    nexus:14371
+Nola_Bracelets                2.5 mods        mod  -     -                                                           1.0    nexus:16722
+Nola_Heart_Choker             2.5 mods        mod  -     -                                                           1.1    nexus:11685
+Nola_Mini_Dress               2.5 mods        mod  -     -                                                           1.1    nexus:15704
+Nola_Moon_Accessories         2.5 mods        mod  -     -                                                           1.0    nexus:14324
+Nola_Spiked_Collar            2.5 mods        mod  -     -                                                           1.1    nexus:14269
+Nola_Accessories_Store        2.5 mods        mod  -     -                                                           1.8    nexus:14299
+Zenitex_Combat_Armor          2.5 mods        mod  -     -                                                           3.3    nexus:13212:-:alt._colo,garment_support
+Zenitex_FAST_Helmet           2.5 mods        mod  -     -                                                           3.4    nexus:13557:-:alt._colo,garment_support
+Zenitex_Ballistic_Vest        2.5 mods        mod  -     -                                                           3.6    nexus:14348:-:alt._colo,alt._vest,alt._pouches,garment_support
+Zenitex_Combat_Boots          2.5 mods        mod  -     -                                                           3.4    nexus:14781:-:alt._colo,garment_support
+Zenitex_Pistol_Holsters       2.5 mods        mod  -     -                                                           1.5    nexus:18002:-:alt._colo,garment_support
+Zenitex_Military_Backpack     2.5 mods        mod  -     -                                                           1.5    nexus:18152:-:alt._colo,garment_support
+Zenitex_Military_Underwear    2.5 mods        mod  -     -                                                           1.5    nexus:20394:-:alt._colo,garment_support
+Zenitex_Combat_Goggles        2.5 mods        mod  -     -                                                           1.4    nexus:17049:-:alt._colo,garment_support
+Zenitex_Balaclava_Pack        2.5 mods        mod  -     -                                                           2.1    nexus:17411:-:alt._colo,_-_gs
+Nola_Virtual_Boutique         2.5 mods        mod  -     -                                                           7.6    nexus:5114:+female
+Preem_Hair                    2.5 mods        mod  -     -                                                           3.0.0  nexus:8223:+(2k)
+Wolfcut_Messy                 2.5 mods        mod  -     -                                                           2.0    nexus:16697:+messy_wolfcut
+Wolfcut_Emo                   2.5 mods        mod  -     -                                                           2.0    nexus:16697:+emo_wolfcut
+Wolfcut_Hime_Short            2.5 mods        mod  -     -                                                           2.0    nexus:16697:+hime_short
+Wolfcut_Hime_Medium           2.5 mods        mod  -     -                                                           2.0    nexus:16697:+hime_medium
+Wolfcut_Hime_Long             2.5 mods        mod  -     -                                                           2.0    nexus:16697:+hime_long
+Subleader_Hair_Pack           2.5 mods        mod  -     -                                                           1.09   nexus:19268:+allinone
+Hyst_Hair_Collection          2.5 mods        mod  -     -                                                           1.2    nexus:21766:+all_in_one
+Meluminary_Hair_Megapak       2.5 mods        mod  -     -                                                           5.0.0  nexus:19197:+megapak
+Undercut_Slickback            2.5 mods        mod  -     -                                                           1.0    nexus:19907:+hair_01
+Undercut_Sidewave             2.5 mods        mod  -     -                                                           1.0    nexus:19907:+hair_02
+Undercut_ManBun               2.5 mods        mod  -     -                                                           1.0    nexus:19907:+hair_03
+Undercut_Slickback_Braids     2.5 mods        mod  -     -                                                           1.1    nexus:19907:+hair_04
+The_Community_Palette_Project 2.5 mods+eqex   lib  -     -                                                           1.1    nexus:10437
+Bullet_Necklace               2.5 mods+eqex   mod  -     -                                                           1.1    nexus:15076
+Chain_Jewelry                 2.5 mods+eqex   mod  -     -                                                           1.2    nexus:15861:+jewelry_-_main
+Reyes_Accessories             2.5 mods+eqex   mod  -     -                                                           1.1    nexus:17069
+raem_Accessory_Store          2.5 mods+eqex   mod  -     -                                                           2.0    nexus:14210:+accessories_-_main
+Browser_Extension             2.5 mods        lib  -     -                                                           0.9.7  nexus:10038:+browserextensionframework
+Immersive_First_Person        2.5 mods        mod  -     -                                                           2.2.0  nexus:2675:-:~itp_compatibility
+Katana_Pack_2                 2.5 mods        mod  -     -                                                           1.1    nexus:36164:+katana_pack_2
+Curbside                      2.5 mods        mod  -     -                                                           1.0.1  nexus:35922
 "
 # <<< add-on sets
 # What a component needs besides RED4ext: without it, it is not installed (a store without
 # Virtual Atelier would stop redscript from compiling every script, NightCoop's included).
 # A component comes after what it needs in the table above.
-ADDON_NEEDS="Let_There_Be_Flight:redscript,ArchiveXL,TweakXL,Input_Loader
-Mod_Settings:redscript,ArchiveXL Audioware:redscript,Codeware,TweakXL Native_Settings_UI:Cyber_Engine_Tweaks
-Virtual_Atelier:redscript,Codeware,ArchiveXL,Mod_Settings A.G.I.S.:Virtual_Atelier Night_City_Marketplace:Virtual_Atelier
-Virtual_Car_Dealer:redscript,Codeware,ArchiveXL,TweakXL Quick_Stash:Cyber_Engine_Tweaks Cyber_Drift:Cyber_Engine_Tweaks
+# Phantom_Liberty is the game's expansion (archive/pc/ep1), not a component: without it, what needs
+# it is left out.
+ADDON_NEEDS="Let_There_Be_Flight:redscript,ArchiveXL,TweakXL,Input_Loader Mod_Settings:redscript,ArchiveXL
+Audioware:redscript,Codeware,TweakXL Native_Settings_UI:Cyber_Engine_Tweaks
+Virtual_Atelier:redscript,Codeware,ArchiveXL,Mod_Settings A.G.I.S.:Virtual_Atelier
+Night_City_Marketplace:Virtual_Atelier Virtual_Car_Dealer:redscript,Codeware,ArchiveXL,TweakXL
+Quick_Stash:Cyber_Engine_Tweaks Cyber_Drift:Cyber_Engine_Tweaks
 Drive_an_Aerial_Vehicle:redscript,Codeware,TweakXL,Cyber_Engine_Tweaks,Native_Settings_UI
-All_Vanilla_Clothes:Virtual_Atelier Iconic_Shops:Virtual_Atelier,TweakXL Zenitex_Virtual_Atelier:Virtual_Atelier
-Zenitex_Ballistic_Mask:ArchiveXL,TweakXL Zenitex_Tactical_Harness:ArchiveXL,TweakXL Zenitex_Combat_Jacket:ArchiveXL,TweakXL
-Zenitex_Armor_Pads:ArchiveXL,TweakXL Zenitex_Panam_Pants:ArchiveXL,TweakXL Zenitex_Combat_Gloves:ArchiveXL,TweakXL
-Comfy_Boots:ArchiveXL,TweakXL Vehicle_Pack_Basic_1:Virtual_Car_Dealer Vehicle_Pack_Basic_2:Virtual_Car_Dealer
-Cyberpunk_Bikes_Edge:ArchiveXL,TweakXL Bikes_of_the_Dark_Future:ArchiveXL,TweakXL,Cyber_Engine_Tweaks,redscript,Vehicle_Exit_Fix
+All_Vanilla_Clothes:Virtual_Atelier Iconic_Shops:Virtual_Atelier,TweakXL,Phantom_Liberty
+Zenitex_Virtual_Atelier:Virtual_Atelier Zenitex_Core_Dependency:ArchiveXL,TweakXL
+Zenitex_Ballistic_Mask:ArchiveXL,TweakXL,Zenitex_Core_Dependency
+Zenitex_Tactical_Harness:ArchiveXL,TweakXL,Zenitex_Core_Dependency
+Zenitex_Combat_Jacket:ArchiveXL,TweakXL,Zenitex_Core_Dependency
+Zenitex_Armor_Pads:ArchiveXL,TweakXL,Zenitex_Core_Dependency
+Zenitex_Panam_Pants:ArchiveXL,TweakXL,Zenitex_Core_Dependency
+Zenitex_Combat_Gloves:ArchiveXL,TweakXL,Zenitex_Core_Dependency Comfy_Boots:ArchiveXL,TweakXL Vehicle_Exit_Fix:redscript
+Vehicle_Pack_Basic_1:Virtual_Car_Dealer Vehicle_Pack_Basic_2:Virtual_Car_Dealer Cyberpunk_Bikes_Edge:ArchiveXL,TweakXL
+Bikes_of_the_Dark_Future:ArchiveXL,TweakXL,Cyber_Engine_Tweaks,redscript,Vehicle_Exit_Fix
 Toyota_Supra_HKS:ArchiveXL,TweakXL,Cyber_Engine_Tweaks,redscript,Vehicle_Manufacturer_Fix
 Porsche_911_GT3_RS:ArchiveXL,TweakXL,Cyber_Engine_Tweaks,Material_and_Texture_Override,Virtual_Car_Dealer
-Vehicle_Customizer:Cyber_Engine_Tweaks Vehicle_Customizer_update:Vehicle_Customizer"
+Vehicle_Customizer:Cyber_Engine_Tweaks Vehicle_Customizer_update:Vehicle_Customizer Deceptious_Quest_Core:ArchiveXL
+VendorsXL:redscript,Codeware,ArchiveXL,TweakXL,Deceptious_Quest_Core Equipment_EX:redscript,Codeware,ArchiveXL,TweakXL
+Impact_FX:redscript,Codeware,TweakXL Immersive_Audio_Distance:redscript,Codeware
+Apollo_Intensa_Emozione:redscript,Codeware,ArchiveXL,TweakXL,Cyber_Engine_Tweaks,Virtual_Car_Dealer
+Countach_LPI_800-4:redscript,Codeware,ArchiveXL,TweakXL,Cyber_Engine_Tweaks,Virtual_Car_Dealer
+Countach_Liberty_Walk:redscript,Codeware,ArchiveXL,TweakXL,Cyber_Engine_Tweaks,Virtual_Car_Dealer
+VAZ_Oka_Yozakura:redscript,Codeware,ArchiveXL,TweakXL,Cyber_Engine_Tweaks,Virtual_Car_Dealer
+Toyota_GR_Yaris:ArchiveXL,TweakXL,Virtual_Car_Dealer Toyota_GR_Yaris_Rocket_Bunny:Toyota_GR_Yaris
+Nissan_Silvia_S14:redscript,ArchiveXL,TweakXL,Vehicle_Manufacturers_Resource,Virtual_Car_Dealer
+Goliath_Coat:ArchiveXL,TweakXL Cityfolk_Hoodie:ArchiveXL,TweakXL Knife_Bandolier:ArchiveXL,TweakXL
+Bunny_Slippers:ArchiveXL,TweakXL Saul_Pants:ArchiveXL,TweakXL CrystalJock_Bomber:ArchiveXL,TweakXL
+Master_Chief_Suit:ArchiveXL,TweakXL Indiana_Jones_Outfit:ArchiveXL,TweakXL Fifth_Element_Collection:ArchiveXL,TweakXL
+Cityfolk_Short_Jacket:ArchiveXL,TweakXL Jackies_Jacket:ArchiveXL,TweakXL Stinky_Burnt_Top:ArchiveXL,TweakXL
+Stinky_Slashed_Top:ArchiveXL,TweakXL Stinky_Croptop:ArchiveXL,TweakXL Yeehaw_Collar_Shirt:ArchiveXL,TweakXL
+Chuckwalla_T-Shirt:ArchiveXL,TweakXL Stinky_Mechanic_Pants:ArchiveXL,TweakXL Stinky_Quilted_Pants:ArchiveXL,TweakXL
+Stinky_Bootcut_Jeans:ArchiveXL,TweakXL Stinky_Leather_Jeans:ArchiveXL,TweakXL David_Martinez_Pants:ArchiveXL,TweakXL
+Yeehaw_Spur_Boots:ArchiveXL,TweakXL Latex_Succubus_Tail:ArchiveXL,TweakXL Trauma_Team_Jumpsuit:ArchiveXL,TweakXL
+Dexter_Pants:ArchiveXL,TweakXL Dexter_Vest:ArchiveXL,TweakXL Dexter_Shoes:ArchiveXL,TweakXL
+PinkyBlume_Croptop:ArchiveXL,TweakXL RVC00N_Dumpster_3:Virtual_Atelier,ArchiveXL,TweakXL,VendorsXL
+Street_Ninja_Remake:redscript,Codeware,ArchiveXL,TweakXL
+Street_Ninja_Shop:Virtual_Atelier,Cyber_Engine_Tweaks,Street_Ninja_Remake AirPods_Max:ArchiveXL,TweakXL
+Nola_Barbed_Accessories:ArchiveXL,TweakXL Nola_Bracelets:ArchiveXL,TweakXL Nola_Heart_Choker:ArchiveXL,TweakXL
+Nola_Mini_Dress:ArchiveXL,TweakXL Nola_Moon_Accessories:ArchiveXL,TweakXL Nola_Spiked_Collar:ArchiveXL,TweakXL
+Nola_Accessories_Store:Virtual_Atelier Zenitex_Combat_Armor:ArchiveXL,TweakXL,Zenitex_Core_Dependency
+Zenitex_FAST_Helmet:ArchiveXL,TweakXL,Zenitex_Core_Dependency,Phantom_Liberty
+Zenitex_Ballistic_Vest:ArchiveXL,TweakXL,Zenitex_Core_Dependency
+Zenitex_Combat_Boots:ArchiveXL,TweakXL,Zenitex_Core_Dependency
+Zenitex_Pistol_Holsters:ArchiveXL,TweakXL,Zenitex_Core_Dependency,Phantom_Liberty
+Zenitex_Military_Backpack:ArchiveXL,TweakXL,Zenitex_Core_Dependency,Phantom_Liberty
+Zenitex_Military_Underwear:ArchiveXL,TweakXL,Zenitex_Core_Dependency
+Zenitex_Combat_Goggles:ArchiveXL,TweakXL,Zenitex_Core_Dependency
+Zenitex_Balaclava_Pack:ArchiveXL,TweakXL,Zenitex_Core_Dependency Nola_Virtual_Boutique:Virtual_Atelier
+Wolfcut_Messy:ArchiveXL Wolfcut_Emo:ArchiveXL Wolfcut_Hime_Short:ArchiveXL Wolfcut_Hime_Medium:ArchiveXL
+Wolfcut_Hime_Long:ArchiveXL Subleader_Hair_Pack:ArchiveXL Hyst_Hair_Collection:ArchiveXL
+Meluminary_Hair_Megapak:ArchiveXL Undercut_Slickback:ArchiveXL Undercut_Sidewave:ArchiveXL Undercut_ManBun:ArchiveXL
+Undercut_Slickback_Braids:ArchiveXL Bullet_Necklace:ArchiveXL,TweakXL,Equipment_EX
+Chain_Jewelry:ArchiveXL,TweakXL,Equipment_EX,The_Community_Palette_Project
+Reyes_Accessories:ArchiveXL,TweakXL,Equipment_EX,The_Community_Palette_Project raem_Accessory_Store:Virtual_Atelier
+Browser_Extension:redscript,Codeware Immersive_First_Person:Cyber_Engine_Tweaks,redscript
+Katana_Pack_2:redscript,Codeware,ArchiveXL,TweakXL,Audioware Curbside:redscript"
+# Outfit mods: in co-op, a partner without the same mod sees a plain game piece in their place.
+OUTFITS="Zenitex_Ballistic_Mask Zenitex_Tactical_Harness Zenitex_Combat_Jacket Zenitex_Armor_Pads Zenitex_Panam_Pants
+Zenitex_Combat_Gloves Comfy_Boots Goliath_Coat Cityfolk_Hoodie Knife_Bandolier Bunny_Slippers Saul_Pants CrystalJock_Bomber
+Master_Chief_Suit Indiana_Jones_Outfit Fifth_Element_Collection Cityfolk_Short_Jacket Jackies_Jacket Stinky_Burnt_Top
+Stinky_Slashed_Top Stinky_Croptop Yeehaw_Collar_Shirt Chuckwalla_T-Shirt Stinky_Mechanic_Pants Stinky_Quilted_Pants
+Stinky_Bootcut_Jeans Stinky_Leather_Jeans David_Martinez_Pants Yeehaw_Spur_Boots Latex_Succubus_Tail Trauma_Team_Jumpsuit
+Dexter_Pants Dexter_Vest Dexter_Shoes PinkyBlume_Croptop Street_Ninja_Remake AirPods_Max
+Nola_Barbed_Accessories Nola_Bracelets Nola_Heart_Choker Nola_Mini_Dress Nola_Moon_Accessories
+Nola_Spiked_Collar Zenitex_Combat_Armor Zenitex_FAST_Helmet Zenitex_Ballistic_Vest Zenitex_Combat_Boots
+Zenitex_Pistol_Holsters Zenitex_Military_Backpack Zenitex_Military_Underwear Zenitex_Combat_Goggles Zenitex_Balaclava_Pack
+Bullet_Necklace Chain_Jewelry Reyes_Accessories"
+# Hairstyles added to the character creator: in co-op, a partner without the same mod sees no hair there.
+HAIRS="Wolfcut_Messy Wolfcut_Emo Wolfcut_Hime_Short Wolfcut_Hime_Medium Wolfcut_Hime_Long Subleader_Hair_Pack
+Hyst_Hair_Collection Meluminary_Hair_Megapak Undercut_Slickback Undercut_Sidewave Undercut_ManBun Undercut_Slickback_Braids"
 # Files a mod writes to while the game runs (its settings, its database, what it has learned):
 # the player's copy stays, and is replaced only when a new release changes the file it ships.
 # "*" is every component; a "*" in a pattern also matches across folders.
@@ -195,6 +357,7 @@ PROTON_WANT="auto"
 GAME_ARGS="--launcher-skip"
 GP_OPT=""        # on or off: --game-performance, --no-game-performance (remembered in settings.tsv)
 MH_OPT=""        # on or off: --mangohud, --no-mangohud
+RM_OPT=""        # on or off: --redmod, --no-redmod (remembered in settings.tsv)
 SAVE_BACKUP=""   # 1 or 0; empty: copy the saves on the first install only
 SET_WANT=()      # +flight, -flight, +mods, -mods from the options; a set not named stays as it was
 NEXUS_DIRS=()    # where to look for the Nexus downloads (--mods-from); default: the Downloads folder
@@ -832,79 +995,35 @@ def lo_uses(s):
     return used
 
 
-def lo_wish_met(s, wish):
-    """wish: +game-performance, -game-performance, +mangohud or -mangohud."""
-    used = lo_uses(s)
-    on = 'game-performance' in used if wish[1:] == 'game-performance' else bool({'mangohud', 'MANGOHUD=1'} & set(used))
-    return on == (wish[0] == '+')
-
-
-def lo_wrap(s, wrap):
-    """Apply the wishes to the words before %command%. game-performance goes last, right
-    before %command% (CachyOS's order); MANGOHUD=1 goes after the DLL overrides."""
-    i = s.index('%command%')
-    words, rest = lo_prefix(s), s[i:]
-    for wish in [w for w in wrap.split(',') if w]:
-        if lo_wish_met(' '.join(words + [rest]), wish):
-            continue
-        op, name = wish[0], wish[1:]
-        if name == 'game-performance':
-            words = words + [name] if op == '+' else [w for w in words if lo_name(w) != name]
-        elif op == '-':   # the wrapper (with its --dlsym) and the variable
-            kept, after = [], False
-            for w in words:
-                if not (after and w == '--dlsym') and lo_name(w) != 'mangohud' and not w.startswith('MANGOHUD='):
-                    kept.append(w)
-                after = lo_name(w) == 'mangohud'
-            words = kept
-        else:
-            k = next((j for j, w in enumerate(words) if w.startswith('MANGOHUD=')), None)
-            if k is not None:
-                words[k] = 'MANGOHUD=1'
-            else:
-                k = next((j for j, w in enumerate(words) if w.startswith('WINEDLLOVERRIDES=')), -1)
-                words.insert(k + 1, 'MANGOHUD=1')
-    return ' '.join(words + [rest])
+def lo_build(dlls='winmm', args='', wrap=''):
+    """The whole launch option line the script writes: the DLL overrides native-first, MANGOHUD=1 and
+    game-performance when wished (game-performance right before %command%, CachyOS's order), %command%
+    and the game arguments. It replaces what was there."""
+    wishes = [w for w in wrap.split(',') if w]
+    words = ['WINEDLLOVERRIDES="%s=n,b"' % ','.join(d for d in dlls.split(',') if d)]
+    if '+mangohud' in wishes:
+        words.append('MANGOHUD=1')
+    if '+game-performance' in wishes:
+        words.append('game-performance')
+    return ' '.join(words + ['%command%'] + args.split())
 
 
 def lo_state(s, dlls='winmm', args='', wrap=''):
-    """ok: every DLL in dlls is native-first before %command%, every argument is present and
-    every wrapper wish is met; broken: the override sits after %command% (Steam passes it to
-    the game as an argument); missing: anything else."""
-    s, dlls = s or '', [d for d in dlls.split(',') if d]
-    m, modes = wdo_modes(s)
-    if not m or any(not modes.get(d, '').startswith('n') for d in dlls):
-        return 'missing'
-    if '%command%' not in s or m.start() > s.index('%command%'):
+    """ok: the line is the one the script writes (lo_build); broken: the DLL override sits after
+    %command% (Steam passes it to the game as an argument); missing: anything else."""
+    s = (s or '').strip()
+    if ' '.join(s.split()) == lo_build(dlls, args, wrap):
+        return 'ok'
+    m, _ = wdo_modes(s)
+    if m and '%command%' in s and m.start() > s.index('%command%'):
         return 'broken'
-    if not all(a in s.split() for a in args.split()):
-        return 'missing'
-    return 'ok' if all(lo_wish_met(s, w) for w in wrap.split(',') if w) else 'missing'
+    return 'missing'
 
 
 def lo_merge(s, dlls='winmm', args='', wrap=''):
-    """Make the DLLs native-first, add the game arguments and apply the wrapper wishes,
-    keeping every other override, variable, wrapper (gamemoderun, gamescope, ...) and argument."""
-    s, dlls = (s or '').strip(), [d for d in dlls.split(',') if d]
-    m, _ = wdo_modes(s)
-    keep = []
-    for e in m.group(1).strip('"\'').split(';') if m else []:
-        names, eq, md = e.partition('=')
-        rest = [n for n in names.split(',') if n.strip() and dll_names(n)[0] not in dlls]
-        if rest:
-            keep.append(','.join(rest) + eq + md)
-    tok = 'WINEDLLOVERRIDES="' + ';'.join(keep + [','.join(dlls) + '=n,b']) + '"'
-    if m and '%command%' in s and m.start() < s.index('%command%'):
-        s = s[:m.start()] + tok + s[m.end():]
-    else:
-        if m:
-            s = re.sub(r'\s+', ' ', (s[:m.start()] + ' ' + s[m.end():]).strip())
-        s = tok + ' ' + s if '%command%' in s else (tok + ' %command% ' + s).strip()
-    for a in args.split():
-        if a not in s.split():
-            i = s.index('%command%') + len('%command%')
-            s = s[:i] + ' ' + a + s[i:]
-    return lo_wrap(s.strip(), wrap) if wrap else s.strip()
+    """The line to write: the script's own (lo_build). Other variables, wrappers and arguments that
+    were there are not kept: the script writes the whole line."""
+    return lo_build(dlls, args, wrap)
 
 
 def lo_files(root):
@@ -1221,6 +1340,17 @@ def cmd_findci(top, rel):
     out(p)
 
 
+def cmd_redmods(game):
+    """How many REDmod mods the game folder has: folders in mods/ with an info.json."""
+    top, n = ci_resolve(game, 'mods'), 0
+    if top and os.path.isdir(top):
+        for d in os.listdir(top):
+            p = os.path.join(top, d)
+            if os.path.isdir(p) and any(f.lower() == 'info.json' for f in os.listdir(p)):
+                n += 1
+    out(n)
+
+
 def cmd_rmci(top, *rels):
     for rel in rels:
         p = ci_resolve(top, rel)
@@ -1441,9 +1571,60 @@ def cmd_roots(top):
         out(r)
 
 
+# An archive with no game folders may hold only archive/pc/mod's files, as mod managers take it;
+# besides them it may hold notes and pictures, nothing else.
+BARE_EXTS = ('.archive', '.xl')
+NOTE_EXTS = ('', '.txt', '.md', '.pdf', '.png', '.jpg', '.jpeg', '.webp', '.gif', '.url', '.html', '.htm')   # '': LICENSE, README
+
+
+def bare_files(top):
+    """The .archive and .xl files of an unpacked archive with no game folders, when they lie at its
+    root or in one folder below it, all in the same folder, and nothing else is there but notes. A
+    fomod installer, files in several folders (versions to choose from) or another kind of file
+    (a script, whose place cannot be told): none."""
+    found = []
+    for dp, dns, fns in os.walk(top):
+        rel = os.path.relpath(dp, top)
+        if 'fomod' in (n.lower() for n in dns + [os.path.basename(dp)]):
+            return []
+        dns[:] = [n for n in dns if n.lower() != '__macosx']
+        for fn in fns:
+            ext = os.path.splitext(fn)[1].lower()
+            if ext in BARE_EXTS:
+                found.append((rel, os.path.join(dp, fn)))
+            elif ext not in NOTE_EXTS:
+                return []
+    if not found or len({r for r, _ in found}) > 1 or found[0][0].count(os.sep) > 0:
+        return []
+    return sorted(p for _, p in found)
+
+
+def cmd_split_roots(addons, *entries):
+    """The roots of each component (entries "component<TAB>root"), with a folder that more than one
+    component puts files in replaced, for each of them, by its own files there (from <addons>/
+    <component>.files, its unpacked game folders), so that keeping one does not keep the others'."""
+    owners = {}
+    for e in entries:
+        c, r = e.split('\t', 1)
+        if r.endswith('/'):
+            owners.setdefault(r.lower(), set()).add(c)
+    for e in entries:
+        c, r = e.split('\t', 1)
+        top = os.path.join(addons, c + '.files', r)
+        if len(owners.get(r.lower(), ())) < 2 or not os.path.isdir(top):
+            out(e)
+            continue
+        for dp, dns, fns in os.walk(top):
+            dns.sort()
+            for fn in sorted(fns):
+                out(c + '\t' + r + os.path.relpath(os.path.join(dp, fn), top).replace(os.sep, '/'))
+
+
 def cmd_modroot(top):
     """The folder in an unpacked mod archive that holds the game folders (r6, archive, bin,
-    red4ext, engine, mods): the archive root, or a folder at most two levels below it."""
+    red4ext, engine, mods): the archive root, or a folder at most two levels below it. With none,
+    an archive of bare .archive and .xl files (see bare_files) is moved into a new folder's
+    archive/pc/mod, and that folder is the root."""
     level = [top]
     for _ in range(3):
         for d in level:
@@ -1452,7 +1633,15 @@ def cmd_modroot(top):
                 return
         level = [os.path.join(d, n) for d in level for n in sorted(os.listdir(d))
                  if os.path.isdir(os.path.join(d, n)) and n.lower() not in ('fomod', '__macosx')]
-    die('no game folders (r6, archive, bin, red4ext, engine, mods) in the archive')
+    bare = bare_files(top)
+    if bare:
+        root = os.path.join(top, '.bare-files')
+        os.makedirs(os.path.join(root, 'archive', 'pc', 'mod'), exist_ok=True)
+        for p in bare:
+            os.replace(p, os.path.join(root, 'archive', 'pc', 'mod', os.path.basename(p)))
+        out(root)
+        return
+    die('no game folders (r6, archive, bin, red4ext, engine, mods) or .archive files in the archive')
 
 
 # How Nexus Mods names a download: <file name>-<mod id>-<version>-<upload time>.<ext> until 2026
@@ -1561,7 +1750,7 @@ def cmd_keep_state(files, game, recorded, *patterns):
 
 
 CMDS = {
-    'roots': cmd_roots, 'modroot': cmd_modroot, 'nexus-find': cmd_nexus_find, 'keep-state': cmd_keep_state,
+    'redmods': cmd_redmods, 'roots': cmd_roots, 'split-roots': cmd_split_roots, 'modroot': cmd_modroot, 'nexus-find': cmd_nexus_find, 'keep-state': cmd_keep_state,
     'pever': cmd_pever, 'gamever': cmd_gamever, 'r4ok': cmd_r4ok, 'pestr': cmd_pestr, 'vge': cmd_vge, 'builtin': cmd_builtin, 'pecrt': cmd_pecrt,
     'libs': cmd_libs, 'proton': cmd_proton, 'slr': cmd_slr,
     'ct-get': cmd_ct_get, 'ct-list': cmd_ct_list, 'ct-pick': cmd_ct_pick, 'ct-set': cmd_ct_set,
@@ -1633,12 +1822,16 @@ while [ $# -gt 0 ]; do
         --no-game-performance) GP_OPT=off; shift ;;
         --mangohud)       MH_OPT=on; shift ;;
         --no-mangohud)    MH_OPT=off; shift ;;
+        --redmod)         RM_OPT=on; shift ;;
+        --no-redmod)      RM_OPT=off; shift ;;
         --no-save-backup) SAVE_BACKUP=0; shift ;;
         --backup-saves)   SAVE_BACKUP=1; shift ;;
         --with-flight)    SET_WANT+=(+flight); shift ;;
         --without-flight) SET_WANT+=(-flight); shift ;;
         --with-mods)      SET_WANT+=(+mods); shift ;;
         --without-mods)   SET_WANT+=(-mods); shift ;;
+        --with-equipment-ex) SET_WANT+=(+eqex); shift ;;
+        --without-equipment-ex) SET_WANT+=(-eqex); shift ;;
         --mods-from)      need_arg "$1" $#; NEXUS_DIRS+=("$(readlink -m "$2")"); shift 2 ;;
         --force)          FORCE=1; shift ;;
         --dry-run)        DRY_RUN=1; shift ;;
@@ -1863,12 +2056,14 @@ mh_missing() {   # why MangoHud's overlay cannot show in the game (nothing when 
     fi
 }
 setting() { if [ -f "$DATA_DIR/settings.tsv" ]; then sed -n "s/^$1\t//p" "$DATA_DIR/settings.tsv" | tail -n1; fi; }
-save_settings() {   # remember --no-game-performance (or --game-performance) for later runs
-    [ -n "$GP_OPT" ] && [ "$DRY_RUN" != 1 ] || return 0
-    local f="$DATA_DIR/settings.tsv"
+save_settings() {   # remember --no-game-performance (or --game-performance) and --redmod (or --no-redmod)
+    { [ -n "$GP_OPT" ] || [ -n "$RM_OPT" ]; } && [ "$DRY_RUN" != 1 ] || return 0
+    local f="$DATA_DIR/settings.tsv" gp red
+    gp="${GP_OPT:-$(setting game-performance)}" red="${RM_OPT:-$(setting redmod)}"
     mkdir -p "$DATA_DIR"
-    { if [ -f "$f" ]; then grep -v $'^game-performance\t' "$f" || true; fi
-      if [ "$GP_OPT" = off ]; then printf 'game-performance\toff\n'; fi; } > "$f.new"
+    { if [ -f "$f" ]; then grep -v -e $'^game-performance\t' -e $'^redmod\t' "$f" || true; fi
+      if [ "$gp" = off ]; then printf 'game-performance\toff\n'; fi
+      if [ "$red" = on ]; then printf 'redmod\ton\n'; fi; } > "$f.new"
     if [ -s "$f.new" ]; then mv "$f.new" "$f"; else rm -f "$f.new" "$f"; fi
 }
 wrap_plan() {   # wrap_plan <launch options>: WRAP, the wrapper wishes for the lo-* helpers, and why
@@ -1880,10 +2075,48 @@ wrap_plan() {   # wrap_plan <launch options>: WRAP, the wrapper wishes for the l
     GP_WANT="${GP_OPT:-$(setting game-performance)}"
     GP_WHY="$(gp_problem)" MH_MISSING="$(mh_missing)"
     MH_WHY="$MH_MISSING"
-    [[ "$used" != *" gamescope "* ]] || MH_WHY="the launch options run the game in gamescope, where MangoHud's own overlay is not supported (gamescope's --mangoapp option shows it)"
     [ "$OS_FAMILY" != steamos ] || MH_WHY="SteamOS has its own performance overlay (Quick Access menu > Performance)"
     if [ "$GP_WANT" = off ] || [ -n "$GP_WHY" ]; then WRAP="-game-performance"; else WRAP="+game-performance"; fi
-    case "$MH_OPT" in on) [ -n "$MH_WHY" ] || WRAP+=",+mangohud" ;; off) WRAP+=",-mangohud" ;; esac
+    # the script writes the whole line: MangoHud stays when it was there and can run, or when asked for
+    local mh="$MH_OPT"; [ -n "$mh" ] || [ "$MH_USED" = 0 ] || mh=on
+    case "$mh" in on) [ -n "$MH_WHY" ] || WRAP+=",+mangohud" ;; off) WRAP+=",-mangohud" ;; esac
+    redmod_plan "$1"
+}
+redmod_plan() {   # redmod_plan <launch options>: -modded among the game arguments when REDmod is on
+    RM_USED=0; [[ " $1 " != *" -modded "* ]] || RM_USED=1
+    RM_WANT="${RM_OPT:-$(setting redmod)}" RM_MODS="$(py redmods "$GAME_DIR" 2>/dev/null || echo 0)"
+    if [ "$RM_WANT" = on ] && [[ " $GAME_ARGS " != *" -modded "* ]]; then GAME_ARGS="${GAME_ARGS:+$GAME_ARGS }-modded"; fi
+}
+has_redmod_tool() { findci "$GAME_DIR" tools/redmod/bin/redMod.exe >/dev/null 2>&1; }   # the REDmod DLC is installed
+redmod_notes() {   # install: what happens to -modded (REDmod) in the launch options
+    if [ "$RM_WANT" = on ]; then
+        if [ "$RM_USED" = 0 ]; then
+            info "REDmod: -modded goes in the launch options, so the game loads deployed REDmod mods (--no-redmod takes it out)"
+        elif [ "$RM_OPT" = on ]; then ok "REDmod: -modded is already in the launch options"; fi
+        if ! has_redmod_tool; then
+            warn "REDmod's tool is not installed: install the free REDmod DLC in Steam (the game's Properties > DLC) to deploy REDmod mods"
+        elif [ "$RM_USED" = 0 ] && [[ " $GAME_ARGS " == *" --launcher-skip "* ]]; then
+            info "REDmod mods need a deploy after each change. CDPR's launcher runs it when its mods setting is on, but"
+            info "--launcher-skip skips the launcher: run with --no-launcher-skip once after a change, or run"
+            info "tools/redmod/bin/redMod.exe deploy in the game's Proton prefix"
+        fi
+    elif [ "$RM_USED" = 1 ] && [ "$RM_OPT" = off ]; then
+        info "REDmod: -modded taken out of the launch options (--no-redmod)"
+    elif [ "$RM_USED" = 1 ]; then
+        warn "the launch options had -modded, which REDmod mods need; it is taken out with the rest of the line."
+        warn "Run this again with --redmod to keep it (the choice is remembered)"
+    elif [ "$RM_MODS" -gt 0 ]; then
+        info "REDmod: $RM_MODS mod(s) in the game's mods folder load only with -modded; --redmod adds it"
+    fi
+}
+redmod_rows() {   # check: -modded (REDmod)
+    local tool="the REDmod DLC is installed"
+    has_redmod_tool || tool="the REDmod DLC is not installed (Steam: the game's Properties > DLC)"
+    if [ "$RM_USED" = 1 ]; then row "REDmod" "-modded in the launch options; $RM_MODS mod(s) in mods/; $tool"
+    elif [ "$RM_WANT" = on ]; then row "REDmod" "on (--redmod), not in the launch options yet: run '$0' with Steam closed"
+    elif [ "$RM_MODS" -gt 0 ]; then row "REDmod" "$RM_MODS mod(s) in mods/, which load only with -modded ('$0 --redmod' adds it)"
+    fi
+    return 0
 }
 wrap_notes() {   # install: what happens to game-performance and MangoHud in the launch options
     if [ "$GP_USED" = 1 ] && [ -n "$GP_WHY" ]; then
@@ -1897,13 +2130,14 @@ wrap_notes() {   # install: what happens to game-performance and MangoHud in the
         info "game-performance is not added: $GP_WHY"
     fi
     case "$MH_OPT" in
-        on) if [ "$MH_USED" = 1 ]; then ok "MangoHud is already in the launch options"
+        on) if [ -n "$MH_WHY" ] && [ "$MH_USED" = 1 ]; then info "MangoHud: taken out of the launch options: $MH_WHY"
             elif [ -n "$MH_WHY" ]; then info "MangoHud is not added: $MH_WHY"
+            elif [ "$MH_USED" = 1 ]; then ok "MangoHud is already in the launch options"
             else info "MangoHud: MANGOHUD=1 shows its overlay in the game (--no-mangohud takes it out)"; fi ;;
         off) if [ "$MH_USED" = 1 ]; then info "MangoHud: taken out of the launch options (--no-mangohud)"
              else info "--no-mangohud: MangoHud is not in the launch options"; fi ;;
-        *) if [ "$MH_WRAPPER" = 1 ] && [ -n "$MH_MISSING" ]; then
-               warn "the launch options run mangohud, but $MH_MISSING: the game will not start; install it, or run this again with --no-mangohud"
+        *) if [ "$MH_USED" = 1 ] && [ -n "$MH_WHY" ]; then
+               info "MangoHud: taken out of the launch options: $MH_WHY"
            elif [ "$MH_USED" = 0 ] && [ -z "$MH_WHY" ]; then
                info "MangoHud is installed: --mangohud shows its overlay in the game"
            fi ;;
@@ -1919,7 +2153,7 @@ wrap_rows() {   # check: game-performance and MangoHud
     fi
     if [ "$MH_WRAPPER" = 1 ] && [ -n "$MH_MISSING" ]; then
         row "MangoHud" "in the launch options, but $MH_MISSING"
-        warn "the game will not start this way; install MangoHud, or run '$0 --no-mangohud' with Steam closed"
+        warn "the game will not start this way; install MangoHud, or run '$0' with Steam closed to take it out"
     elif [ "$MH_USED" = 1 ]; then row "MangoHud" "in the launch options"
     elif [ -z "$MH_WHY" ]; then row "MangoHud" "installed; '$0 --mangohud' shows its overlay in the game"
     fi
@@ -2119,7 +2353,7 @@ do_check() {
         missing) row "launch options" "${lo_val:-empty}; recommended: $(py lo-merge "$lo_val" "$dlls" "$GAME_ARGS" "$WRAP" | cut -d$'\x1f' -f2)" ;;
         *) row "launch options" "Steam user config not found" ;;
     esac
-    case "$lo" in ok|broken|missing) wrap_rows ;; esac
+    case "$lo" in ok|broken|missing) wrap_rows; redmod_rows ;; esac
     if [ "$(reg_state winmm)" != ok ] && [ "${lo_winmm:-}" != ok ]; then
         warn "neither override is set: Proton will ignore RED4ext's loader and the mod will not start"
     fi
@@ -2208,10 +2442,10 @@ do_uninstall() {
 # ---------------------------------------------------------------- install ----
 NC_STATUS="" NC_VER="" NC_URL="" NC_SHA="" NC_GAMES="" NC_PROTO="" NC_R4="" NC_MATCHED="" NC_YANKED="" NC_PRESENT=""
 PLAN_ADDED=0 PLAN_REPLACED=0 PLAN_REMOVED=0 PLAN_SAME=0 PLAN_STALE=() FILES_CHANGE=0 PREFIX_CHANGE=0 STEAM_CHANGE=0 SAVE_AUTO=""
-SETS_ON="" SETS_DROPPED="" ADDON_ROOTS=() ADDON_VERS=() ADDON_STATE_NEW=() ADDON_PLAN=() ADDON_KEEP=() ADDON_DROP=() ADDON_MISSING=() ADDON_HAVE=" " ADDON_USED=" " PROTECT=()
+SETS_ON="" SETS_DROPPED="" ADDON_ROOTS=() ADDON_VERS=() ADDON_STATE_NEW=() ADDON_PLAN=() ADDON_KEEP=() ADDON_DROP=() ADDON_GONE=() ADDON_NOPL=() ADDON_MISSING=() ADDON_HAVE=" " ADDON_USED=" " PROTECT=()
 NC_ROOT="" NC_DLL_REL="" NC_PLUGIN_DIR="" R4_CHOICE="" R4_FINAL="" RT_WANT="" RT_TARGET="" RV="" RK="" NEED_RT=0
 VCREDIST_VER="" REG_STATE="" LO_STATE="" LO_VALUE="" LO_WINMM="" RESTART_STEAM=0 DLLS="winmm"
-WRAP="" GP_WANT="" GP_WHY="" GP_USED=0 MH_WHY="" MH_MISSING="" MH_USED=0 MH_WRAPPER=0
+WRAP="" GP_WANT="" GP_WHY="" GP_USED=0 MH_WHY="" MH_MISSING="" MH_USED=0 MH_WRAPPER=0 RM_USED=0 RM_WANT="" RM_MODS=0
 TOOL_NAME="" TOOL_DIR="" TOOL_REASON="" TOOL_LABEL="" TOOL_STATE="none"
 
 step_nightcoop() {
@@ -2352,14 +2586,31 @@ addon_parts() {   # each component once: name sets kind rule version-file
     done < <(addon_lines all)
 }
 name_of() { echo "${1//_/ }"; }   # name_of <component>: its name for people
-set_label() { case "$1" in flight) echo "Let There Be Flight" ;; *) echo "the mod set" ;; esac; }
+set_label() { case "$1" in flight) echo "Let There Be Flight" ;; eqex) echo "Equipment-EX" ;; *) echo "the mod set" ;; esac; }
 listing() { local IFS=,; local s="$*"; echo "${s//,/, }"; }   # listing <items...>: "a, b, c"
-in_sets_on() { local s; for s in ${1//,/ }; do [[ " $SETS_ON " == *" $s "* ]] && return 0; done; return 1; }
+in_sets_on() {   # in_sets_on <sets>: one of its comma-separated sets is on ("mods+eqex": both of them)
+    local s p
+    for s in ${1//,/ }; do
+        for p in ${s//+/ }; do [[ " $SETS_ON " == *" $p "* ]] || continue 2; done
+        return 0
+    done
+    return 1
+}
+has_pl() { findci "$GAME_DIR" archive/pc/ep1 >/dev/null 2>&1; }   # Phantom Liberty is installed
+needs_pl() { [[ " $(needs_of "$1") " == *" Phantom_Liberty "* ]]; }
 recorded_roots() {   # recorded_roots <component>: what the last install put in place for it
     local e; for e in "${ROOTS_REC[@]}"; do if [ "${e%%$'\t'*}" = "$1" ]; then echo "${e#*$'\t'}"; fi; done
 }
 present_root() {   # present_root <component>: the first of its recorded files or folders still in the game folder
     local r d; while IFS= read -r r; do d="$(findci "$GAME_DIR" "${r%/}" 2>/dev/null || true)"; if [ -n "$d" ]; then echo "$d"; return 0; fi; done < <(recorded_roots "$1")
+}
+gone_parts() {   # components an earlier version installed that the table no longer has (their files go as stale)
+    local e c known=" " seen=" "
+    while read -r c _; do known+="$c "; done < <(addon_parts)
+    for e in "${ROOTS_REC[@]}"; do
+        c="${e%%$'\t'*}"
+        if [[ "$known$seen" != *" $c "* ]]; then seen+="$c "; echo "$c"; fi
+    done
 }
 needs_of() { local e; for e in $ADDON_NEEDS; do if [ "${e%%:*}" = "$1" ]; then tr ',' ' ' <<<"${e#*:}"; fi; done; }
 restage() {   # restage <root>...: these files and folders as the game folder has them, so the plan finds
@@ -2395,6 +2646,7 @@ nexus_file() {   # nexus_file <component>: which file to download, of a mod with
         No_Intro_Videos) echo "the archive file" ;;
         Cyber_Drift) echo "the Light file" ;;
         Zenitex_Virtual_Atelier) ;;
+        Zenitex_Core_Dependency) echo "the main file, not No Camo, Black Decals or a colour set" ;;
         Zenitex_*_*) echo "the main file, not Alt. Colors or GS" ;;
         Comfy_Boots) echo "the Female V and Male V file" ;;
         Vehicle_Pack_Basic_1) echo "Car Pack 1" ;;
@@ -2405,6 +2657,37 @@ nexus_file() {   # nexus_file <component>: which file to download, of a mod with
         Material_and_Texture_Override) echo "the Legacy file, not REDmod" ;;
         Vehicle_Customizer) echo "SVE 3dot0, among the main files" ;;
         Vehicle_Customizer_update) echo "SVE 3dot1, among the update files" ;;
+        Immersive_Audio_Distance) echo "the main file for 2.5, Immersive Voice Distance (2.5)" ;;
+        Toyota_GR_Yaris) echo "the main file Toyota Yaris GR All Purpose Drive Spec, not the Drift Handling Spec" ;;
+        Toyota_GR_Yaris_Rocket_Bunny) echo "GR YARIS Rocket Bunny Kit, among the main files" ;;
+        Nissan_Silvia_S14) echo "the main file, S14 Nomad Main files and Livery 1" ;;
+        VendorsXL) echo "the main file, not the template and example files" ;;
+        Equipment_EX) echo "the main file, not the Hide Hub Buttons patch" ;;
+        Fifth_Element_Collection) echo "ALL IN ONE - Fifth Element Collection" ;;
+        Dexter_Pants) echo "Dexter's Pants" ;;
+        Dexter_Vest) echo "Dexter's Vest" ;;
+        Dexter_Shoes) echo "Dexter's Shoes" ;;
+        Street_Ninja_Remake) echo "the main file, STREET NINJA REMAKE - MAIN" ;;
+        Street_Ninja_Shop) echo "STREET NINJA STREETWEAR SHOP, among the optional files" ;;
+        Nola_Virtual_Boutique) echo "ND_female_virtual_boutique" ;;
+        Preem_Hair) echo "Preem Hair (2K), not the 4K file" ;;
+        Wolfcut_Messy) echo "Messy Wolfcut - CCXL" ;;
+        Wolfcut_Emo) echo "Emo Wolfcut - CCXL" ;;
+        Wolfcut_Hime_Short) echo "Hime Short - CCXL" ;;
+        Wolfcut_Hime_Medium) echo "Hime Medium - CCXL" ;;
+        Wolfcut_Hime_Long) echo "Hime Long Jelly - CCXL" ;;
+        Subleader_Hair_Pack) echo "CCXL Sub Hair Pack - AllInOne" ;;
+        Hyst_Hair_Collection) echo "1. AIO - ALL IN ONE - HYST HAIR COLLECTION" ;;
+        Meluminary_Hair_Megapak) echo "CCXL - HAIR MEGAPAK" ;;
+        Undercut_Slickback) echo "HAIR 01 - Slickback Undercut" ;;
+        Undercut_Sidewave) echo "HAIR 02 - Sidewave Undercut" ;;
+        Undercut_ManBun) echo "HAIR 03 - ManBun Undercut" ;;
+        Undercut_Slickback_Braids) echo "HAIR 04 - Slickback Braids Undercut" ;;
+        Chain_Jewelry) echo "Chain Jewelry - Main" ;;
+        raem_Accessory_Store) echo "Accessories - Main Store, among the optional files" ;;
+        Browser_Extension) echo "the main file, BrowserExtensionFramework" ;;
+        Immersive_First_Person) echo "the main file, not ITP Compatibility" ;;
+        Katana_Pack_2) echo "Katana Pack 2, the main file with every blade" ;;
     esac
 }
 nexus_avoided() {   # nexus_avoided <component>: what a file of it that is never installed is
@@ -2441,21 +2724,23 @@ newer_same_line() {   # newer_same_line <installed DLL> <our DLL> <rule>: the in
 step_addons() {   # the add-on sets (--with-flight, --with-mods), matched to the game patch
     local s w r on="" lines comp patch sets kind rule probe ver src sha id prefer avoid path which dir root files t inst ours e why n h v
     local -a cands found
-    for s in flight mods; do   # which sets are on this time: as recorded, unless an option says otherwise
+    for s in flight mods eqex; do   # which sets are on this time: as recorded, unless an option says otherwise
         w=""
         for r in "${SET_WANT[@]}"; do if [ "${r:1}" = "$s" ]; then w="${r:0:1}"; fi; done
         if [ "$w" = + ] || { [ -z "$w" ] && [[ " $SETS_RECORDED " == *" $s "* ]]; }; then on+=" $s"; fi
         if [ "$w" = - ]; then
             if [[ " $SETS_RECORDED " == *" $s "* ]]; then SETS_DROPPED+=" $s"
-            else info "--without-$s: this script has not installed $(set_label "$s"); nothing to remove"; fi
+            else info "--without-${s/eqex/equipment-ex}: this script has not installed $(set_label "$s"); nothing to remove"; fi
         fi
     done
     SETS_ON="${on# }"
     [ -n "$SETS_ON$SETS_RECORDED" ] || return 0
     bold "Add-ons${SETS_ON:+: ${SETS_ON// /, }}"
     lines="$(addon_lines)"
+    while read -r comp; do if [ -n "$comp" ]; then ADDON_GONE+=("$(name_of "$comp")"); fi; done < <(gone_parts)
     if [ -z "$lines" ]; then   # a game patch the table does not know: what is there stays as it is
         warn "no add-on builds are known for game ${GAME_VER:-?}; what is installed is left as it is"
+        if [ "${#ADDON_GONE[@]}" -gt 0 ]; then ok "$(listing "${ADDON_GONE[@]}") will be removed: no longer part of the set"; fi
         while read -r comp _; do keep_recorded "$comp"; done < <(addon_parts)
         SETS_ON="$SETS_RECORDED"
         return 0
@@ -2469,6 +2754,7 @@ step_addons() {   # the add-on sets (--with-flight, --with-mods), matched to the
             fi
             continue
         fi
+        if needs_pl "$comp" && ! has_pl; then ADDON_NOPL+=("$(name_of "$comp")"); continue; fi   # needs the expansion
         cands=()   # the archives to try, best first: path, version, and whether it is the preferred file
         case "$src" in
             nexus:*)   # the user's downloads, and the copies kept from earlier runs; ver: the oldest release for the patch
@@ -2496,7 +2782,7 @@ step_addons() {   # the add-on sets (--with-flight, --with-mods), matched to the
                 cands=("$path"$'\x1f'"$ver"$'\x1f'preferred) ;;
         esac
         for r in $(needs_of "$comp"); do   # everything it needs must be here, or it is left out
-            if [[ "$ADDON_HAVE" != *" $r "* ]]; then
+            if [ "$r" != Phantom_Liberty ] && [[ "$ADDON_HAVE" != *" $r "* ]]; then
                 warn "$(name_of "$comp") needs $(name_of "$r"), which is not here; $(name_of "$comp") is left out"
                 if [ -n "$(recorded_roots "$comp")" ]; then keep_recorded "$comp"; fi
                 continue 2
@@ -2510,7 +2796,7 @@ step_addons() {   # the add-on sets (--with-flight, --with-mods), matched to the
             if ! why="$(unpack_any "$path" "$dir")"; then warn "could not unpack $(basename "$path"): ${why:-unknown error}"; continue; fi
             find "$dir" -type l -delete   # nothing that points out of the game folder
             if root="$(py modroot "$dir" 2>/dev/null)"; then break; fi
-            warn "$(basename "$path") has no game folders (r6, archive, bin, red4ext) in it"
+            warn "$(basename "$path") has no game folders (r6, archive, bin, red4ext) or .archive files in it"
         done
         if [ -z "$root" ]; then
             if [ -n "$(recorded_roots "$comp")" ]; then
@@ -2541,8 +2827,13 @@ step_addons() {   # the add-on sets (--with-flight, --with-mods), matched to the
         if [ -n "$ours" ]; then e="$(sha256sum "$ours" | cut -d' ' -f1)"; else e=-; fi
         ADDON_VERS+=("$comp"$'\t'"$ver"$'\t'"$e")
     done <<<"$lines"
+    # a folder that several components put files in (Zenitex Core Dependency's and the outfits'
+    # r6/tweaks/scorpiontank) is recorded file by file: a framework kept later keeps only its own
+    if [ "${#ADDON_ROOTS[@]}" -gt 0 ]; then mapfile -t ADDON_ROOTS < <(py split-roots "$TMP/addons" "${ADDON_ROOTS[@]}"); fi
     if [ "${#ADDON_PLAN[@]}" -gt 0 ]; then ok "for game ${GAME_VER:-?}: $(listing "${ADDON_PLAN[@]}")"; fi
     if [ "${#ADDON_DROP[@]}" -gt 0 ]; then ok "$(listing "${ADDON_DROP[@]}") will be removed; the frameworks they needed stay, since other mods use them"; fi
+    if [ "${#ADDON_GONE[@]}" -gt 0 ]; then ok "$(listing "${ADDON_GONE[@]}") will be removed: no longer part of the set"; fi
+    if [ "${#ADDON_NOPL[@]}" -gt 0 ]; then info "Phantom Liberty is not installed: $(listing "${ADDON_NOPL[@]}"), which need it, are left out"; fi
     if [[ "$ADDON_HAVE" == *" Quick_Stash "* ]]; then
         info "Quick Stash in co-op: a session plays in the host's world, so a guest's stash there is not their own;"
         info "transfer items in your own game, or as the host."
@@ -2551,9 +2842,40 @@ step_addons() {   # the add-on sets (--with-flight, --with-mods), matched to the
         info "Cars and AVs in co-op: partners see a car of a mod (one Virtual Car Dealer sells, an AV of Drive an"
         info "Aerial Vehicle) only when they have that mod too; otherwise NightCoop shows a game car with as many seats."
     fi
-    if [[ "$ADDON_HAVE" =~ \ (Zenitex_[A-Za-z]+_[A-Za-z_]+|Comfy_Boots)\  ]]; then
+    if [[ "$ADDON_HAVE" == *" Katana_Pack_2 "* ]]; then
+        info "Katana Pack 2 in co-op: a partner without it sees a game blade of the same kind in your hands, and the"
+        info "blades' charge effects show only on your screen; their hits count for everyone."
+    fi
+    local o outfit=0 layered=0
+    for o in $ADDON_HAVE; do
+        if [[ " ${OUTFITS//$'\n'/ } " == *" $o "* ]]; then outfit=1; fi
+        if [ "$o" = Street_Ninja_Remake ]; then layered=1; fi
+    done
+    if [ "$outfit" = 1 ]; then
         info "Outfits of mods in co-op: a partner without the same outfit mod sees a plain game piece for that body"
         info "part (head, face and accessories stay empty), so share the outfit mods with everyone you play with."
+    fi
+    if [ "$layered" = 1 ] && [[ "$ADDON_HAVE" != *" Equipment_EX "* ]]; then
+        info "Street Ninja's four layers are worn together with Equipment-EX (--with-equipment-ex); without it,"
+        info "each piece takes its game slot on its own."
+    fi
+    local hair=0
+    for o in $ADDON_HAVE; do if [[ " ${HAIRS//$'\n'/ } " == *" $o "* ]]; then hair=1; fi; done
+    if [ "$hair" = 1 ]; then
+        info "Hairstyles of mods in co-op: choose them in the character creator, at a mirror or at a ripperdoc. A partner"
+        info "without the same hair mod sees your V without that hairstyle, so keep the mod set the same for everyone."
+    fi
+    if [[ "$ADDON_HAVE" == *" Nola_Mini_Dress "* ]] && [[ "$ADDON_HAVE" != *" Nola_Virtual_Boutique "* ]]; then   # her boutique sells it
+        info "No store of the set sells Nola Dreamer's mini dress: add it in Cyber Engine Tweaks' console"
+        info "(Game.AddToInventory), with the codes listed on its Nexus Mods page."
+    fi
+    if [[ "$ADDON_HAVE" == *" Equipment_EX "* ]]; then
+        info "Equipment-EX in co-op: every partner needs it too. NightCoop sends looks by its slots, so a partner"
+        info "without it sees other slots; NightCoop also notes that it overrides photo-mode functions."
+    fi
+    if [[ "$ADDON_HAVE" == *" VendorsXL "* ]]; then
+        info "VendorsXL changes how every vendor restocks (larger stock limits). The RVC00N Dumpster 3's shop is"
+        info "behind Dakota's garage; the computer next to it sells the whole catalogue."
     fi
     if [[ "$ADDON_HAVE" == *" Vehicle_Customizer "* ]]; then
         info "Vehicle Customizer works only with the game's language set to English."
@@ -2583,11 +2905,19 @@ release_of() {   # release_of <component> <file>: the release this script record
     return 0
 }
 addon_rows() {   # check: each add-on set
-    local set comp sets kind rule probe d v mods libs missing
-    for set in flight mods; do
+    local set comp sets kind rule probe d v mods libs missing alt q ok
+    for set in flight mods eqex; do
         mods=() libs=() missing=()
         while read -r comp sets kind rule probe; do
-            [[ ",$sets," == *",$set,"* ]] || continue
+            if [[ ",$sets," != *",$set,"* ]]; then   # "mods+eqex" shows with eqex, when all its sets are on
+                ok=0
+                for alt in ${sets//,/ }; do
+                    [[ "$alt" == *"+$set" ]] || continue
+                    ok=1; for q in ${alt//+/ }; do [[ " $SETS_RECORDED " == *" $q "* ]] || ok=0; done
+                done
+                [ "$ok" = 1 ] || continue
+            fi
+            if needs_pl "$comp" && ! has_pl; then continue; fi
             if [ "$probe" != - ]; then d="$(findci "$GAME_DIR" "$probe" 2>/dev/null || true)"; else d="$(present_root "$comp")"; fi
             if [ -z "$d" ]; then missing+=("$(name_of "$comp")"); continue; fi
             v="$(release_of "$comp" "$d")"
@@ -2599,6 +2929,9 @@ addon_rows() {   # check: each add-on set
                 row "Let There Be Flight" "${v:-missing}, with $(listing "${libs[@]:-nothing}") (kept up to date by this script)"
             elif [ -n "$v" ]; then row "Let There Be Flight" "$v (installed by hand; --with-flight keeps it and what it needs up to date)"
             else row "Let There Be Flight" "not installed; NightCoop supports it in co-op (add --with-flight)"; fi
+        elif [ "$set" = eqex ]; then
+            if [[ " $SETS_RECORDED " == *" eqex "* ]]; then row "Equipment-EX" "$(listing "${mods[@]:-missing}"), with $(listing "${libs[@]:-nothing}") (kept up to date by this script)"
+            else row "Equipment-EX" "not installed by this script (add --with-equipment-ex to wear layered outfits)"; missing=(); fi
         elif [[ " $SETS_RECORDED " == *" mods "* ]]; then
             row "Mods" "$(listing "${mods[@]:-none yet}"), with $(listing "${libs[@]:-nothing}") (kept up to date by this script)"
         else
@@ -2699,14 +3032,14 @@ step_override() {
     esac
     IFS=$'\x1f' read -r LO_STATE LO_VALUE LO_WINMM < <(py lo-status "$STEAM_ROOT" "$APPID" "$DLLS" "$GAME_ARGS") || LO_STATE=nofile
     if [ "$LO_STATE" != nofile ]; then
-        wrap_plan "$LO_VALUE"; wrap_notes
+        wrap_plan "$LO_VALUE"; wrap_notes; redmod_notes
         IFS=$'\x1f' read -r LO_STATE LO_VALUE LO_WINMM < <(py lo-status "$STEAM_ROOT" "$APPID" "$DLLS" "$GAME_ARGS" "$WRAP") || LO_STATE=nofile
     fi
     case "$LO_STATE" in
         ok) ok "launch options already set: $LO_VALUE" ;;
         nofile) warn "Steam's per-user config was not found; launch options cannot be checked" ;;
         *) info "launch options: will be set to $(py lo-merge "$LO_VALUE" "$DLLS" "$GAME_ARGS" "$WRAP" | cut -d$'\x1f' -f2)"
-           [ -z "$GAME_ARGS" ] || info "(--launcher-skip starts the game without CDPR's launcher window; --no-launcher-skip keeps it)"
+           [[ " $GAME_ARGS " != *" --launcher-skip "* ]] || info "(--launcher-skip starts the game without CDPR's launcher window; --no-launcher-skip keeps it)"
            steam_settings_note ;;
     esac
 }
@@ -2771,6 +3104,7 @@ print_plan() {
         if [ "${#ADDON_PLAN[@]}" -gt 0 ]; then info "add-ons         $(listing "${ADDON_PLAN[@]}") (for game ${GAME_VER:-?})"; fi
         if [ "${#ADDON_KEEP[@]}" -gt 0 ]; then info "keep            $(listing "${ADDON_KEEP[@]}") (installed, newer)"; fi
         if [ "${#ADDON_DROP[@]}" -gt 0 ]; then info "remove          $(listing "${ADDON_DROP[@]}"); the frameworks they needed stay"; fi
+        if [ "${#ADDON_GONE[@]}" -gt 0 ]; then info "remove          $(listing "${ADDON_GONE[@]}") (no longer part of the set)"; fi
     fi
     [ "$NEED_RT" = 1 ] && info "run             VC_redist.x64.exe ${VCREDIST_VER} quietly in the game's Proton prefix"
     [ "$REG_STATE" = missing ] && info "registry        $DLLS = native,builtin for Cyberpunk2077.exe"
@@ -2870,6 +3204,10 @@ apply_steam_settings() {
     fi
     case "$LO_STATE" in missing|broken) ;; *) return 0 ;; esac
     bold "Writing Steam launch options"
+    if [ -n "$LO_VALUE" ]; then   # the script writes the whole line: the earlier one, for reference
+        mkdir -p "$BACKUP" && printf '%s\n' "$LO_VALUE" > "$BACKUP/launch-options.txt"
+        info "the launch options are replaced as a whole; the earlier ones are kept in $BACKUP/launch-options.txt"
+    fi
     while IFS=$'\x1f' read -r f res; do info "user $(basename "$(dirname "$(dirname "$f")")"): $res"; done \
         < <(py lo-set "$STEAM_ROOT" "$APPID" "$DLLS" "$GAME_ARGS" "$WRAP")
     IFS=$'\x1f' read -r LO_STATE LO_VALUE LO_WINMM < <(py lo-status "$STEAM_ROOT" "$APPID" "$DLLS" "$GAME_ARGS" "$WRAP") || true

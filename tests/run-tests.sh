@@ -95,29 +95,26 @@ tool() { hp ct-get "$STEAM" 1091500 | cut -d$'\x1f' -f1; }
 newest_backup() { find "$H/.local/share/nightcoop-linux/backups" -mindepth 1 -maxdepth 1 -type d | sort | tail -n1 | sed "s,$,/,"; }
 
 # ---------------------------------------------------------------- helpers ----
-section "Launch option merging"
+section "Launch options: the script writes the whole line"
 lo() { hp lo-merge "$1" "${3:-winmm}" "${4:-}" "${5:-}" | cut -d$'\x1f' -f"$2"; }   # lo <line> <field> [dlls] [args] [wrappers]
 expect "empty"                       '[ "$(lo "" 2)" = "WINEDLLOVERRIDES=\"winmm=n,b\" %command%" ]'
-expect "arguments only"              '[ "$(lo "--launcher-skip" 2)" = "WINEDLLOVERRIDES=\"winmm=n,b\" %command% --launcher-skip" ]'
-expect "CachyOS wrapper kept"        '[ "$(lo "game-performance %command%" 2)" = "WINEDLLOVERRIDES=\"winmm=n,b\" game-performance %command%" ]'
-expect "other overrides kept"        '[ "$(lo "WINEDLLOVERRIDES=\"version=n,b\" %command%" 2)" = "WINEDLLOVERRIDES=\"version=n,b;winmm=n,b\" %command%" ]'
-expect "builtin winmm corrected"     '[ "$(lo "WINEDLLOVERRIDES=winmm=b mangohud %command%" 2)" = "WINEDLLOVERRIDES=\"winmm=n,b\" mangohud %command%" ]'
-expect "combined entry recognised"   '[ "$(lo "WINEDLLOVERRIDES=\"winmm,version=n,b\" %command%" 1)" = ok ]'
-expect "override after %command%"    '[ "$(lo "%command% WINEDLLOVERRIDES=winmm=n,b" 1)" = broken ]'
-expect "moved before %command%"      '[ "$(lo "%command% WINEDLLOVERRIDES=winmm=n,b" 2)" = "WINEDLLOVERRIDES=\"winmm=n,b\" %command%" ]'
-expect "--launcher-skip added after %command%" '[ "$(lo "game-performance %command% -skipStartScreen" 2 winmm --launcher-skip)" = "WINEDLLOVERRIDES=\"winmm=n,b\" game-performance %command% --launcher-skip -skipStartScreen" ]'
-expect "missing argument means not done" '[ "$(lo "WINEDLLOVERRIDES=\"winmm=n,b\" %command%" 1 winmm --launcher-skip)" = missing ]'
+expect "with the game arguments it adds" '[ "$(lo "" 2 winmm --launcher-skip)" = "WINEDLLOVERRIDES=\"winmm=n,b\" %command% --launcher-skip" ]'
+expect "everything else is replaced: other overrides, variables, wrappers and arguments" '[ "$(lo "WINEDLLOVERRIDES=\"dxgi=n,b\" DXVK_HUD=fps gamemoderun %command% -skipStartScreen" 2 winmm --launcher-skip)" = "WINEDLLOVERRIDES=\"winmm=n,b\" %command% --launcher-skip" ]'
 expect "Cyber Engine Tweaks loader joins" '[ "$(lo "WINEDLLOVERRIDES=\"winmm=n,b\" %command%" 2 winmm,version)" = "WINEDLLOVERRIDES=\"winmm,version=n,b\" %command%" ]'
-expect "game-performance goes last, right before %command%" '[ "$(lo "prime-run %command%" 2 winmm "" +game-performance)" = "WINEDLLOVERRIDES=\"winmm=n,b\" prime-run game-performance %command%" ]'
-expect "game-performance not doubled" '[ "$(lo "WINEDLLOVERRIDES=\"winmm=n,b\" game-performance %command%" 1 winmm "" +game-performance)" = ok ]'
-expect "game-performance taken out"  '[ "$(lo "WINEDLLOVERRIDES=\"winmm=n,b\" game-performance %command% --launcher-skip" 2 winmm --launcher-skip -game-performance)" = "WINEDLLOVERRIDES=\"winmm=n,b\" %command% --launcher-skip" ]'
-expect "a game argument of that name is not a wrapper" '[ "$(lo "WINEDLLOVERRIDES=\"winmm=n,b\" %command% game-performance" 1 winmm "" -game-performance)" = ok ]'
-expect "nor is a variable set to a path of that name" '[ "$(lo "WINEDLLOVERRIDES=\"winmm=n,b\" TOOL=/opt/x/game-performance %command%" 1 winmm "" -game-performance)" = ok ]'
-expect "MANGOHUD=1 after the overrides" '[ "$(lo "gamemoderun %command%" 2 winmm "" +mangohud)" = "WINEDLLOVERRIDES=\"winmm=n,b\" MANGOHUD=1 gamemoderun %command%" ]'
-expect "the mangohud wrapper counts as MangoHud" '[ "$(lo "WINEDLLOVERRIDES=\"winmm=n,b\" mangohud %command%" 1 winmm "" +mangohud)" = ok ]'
-expect "MANGOHUD=0 turned on"        '[ "$(lo "MANGOHUD=0 %command%" 2 winmm "" +mangohud)" = "WINEDLLOVERRIDES=\"winmm=n,b\" MANGOHUD=1 %command%" ]'
-expect "MangoHud taken out: wrapper, its --dlsym and the variable" '[ "$(lo "MANGOHUD=1 mangohud --dlsym game-performance %command%" 2 winmm "" -mangohud)" = "WINEDLLOVERRIDES=\"winmm=n,b\" game-performance %command%" ]'
-expect "a quoted value is one word, its spacing kept" '[ "$(lo "DXVK_HUD=\"fps,  memory\" %command%" 2 winmm "" +game-performance)" = "WINEDLLOVERRIDES=\"winmm=n,b\" DXVK_HUD=\"fps,  memory\" game-performance %command%" ]'
+expect "MANGOHUD=1 after the overrides, game-performance right before %command%" '[ "$(lo "prime-run %command%" 2 winmm --launcher-skip +game-performance,+mangohud)" = "WINEDLLOVERRIDES=\"winmm=n,b\" MANGOHUD=1 game-performance %command% --launcher-skip" ]'
+expect "unwished, they are left out (the mangohud wrapper and its --dlsym too)" '[ "$(lo "MANGOHUD=1 mangohud --dlsym game-performance %command%" 2 winmm "" -game-performance,-mangohud)" = "WINEDLLOVERRIDES=\"winmm=n,b\" %command%" ]'
+expect "the line the script writes is ok" '[ "$(lo "WINEDLLOVERRIDES=\"winmm=n,b\" game-performance %command% --launcher-skip" 1 winmm --launcher-skip +game-performance)" = ok ]'
+expect "anything more is not" '[ "$(lo "WINEDLLOVERRIDES=\"winmm=n,b\" gamemoderun %command% --launcher-skip" 1 winmm --launcher-skip)" = missing ]'
+expect "nor anything less" '[ "$(lo "WINEDLLOVERRIDES=\"winmm=n,b\" %command%" 1 winmm --launcher-skip)" = missing ]'
+expect "an override after %command% is broken" '[ "$(lo "%command% WINEDLLOVERRIDES=winmm=n,b" 1)" = broken ]'
+expect "REDmod: -modded after the other game arguments, and the line with it is ok" '[ "$(lo "gamemoderun %command%" 2 winmm "--launcher-skip -modded")" = "WINEDLLOVERRIDES=\"winmm=n,b\" %command% --launcher-skip -modded" ] && [ "$(lo "WINEDLLOVERRIDES=\"winmm=n,b\" %command% --launcher-skip -modded" 1 winmm "--launcher-skip -modded")" = ok ]'
+expect "what a line runs: wrappers before %command%, not game arguments or variables" '[ "$(hp lo-uses "MANGOHUD=1 TOOL=/opt/x/game-performance gamescope -- %command% game-performance")" = "MANGOHUD=1 gamescope" ]'
+expect "a quoted value is one word" '[ "$(hp lo-uses "DXVK_HUD=\"fps,  game-performance\" mangohud --dlsym %command%")" = mangohud ]'
+
+section "The fixtures' add-on table"
+rows() { awk -v n="$2" 'NF == n { $NF = ""; if (n == 9) $(NF - 1) = ""; print }' "$1" | sort; }   # rows <file> <fields>: without source and SHA-256
+expect "its GitHub rows are the installer's, but for their URL and SHA-256" '[ "$(rows "$FIX/addon-sets.txt" 9)" = "$(sed -n "/^ADDON_SETS=\"/,/^\"/p" "$SCRIPT" | rows /dev/stdin 9)" ] && [ "$(rows "$FIX/addon-sets.txt" 9 | wc -l)" = 9 ]'
+expect "its Nexus rows are the installer's" '[ "$(awk "NF == 8" "$FIX/addon-sets.txt" | sort)" = "$(sed -n "/^ADDON_SETS=\"/,/^\"/p" "$SCRIPT" | awk "NF == 8 {\$1 = \$1; print}" | sort)" ]'
 
 section "Release selection (releases.json, as nightcoop.net publishes it)"
 pick() { hp pick "$FIX/site/releases.json" "$1" "https://nightcoop.net" "${2:-}" | tr '\037' '|'; }
@@ -179,7 +176,7 @@ expect "runtime upgraded to 14.51"    '[ "$(hp pever "$PFX/drive_c/windows/syste
 expect "installer run with runinprefix" 'grep -q "^runinprefix .*vc_redist.x64.exe /install /quiet /norestart" "$PFX/../fake-proton.log"'
 expect "newest installer chosen over Steamworks 14.44" '[[ "$OUT" == *"installer: $H/.cache/nightcoop-linux/vc_redist.x64.exe (14.51.36247.0)"* ]]' "$OUT"
 expect "registry override written"    '[ "$(hp reg-get "$PFX/user.reg" "$REG_KEY" winmm)" = native,builtin ]'
-expect "launch options merged"        '[ "$(launch_opts)" = "WINEDLLOVERRIDES=\\\"winmm=n,b\\\" gamemoderun %command% --launcher-skip" ]' "$(launch_opts)"
+expect "launch options written whole, the earlier line kept in the backup" '[ "$(launch_opts)" = "WINEDLLOVERRIDES=\\\"winmm=n,b\\\" %command% --launcher-skip" ] && [ "$(cat "$H"/.local/share/nightcoop-linux/backups/*/launch-options.txt)" = "gamemoderun %command% --launcher-skip" ] && [[ "$OUT" == *"the launch options are replaced as a whole; the earlier ones are kept in"* ]]' "$(launch_opts)"
 expect "Proton Experimental chosen for the game" '[ "$(tool)" = proton_experimental ] && [[ "$OUT" == *"Proton for the game:"*"proton_experimental (chosen in Steam)"* ]]' "$OUT"
 expect "saves backed up"              '[ -f "$(newest_backup)Saved Games/ManualSave-0/sav.dat" ]'
 expect "check reports NightCoop"      '[[ "$OUT" == *"NightCoop:"*"0.2.0.0"*"release 0.2.0-beta"* ]]' "$OUT"
@@ -227,14 +224,14 @@ run install --yes
 expect "install succeeds with Steam open" '[ $RC = 0 ]' "$OUT"
 expect "Steam's files not touched"    '[ "$(launch_opts)" = "gamemoderun %command% --launcher-skip" ] && [ -z "$(tool)" ]'
 expect "registry override still set"  '[ "$(hp reg-get "$PFX/user.reg" "$REG_KEY" winmm)" = native,builtin ]'
-expect "launch options recommended"   '[[ "$OUT" == *"Recommended (the prefix override already lets the mod load)"*"WINEDLLOVERRIDES=\"winmm=n,b\" gamemoderun %command% --launcher-skip"* ]]' "$OUT"
+expect "launch options recommended"   '[[ "$OUT" == *"Recommended (the prefix override already lets the mod load)"*"WINEDLLOVERRIDES=\"winmm=n,b\" %command% --launcher-skip"* ]]' "$OUT"
 expect "Proton choice explained"      '[[ "$OUT" == *"Properties > Compatibility"*"choose Proton Experimental"* ]]' "$OUT"
 expect "no 'manual step' demanded"    '[[ "$OUT" != *"One manual step left"* ]]' "$OUT"
 run install --yes
 kill "$STEAM_PID" 2>/dev/null; wait "$STEAM_PID" 2>/dev/null
 expect "rerun with Steam still open only repeats the recommendations" '[ $RC = 0 ] && [[ "$OUT" == *"nothing to replace"* ]] && [[ "$OUT" == *"Recommended (the prefix override already lets the mod load)"* ]] && [[ "$OUT" != *"Backing up"* ]]' "$OUT"
 run install --yes
-expect "rerun with Steam closed writes only Steam's settings" '[ $RC = 0 ] && [ "$(launch_opts)" = "WINEDLLOVERRIDES=\\\"winmm=n,b\\\" gamemoderun %command% --launcher-skip" ] && [ "$(tool)" = proton_experimental ] && [[ "$OUT" != *"Backing up"* ]]' "$OUT"
+expect "rerun with Steam closed writes only Steam's settings" '[ $RC = 0 ] && [ "$(launch_opts)" = "WINEDLLOVERRIDES=\\\"winmm=n,b\\\" %command% --launcher-skip" ] && [ "$(tool)" = proton_experimental ] && [[ "$OUT" != *"Backing up"* ]]' "$OUT"
 
 # ---------------------------------------------------------- Flatpak Steam ----
 section "Flatpak Steam (sandbox paths in Steam's files)"
@@ -452,9 +449,10 @@ else
 fi
 
 section "Mods (--with-mods): clothing stores and outfits, car and bike packs, Vehicle Customizer"
-newworld style native; OSR="$T/os-arch"; D="$H/Downloads"; mkdir -p "$D"
+newworld style native; OSR="$T/os-arch"; D="$H/Downloads"; mkdir -p "$D" "$G/archive/pc/ep1"   # Iconic Shops needs Phantom Liberty
 P="$G/red4ext/Plugins"; VC="$G/bin/x64/plugins/cyber_engine_tweaks/mods/VehicleCustomizerSVE"; PRISTINE_STYLE="$(snapshot "$G")"
-cp "$FIX/nexus/Virtual Atelier 2987 1.6.4 2026-10-25T17-42Z HncQn22j7.zip" "$FIX/nexus/Virtual Car Dealer 4454 2.3.0 2026-10-25T11-18Z lcXrcZZMt.zip" "$FIX"/style/* "$D/"
+ZCORE="$FIX/round5/Zenitex Core Dependency 16356 5.1.8 2026-08-21T11-39Z JSKWSQkA8.zip"   # every Zenitex outfit needs it
+cp "$FIX/nexus/Virtual Atelier 2987 1.6.4 2026-10-25T17-42Z HncQn22j7.zip" "$FIX/nexus/Virtual Car Dealer 4454 2.3.0 2026-10-25T11-18Z lcXrcZZMt.zip" "$FIX"/style/* "$ZCORE" "$D/"
 run install --yes --with-mods
 expect "the clothing stores, and the Zenitex outfits by their main files only (no Alt. Colors, GS or Gymfiend file)" '[ $RC = 0 ] && [ -f "$G/r6/scripts/AllVanillaClothes/store.reds" ] && [ -f "$G/r6/scripts/iconicshop/shops/top.reds" ] && [ -f "$G/r6/scripts/ScorpionTank/scorpion_zenitex_virtual_atelier.reds" ] && ( for i in mask harness jacket pads pants gloves; do [ -f "$G/r6/tweaks/scorpiontank/zenitex_$i.yaml" ] && [ ! -e "$G/r6/tweaks/scorpiontank/zenitex_${i}_gs.yaml" ] || exit 1; done ) && [ ! -e "$G/r6/tweaks/scorpiontank/zenitex_mask_alt.yaml" ] && [ -f "$G/r6/tweaks/scorpiontank/comfy_boots.yaml" ] && [ ! -e "$G/r6/tweaks/scorpiontank/comfy_boots_gymfiend.yaml" ] && [ ! -e "$G/codes.txt" ]' "$OUT"
 expect "both car packs of one Nexus mod, the bikes' main file only, the Supra and the Porsche with what they need" '[ -f "$G/r6/tweaks/VirtualCarDealer/car_pack_1.yaml" ] && [ -f "$G/r6/tweaks/VirtualCarDealer/car_pack_2.yaml" ] && [ -f "$G/r6/tweaks/Methodd/Methodd_Edge/mthdd_Methodd_Edge.yaml" ] && [ -f "$G/archive/pc/mod/BDF_DRe_ArchV4.archive" ] && [ ! -e "$G/archive/pc/mod/BDF_DRe_ArchV4_Mirrors.archive" ] && [ ! -e "$G/archive/pc/mod/dre_cyberhelmets.archive" ] && [ -f "$G/r6/tweaks/VehicleExitFix/exit.yaml" ] && [ -f "$G/r6/tweaks/krnlnik/supra.yaml" ] && [ ! -e "$G/r6/tweaks/krnlnik/supra_colors.yaml" ] && [ -f "$G/r6/scripts/VMF/vmf.reds" ] && [ -f "$G/archive/pc/mod/porsche_gt3rs.archive" ] && [ ! -e "$G/archive/pc/mod/porsche_gt3rs_grey_red.archive" ] && [ -f "$G/archive/pc/mod/MaterialTextureOverride.archive" ] && [ ! -e "$G/mods/MaterialTextureOverride" ]' "$OUT"
@@ -464,7 +462,7 @@ printf '{"Quadra": "b"}\n' > "$VC/saved.json"   # a customisation saved while pl
 run update --yes
 expect "Vehicle Customizer's saved customisations stay; a rerun changes nothing" '[ $RC = 0 ] && grep -q Quadra "$VC/saved.json" && [ "$(cat "$VC/init.lua")" = "-- vehicle customizer 3.1" ] && [[ "$OUT" == *"everything is up to date; nothing to do"* ]]' "$OUT"
 run update --yes --without-mods
-expect "--without-mods removes the clothing and vehicles; Material and Texture Override stays as a framework" '[ $RC = 0 ] && [ ! -e "$G/r6/scripts/iconicshop" ] && [ ! -e "$G/r6/tweaks/scorpiontank" ] && [ ! -e "$G/r6/tweaks/VirtualCarDealer" ] && [ ! -e "$G/archive/pc/mod/porsche_gt3rs.archive" ] && [ ! -e "$VC" ] && [ -f "$G/archive/pc/mod/MaterialTextureOverride.archive" ]' "$OUT"
+expect "--without-mods removes the clothing and vehicles; Material and Texture Override and Zenitex Core Dependency stay as frameworks" '[ $RC = 0 ] && [ ! -e "$G/r6/scripts/iconicshop" ] && [ ! -e "$G/r6/tweaks/scorpiontank/zenitex_mask.yaml" ] && [ -f "$G/r6/tweaks/scorpiontank/#_scorpion_zenitex_core_dependency.yaml" ] && [ ! -e "$G/r6/tweaks/VirtualCarDealer" ] && [ ! -e "$G/archive/pc/mod/porsche_gt3rs.archive" ] && [ ! -e "$VC" ] && [ -f "$G/archive/pc/mod/MaterialTextureOverride.archive" ]' "$OUT"
 run uninstall --yes
 expect "uninstall puts the game folder back exactly" '[ $RC = 0 ] && [ "$PRISTINE_STYLE" = "$(snapshot "$G")" ]' "$(diff <(echo "$PRISTINE_STYLE") <(snapshot "$G"))"
 newworld stylepack native; OSR="$T/os-arch"; D="$H/Downloads"; mkdir -p "$D"
@@ -475,11 +473,130 @@ cp "$FIX/style/Vehicle Customizer SVE 3dot1 9034 3.1 2026-09-21T11-33Z tvQTvsQ74
 run update --yes
 expect "an update file alone is not taken for its main file: the update waits for it" '[ $RC = 0 ] && [ ! -e "$G/bin/x64/plugins/cyber_engine_tweaks/mods/VehicleCustomizerSVE" ] && [[ "$OUT" == *"Vehicle Customizer update needs Vehicle Customizer, which is not here"* ]] && [[ "$OUT" == *"Vehicle Customizer (SVE 3dot0, among the main files): https://www.nexusmods.com/cyberpunk2077/mods/9034?tab=files"* ]]' "$OUT"
 
+# ------------------------------------- the third round, and Equipment-EX ----
+section "Mods (--with-mods): six cars, the clothes of three stores, Impact FX, Immersive Audio Distance; Equipment-EX"
+newworld round3 native; OSR="$T/os-arch"; D="$H/Downloads"; mkdir -p "$D"
+PRISTINE_R3="$(snapshot "$G")"
+cp "$FIX/nexus/Virtual Atelier 2987 1.6.4 2026-10-25T17-42Z HncQn22j7.zip" "$FIX/nexus/Virtual Car Dealer 4454 2.3.0 2026-10-25T11-18Z lcXrcZZMt.zip" "$FIX"/round3/* "$D/"
+# the GR Yaris's drift tune as a later release, newer than the main file: the rule still takes the main file
+cp "$FIX/round3/Toyota Yaris GR Drift Handling Spec (Tune Only) 34357 1 2026-10-29T18-57Z Co8doe62d.zip" "$D/Toyota Yaris GR Drift Handling Spec (Tune Only) 34357 3.4 2026-11-20T09-00Z Co8doe62e.zip"
+came() { grep -q -F -- "$2" "$G/$1" 2>/dev/null; }   # came <file> <part of a download's name>: the file is that download's
+run install --yes --with-mods
+expect "the six cars: the GR Yaris's main file and kit, not its drift tune (a newer release of it too); the Silvia with what it needs, not its second livery" '[ $RC = 0 ] && [ -f "$G/r6/tweaks/xaires/apollo_ie.yaml" ] && [ -f "$G/r6/tweaks/xaires/countach.yaml" ] && [ -f "$G/r6/tweaks/xaires/countach_lbwk.yaml" ] && [ -f "$G/r6/tweaks/FIGI6_Oka/vaz1111_oka.yaml" ] && came r6/tweaks/toyota_gr_yaris/toyota_gr_yaris.yaml "All Purpose" && [ -f "$G/archive/pc/mod/00_Toyota_Yaris_GR_RocketBunny.archive" ] && [ -f "$G/r6/tweaks/ctrlsec/ctrlsec_UnboundS14_Nomad.yaml" ] && [ ! -e "$G/archive/pc/mod/Livery_2.archive" ] && [ -f "$G/archive/pc/mod/car_manuf.archive" ]' "$OUT"
+expect "Impact FX, and Immersive Audio Distance's file for 2.5, not the one for 2.31" '[ -f "$G/r6/scripts/CinematicImpactFX/CinematicImpactFX.reds" ] && came "r6/scripts/Immersive Audio Distance/ImmersiveAudioDistance.reds" "Immersive Voice Distance (2.5)"' "$OUT"
+expect "The RVC00N Dumpster 3 with VendorsXL and Deceptious Quest Core; its garments, the Fifth Element's all-in-one file and Dexter's three" '[ -f "$G/r6/tweaks/PinkyDude_TheRVC00NDumpster3/PinkyDude_TheRVC00NDumpster3.yaml" ] && [ -f "$G/r6/scripts/VendorsXL/VendorsXL.reds" ] && [ -f "$G/archive/pc/mod/zDeceptiousQuestCore.archive" ] && [ -f "$G/r6/tweaks/PinkyDude_TheRVC00NDumpster3/PinkyDude_Clothes_GoliathCoat.yaml" ] && [ -f "$G/r6/tweaks/PinkyDude_TheRVC00NDumpster3/PinkyDude_Clothes_KnifeBandolier.yaml" ] && came archive/pc/mod/PinkyDude_Clothes_TFEC_LeelooPants.archive "ALL IN ONE" && ( for p in pants vest shoes; do [ -f "$G/r6/tweaks/PinkyDude_TheRVC00NDumpster3/PinkyDude_Clothes_DexterFit_$p.yaml" ] || exit 1; done )' "$OUT"
+expect "Street Ninja's store and clothes, Nola Dreamer's store and accessories; not the photo-mode clothes of Veegee and Dolly Go-Go, though downloaded; no read-me, code list or PDF in the game folder" '[ ! -e "$G/r6/scripts/veegee_shop_3.reds" ] && [ ! -e "$G/Veegee Shop 3" ] && [ ! -e "$G/r6/tweaks/Veegee" ] && [ ! -e "$G/r6/tweaks/fairyexe" ] && [[ "$OUT" != *"Veegee"* ]] && [[ "$OUT" != *"Dolly"* ]] && [ -f "$G/r6/tweaks/StreetNinja20_Collection.yaml" ] && [ -f "$G/bin/x64/plugins/cyber_engine_tweaks/mods/StreetNinjaShopOrder/init.lua" ] && [ -f "$G/r6/scripts/ND_Accessories_store.reds" ] && [ -f "$G/r6/tweaks/nola_dreamer/ND_AirPods_Max_FemV.yaml" ] && [ -f "$G/r6/tweaks/nola_dreamer/ND_Spiked_Collar_BothV.yaml" ] && [ ! -e "$G/veegee_urban_techwear_outfit_code.txt" ] && [ ! -e "$G/StreetNinja20_Collection_README.txt" ] && [ ! -e "$G/StreetNinjaStreetwearShop_README.txt" ] && [ ! -e "$G/Street_Ninja_Remake_1.14.0_Item_Catalog.pdf" ]' "$OUT"
+expect "Equipment-EX only when asked; co-op notes on outfits, layers and VendorsXL; the clothes no store sells" '[ ! -e "$G/r6/scripts/EquipmentEx" ] && [[ "$OUT" == *"a partner without the same outfit mod sees a plain game piece"* ]] && [[ "$OUT" == *"worn together with Equipment-EX"* ]] && [[ "$OUT" == *"VendorsXL changes how every vendor restocks"* ]] && [[ "$OUT" == *"No store of the set sells Nola Dreamer'"'"'s mini dress"* ]]' "$OUT"
+run update --yes
+expect "a rerun changes nothing, and names nothing as gone from the set" '[ $RC = 0 ] && [[ "$OUT" == *"everything is up to date; nothing to do"* ]] && [[ "$OUT" != *"no longer part of the set"* ]]' "$OUT"
+run update --yes --with-equipment-ex
+expect "--with-equipment-ex adds its main file, not the Hide Hub Buttons patch, and says partners need it too" '[ $RC = 0 ] && [ -f "$G/r6/scripts/EquipmentEx/EquipmentEx.reds" ] && [ ! -e "$G/r6/scripts/EquipmentEx/EquipmentEx.HideHubButtons.reds" ] && [[ "$OUT" == *"Equipment-EX in co-op: every partner needs it too"* ]] && [[ "$OUT" != *"worn together with Equipment-EX"* ]]' "$OUT"
+run check
+expect "check: Equipment-EX is kept up to date, with its frameworks" '[[ "$OUT" == *"Equipment-EX:"*"Equipment EX 1.2.10, with redscript 0.5.32, ArchiveXL 1.28.6, TweakXL 1.12.0, Codeware 1.21.2 (kept up to date by this script)"* ]]' "$OUT"
+run update --yes --without-equipment-ex
+expect "--without-equipment-ex takes it out again; the mods stay" '[ $RC = 0 ] && [ ! -e "$G/r6/scripts/EquipmentEx" ] && [ -f "$G/r6/tweaks/StreetNinja20_Collection.yaml" ]' "$OUT"
+run update --yes --without-mods
+expect "--without-mods removes the cars and clothes; VendorsXL, Deceptious Quest Core and Vehicle Manufacturers Resource stay" '[ $RC = 0 ] && [ ! -e "$G/r6/tweaks/xaires" ] && [ ! -e "$G/r6/tweaks/nola_dreamer" ] && [ ! -e "$G/r6/tweaks/PinkyDude_TheRVC00NDumpster3/PinkyDude_Clothes_GoliathCoat.yaml" ] && [ -f "$G/r6/scripts/VendorsXL/VendorsXL.reds" ] && [ -f "$G/archive/pc/mod/zDeceptiousQuestCore.archive" ] && [ -f "$G/archive/pc/mod/car_manuf.archive" ]' "$OUT"
+run uninstall --yes
+expect "uninstall puts the game folder back exactly" '[ $RC = 0 ] && [ "$PRISTINE_R3" = "$(snapshot "$G")" ]' "$(diff <(echo "$PRISTINE_R3") <(snapshot "$G"))"
+newworld round3needs native; OSR="$T/os-arch"; D="$H/Downloads"; mkdir -p "$D"
+cp "$FIX/nexus/Virtual Atelier 2987 1.6.4 2026-10-25T17-42Z HncQn22j7.zip" "$FIX/round3/Goliath Coat "* "$FIX/round3/The RVC00N Dumpster 3 "* "$FIX/round3/Deceptious Quest Core "* "$D/"
+run install --yes --with-mods
+expect "without VendorsXL the RVC00N store waits and says why; its garment installs" '[ $RC = 0 ] && [ ! -e "$G/r6/scripts/PinkyDude_TheRVC00NDumpster3.reds" ] && [ -f "$G/r6/tweaks/PinkyDude_TheRVC00NDumpster3/PinkyDude_Clothes_GoliathCoat.yaml" ] && [[ "$OUT" == *"RVC00N Dumpster 3 needs VendorsXL, which is not here"* ]] && [[ "$OUT" != *"No store of the set sells"* ]]' "$OUT"
+newworld retired native; OSR="$T/os-arch"; D="$H/Downloads"; mkdir -p "$D"
+PRISTINE_RT="$(snapshot "$G")"
+cp "$FIX/nexus/Virtual Atelier 2987 1.6.4 2026-10-25T17-42Z HncQn22j7.zip" "$FIX"/round3/* "$D/"
+# an earlier table, with Veegee's photo-mode outfit and store, which the set no longer has
+awk '{ print } /^ADDON_SETS="$/ { print "Urban_Techwear_Outfit 2.5 mods mod - - 1.0 nexus:25512"; print "Veegee_Shop_3 2.5 mods mod - - 1.5.2 nexus:18890" }' "$NI" > "$T/ni-earlier.sh"
+NI_NOW="$NI"; NI="$T/ni-earlier.sh"; run install --yes --with-mods; NI="$NI_NOW"
+expect "the earlier table installs Veegee's outfit and store" '[ $RC = 0 ] && [ -f "$G/r6/scripts/veegee_shop_3.reds" ] && [ -f "$G/r6/tweaks/Veegee/veegee_urban_techwear_outfit.yaml" ]' "$OUT"
+run update --yes
+expect "the next run takes out what left the set, says so, and keeps the rest" '[ $RC = 0 ] && [ ! -e "$G/r6/scripts/veegee_shop_3.reds" ] && [ ! -e "$G/r6/tweaks/Veegee" ] && [ -f "$G/r6/tweaks/StreetNinja20_Collection.yaml" ] && [[ "$OUT" == *"Urban Techwear Outfit, Veegee Shop 3 will be removed: no longer part of the set"* ]]' "$OUT"
+run update --yes
+expect "and the run after it changes nothing" '[ $RC = 0 ] && [[ "$OUT" == *"everything is up to date; nothing to do"* ]]' "$OUT"
+run uninstall --yes
+expect "uninstall puts the game folder back exactly" '[ $RC = 0 ] && [ "$PRISTINE_RT" = "$(snapshot "$G")" ]' "$(diff <(echo "$PRISTINE_RT") <(snapshot "$G"))"
+newworld eqexonly native; OSR="$T/os-arch"; D="$H/Downloads"; mkdir -p "$D"
+cp "$FIX/round3/Equipment-EX "* "$FIX/round3/EquipmentEx-HideHubButtons-"* "$FIX/round4/V's Bullet Necklace"* "$FIX/round4/Accessories - Main Store"* "$D/"
+run install --yes --with-equipment-ex
+expect "--with-equipment-ex alone brings the frameworks it needs, and nothing of the mod set" '[ $RC = 0 ] && [ -f "$G/r6/scripts/EquipmentEx/EquipmentEx.reds" ] && [ -f "$G/red4ext/Plugins/ArchiveXL/ArchiveXL.dll" ] && [ -f "$G/red4ext/Plugins/TweakXL/TweakXL.dll" ] && [ -f "$G/red4ext/Plugins/Codeware/Codeware.dll" ] && [ -f "$G/engine/tools/scc_lib.dll" ] && [ ! -e "$G/bin/x64/plugins/cyber_engine_tweaks.asi" ]' "$OUT"
+expect "raem's jewellery waits for the mod set too, and is not missing without it" '[ ! -e "$G/r6/tweaks/raem" ] && [ ! -e "$G/r6/scripts/raem" ] && [[ "$OUT" != *"Bullet Necklace"* ]]' "$OUT"
+run check
+expect "check: the Equipment-EX row without the jewellery, and no jewellery missing" '[[ "$OUT" == *"Equipment-EX:"*"Equipment EX 1.2.10, with redscript 0.5.32, ArchiveXL 1.28.6, TweakXL 1.12.0, Codeware 1.21.2 (kept up to date"* ]] && [[ "$OUT" != *"Bullet Necklace"* ]] && [[ "$OUT" != *"Palette"* ]] && [[ "$OUT" != *"raem"* ]]' "$OUT"
+
+# ------------------------------- the fourth round: Zenitex gear, hair and jewellery ----
+section "Mods (--with-mods): Zenitex gear, hairstyles and Nola Dreamer's boutique; raem's jewellery only with Equipment-EX too"
+newworld round4 native; OSR="$T/os-arch"; D="$H/Downloads"; mkdir -p "$D" "$G/archive/pc/ep1"   # a game with Phantom Liberty
+PRISTINE_R4="$(snapshot "$G")"
+R4_DL=("$FIX/nexus/Virtual Atelier 2987 1.6.4 2026-10-25T17-42Z HncQn22j7.zip" "$FIX/style/Zenitex Virtual Atelier 10090 4.13 2026-08-28T15-44Z gMz5MuNQO.zip"
+       "$FIX/round3/ND_Mini_dress_with_glasses_FemV-15704-1-1-1747683086.zip" "$FIX/round3/Equipment-EX 6945 1.2.10 2026-10-25T21-07Z k8Iw8mmPd.zip" "$FIX"/round4/*
+       "$FIX/round5/Zenitex Core Dependency 16356 5.1.8 2026-08-21T11-39Z JSKWSQkA8.zip" "$FIX/round5/The Community Palette Project-10437-1-1-1710101546.zip")
+cp "${R4_DL[@]}" "$D/"
+# later releases of the files two rules pass over: Preem Hair's 4K file, and one of Hyst's single hairs
+cp "$FIX/round4/Preem Hair (4K) 8223 3.0.0 2026-10-21T01-20Z G5yE5CC3f.zip" "$D/Preem Hair (4K) 8223 3.0.1 2026-11-20T09-00Z G5yE5CC3g.zip"
+cp "$FIX/round4/Kim Hair-21766-1-0-1762627938.zip" "$D/Kim Hair 21766 1.3 2026-11-20T09-00Z Co8doe62f.zip"
+run install --yes --with-mods
+expect "the seven Zenitex outfits, its goggles and balaclavas (with Phantom Liberty, the three that need it too), not their GS or Alt. Colors files" '[ $RC = 0 ] && ( for f in military_combat_armor military_opscore_helmet military_armored_ballistic_vest military_combat_boots military_dual_pistol_holsters military_zenitex_backpack military_zenitex_underwear military_accessories_zenitex_goggles zenitex_balaclava_pack; do [ -f "$G/r6/tweaks/scorpiontank/scorpion_$f.yaml" ] || exit 1; done ) && ! ls "$G/archive/pc/mod" | grep -q -i _addon_ && [[ "$OUT" != *"Phantom Liberty is not installed"* ]]' "$OUT"
+expect "hair: Preem Hair's 2K file (a newer 4K file too), the five Wolfcut files for the character creator (not the old replacers), Subleader's and Hyst's all-in-one files, the Megapak out of its folder, the four undercuts" 'came "archive/pc/mod/###-PreemHair.archive" "(2K)" && ( for f in NUT_wolfcut_messy_ccxl NUT_wolfcut_emo_ccxl NUT_hime_short NUT_hime_medium NUT_hime_jelly_ccxl HALK_Hair_SlickBackUndercut HALK_CCXL_Hair_SideWaveUndercut HALK_CCXL_Hair_ManBunUndercut HALK_CCXL_Hair_SlickBackBraidsUndercut; do [ -f "$G/archive/pc/mod/$f.xl" ] || exit 1; done ) && ! ls "$G/archive/pc/mod" | grep -q wolfemo && came archive/pc/mod/CCXL_Sub_HairPack_Wolf.xl AllInOne && came archive/pc/mod/hyst_kim_hair_ccxl.xl "ALL IN ONE" && [ -f "$G/archive/pc/mod/MELUMINARY - CCXL - CAROLINE INVERTED BOB.xl" ] && [ ! -e "$G/CCXL - MEGAPAK" ] && [ ! -e "$G/CCXL - WINONA" ]' "$OUT"
+expect "Nola Dreamer's boutique (its file for Fem V), which sells the mini dress, so no note on it; no jewellery without Equipment-EX; the co-op note on hair" '[ -f "$G/r6/scripts/ND_female_virtual_boutique.reds" ] && [ ! -e "$G/r6/scripts/ND_male_virtual_boutique.reds" ] && [[ "$OUT" != *"No store of the set sells"* ]] && [ ! -e "$G/r6/tweaks/raem" ] && [ ! -e "$G/r6/scripts/raem" ] && [[ "$OUT" == *"Hairstyles of mods in co-op"* ]] && [[ "$OUT" == *"sees your V without that hairstyle"* ]]' "$OUT"
+run update --yes
+expect "a rerun changes nothing" '[ $RC = 0 ] && [[ "$OUT" == *"everything is up to date; nothing to do"* ]]' "$OUT"
+run update --yes --with-equipment-ex
+expect "--with-equipment-ex brings raem's jewellery and the store that sells it, not raem's other stores" '[ $RC = 0 ] && [ -f "$G/r6/scripts/EquipmentEx/EquipmentEx.reds" ] && [ -f "$G/r6/tweaks/raem/rm_acc_neck_bulletv.yaml" ] && [ -f "$G/r6/tweaks/raem/rm_acc_set_doll.yaml" ] && [ -f "$G/archive/pc/mod/rm_acc_rings_reyes.xl" ] && [ -f "$G/r6/scripts/raem/rm_atelier_accessories_main.reds" ] && [ ! -e "$G/r6/scripts/raem/rm_atelier_clothes_main.reds" ] && [ ! -e "$G/r6/scripts/raem/rm_atelier_accessories_pearls.reds" ] && [ ! -e "$G/archive/pc/mod/rm_00_acc_set_doll_MESH_masc_neck 6 higher fit.archive" ]' "$OUT"
+run check
+expect "check: the jewellery in the Equipment-EX row, the hair in the mod set's" '[[ "$OUT" == *"Equipment-EX:"*"Bullet Necklace 1.1"*"(kept up to date by this script)"* ]] && [[ "$OUT" == *"Mods:"*"Preem Hair 3.0.0"*"Undercut Slickback Braids 1.1"* ]]' "$OUT"
+run update --yes --without-equipment-ex
+expect "--without-equipment-ex takes the jewellery out with it; the hair and the Zenitex gear stay" '[ $RC = 0 ] && [ ! -e "$G/r6/tweaks/raem" ] && [ ! -e "$G/r6/scripts/raem" ] && [ -f "$G/archive/pc/mod/NUT_hime_short.xl" ] && [ -f "$G/r6/tweaks/scorpiontank/scorpion_zenitex_balaclava_pack.yaml" ]' "$OUT"
+run uninstall --yes
+expect "uninstall puts the game folder back exactly" '[ $RC = 0 ] && [ "$PRISTINE_R4" = "$(snapshot "$G")" ]' "$(diff <(echo "$PRISTINE_R4") <(snapshot "$G"))"
+newworld round4nopl native; OSR="$T/os-arch"; D="$H/Downloads"; mkdir -p "$D"   # a game without Phantom Liberty
+cp "${R4_DL[@]}" "$D/"
+run install --yes --with-mods
+expect "without Phantom Liberty, the helmet, holsters and backpack that need it are left out, and said so; the rest is installed" '[ $RC = 0 ] && [ ! -e "$G/r6/tweaks/scorpiontank/scorpion_military_opscore_helmet.yaml" ] && [ ! -e "$G/r6/tweaks/scorpiontank/scorpion_military_dual_pistol_holsters.yaml" ] && [ ! -e "$G/r6/tweaks/scorpiontank/scorpion_military_zenitex_backpack.yaml" ] && [ -f "$G/r6/tweaks/scorpiontank/scorpion_military_combat_boots.yaml" ] && [[ "$OUT" == *"Phantom Liberty is not installed: Iconic Shops, Zenitex FAST Helmet, Zenitex Pistol Holsters, Zenitex Military Backpack, which need it, are left out"* ]]' "$OUT"
+run check
+expect "check does not count them as missing" '[ $RC = 0 ] && [[ "$OUT" != *"FAST Helmet"* ]] && [[ "$OUT" != *"Pistol Holsters"* ]]' "$OUT"
+
+# ------------------------ the fifth round: what the mods need, and four more mods ----
+section "Mods (--with-mods): Zenitex Core Dependency and The Community Palette Project; Immersive First Person, Katana Pack 2, Browser Extension, Curbside"
+R5_DL=("$FIX/nexus/Virtual Atelier 2987 1.6.4 2026-10-25T17-42Z HncQn22j7.zip" "$FIX/style/IconicShops 7215 3.6.2 2026-11-04T06-43Z FKtYKrCFm.zip"
+       "$FIX/round4/Zenitex Balaclava Pack-17411-2-1-1780145222.zip" "$FIX/round3/Equipment-EX 6945 1.2.10 2026-10-25T21-07Z k8Iw8mmPd.zip"
+       "$FIX/round4/Chain Jewelry - Main-15861-1-2-1728769757.zip" "$FIX/round4/Reyes Accessories - Main File-17069-1-1-1741904576.zip")
+newworld round5 native; OSR="$T/os-arch"; D="$H/Downloads"; mkdir -p "$D" "$G/archive/pc/ep1"
+PRISTINE_R5="$(snapshot "$G")"
+cp "${R5_DL[@]}" "$FIX"/round5/* "$D/"
+# newer files that the rules pass over: a colour set of Zenitex Core, one blade of Katana Pack 2, Browser Extension's example
+cp "$FIX/round5/Zenitex Core Dependency - Verdant Set-16356-4-1-3-1766449434.zip" "$D/Zenitex Core Dependency - Verdant Set 16356 5.2 2026-11-20T09-00Z Co8doe62g.zip"
+cp "$FIX/round5/Nagakiba 36164 1.1 2026-11-07T04-36Z JSKWSQsh2.zip" "$D/Nagakiba 36164 1.2 2026-11-20T09-00Z Co8doe62h.zip"
+cp "$FIX/round5/BrowserExtensionExample-10038-0-9-1697377093.zip" "$D/BrowserExtensionExample 10038 0.9.8 2026-11-20T09-00Z Co8doe62i.zip"
+run install --yes --with-mods --with-equipment-ex
+expect "Zenitex Core Dependency by its main file (not a newer colour set), so the balaclavas install" '[ $RC = 0 ] && [ -f "$G/r6/tweaks/scorpiontank/#_scorpion_zenitex_core_dependency.yaml" ] && [ -f "$G/archive/pc/mod/#_scorpion_zenitex_core_dependency.xl" ] && ! ls "$G/archive/pc/mod" | grep -q -i verdant && [ -f "$G/r6/tweaks/scorpiontank/scorpion_zenitex_balaclava_pack.yaml" ]' "$OUT"
+expect "The Community Palette Project, a bare .archive, goes into archive/pc/mod; Chain Jewelry and Reyes Accessories follow" '[ -f "$G/archive/pc/mod/TheCommunityPaletteProject_MLTemplateResource.archive" ] && [ ! -e "$G/TheCommunityPaletteProject_MLTemplateResource.archive" ] && [ ! -e "$G/.bare-files" ] && [ -f "$G/r6/tweaks/raem/rm_acc_set_doll.yaml" ] && [ -f "$G/archive/pc/mod/rm_acc_rings_reyes.xl" ]' "$OUT"
+expect "Immersive First Person (CET mod, plugin, scripts), not its file for Immersive Third Person, which it passes over quietly" '[ -f "$G/bin/x64/plugins/cyber_engine_tweaks/mods/ImmersiveFirstPerson/init.lua" ] && [ -f "$G/red4ext/Plugins/ImmersiveFirstPerson/ImmersiveFirstPerson.dll" ] && [ -f "$G/r6/scripts/ImmersiveFirstPerson/LookAt.reds" ] && [ ! -e "$G/archive/pc/mod/0_ImmersiveFirstPerson_ITP_Compat.archive" ] && [[ "$OUT" != *"ITP Compatibility"* ]]' "$OUT"
+expect "Katana Pack 2 by its file with every blade (not a newer single blade), Browser Extension's framework (not its newer example), Curbside" '[ -f "$G/archive/pc/mod/Katana_Pack_2.archive" ] && [ -f "$G/r6/scripts/KatanaPack2_Scripts/KatanaCyberfang.reds" ] && [ -f "$G/r6/audioware/KatanaPack2Sounds/SwordOfNight.yml" ] && [ ! -e "$G/archive/pc/mod/Katana_Nagakiba.archive" ] && [ -f "$G/r6/scripts/BrowserExtension/BrowserExtension.System.reds" ] && [ ! -e "$G/r6/scripts/CustomSiteExample" ] && [ ! -e "$G/archive/pc/mod/CustomSiteExample.archive" ] && [ -f "$G/r6/scripts/Curbside/CBS_Run.reds" ]' "$OUT"
+expect "Iconic Shops with Phantom Liberty there; the co-op note on Katana Pack 2" '[ -f "$G/r6/scripts/iconicshop/shops/top.reds" ] && [[ "$OUT" != *"Phantom Liberty is not installed"* ]] && [[ "$OUT" == *"Katana Pack 2 in co-op: a partner without it sees a game blade of the same kind in your hands"* ]]' "$OUT"
+run update --yes
+expect "a rerun changes nothing" '[ $RC = 0 ] && [[ "$OUT" == *"everything is up to date; nothing to do"* ]]' "$OUT"
+run check
+expect "check: Zenitex Core Dependency and the four mods in the mod set's row, The Community Palette Project in Equipment-EX's" '[[ "$OUT" == *"Mods:"*"Immersive First Person 2.2.0, Katana Pack 2 1.1, Curbside 1.0.1"*"Zenitex Core Dependency 5.1.8"*"Browser Extension 0.9.7"* ]] && [[ "$OUT" == *"Equipment-EX:"*"The Community Palette Project 1.1"* ]]' "$OUT"
+run uninstall --yes
+expect "uninstall puts the game folder back exactly" '[ $RC = 0 ] && [ "$PRISTINE_R5" = "$(snapshot "$G")" ]' "$(diff <(echo "$PRISTINE_R5") <(snapshot "$G"))"
+newworld round5needs native; OSR="$T/os-arch"; D="$H/Downloads"; mkdir -p "$D"   # no Phantom Liberty, no Zenitex Core, no palette
+cp "${R5_DL[@]}" "$D/"
+cp "$FIX/round5/Zenitex Core Dependency - Verdant Set-16356-4-1-3-1766449434.zip" "$D/Zenitex Core Dependency - Verdant Set 16356 5.2 2026-11-20T09-00Z Co8doe62g.zip"
+run install --yes --with-mods --with-equipment-ex
+expect "without Zenitex Core Dependency the balaclavas are left out; its colour set is not taken for it, and its page is named" '[ $RC = 0 ] && [ ! -e "$G/r6/tweaks/scorpiontank/scorpion_zenitex_balaclava_pack.yaml" ] && ! ls "$G/archive/pc/mod" | grep -q -i verdant && [[ "$OUT" == *"Zenitex Balaclava Pack needs Zenitex Core Dependency, which is not here"* ]] && [[ "$OUT" == *"Verdant Set 16356 5.2 2026-11-20T09-00Z Co8doe62g.zip is not installed: it is another file of Zenitex Core Dependency than the one this script takes (the main file, not No Camo, Black Decals or a colour set)"* ]] && [[ "$OUT" == *"Zenitex Core Dependency (the main file, not No Camo, Black Decals or a colour set): https://www.nexusmods.com/cyberpunk2077/mods/16356?tab=files"* ]]' "$OUT"
+expect "without The Community Palette Project, Chain Jewelry and Reyes Accessories are left out" '[ ! -e "$G/r6/tweaks/raem/rm_acc_set_doll.yaml" ] && [ ! -e "$G/archive/pc/mod/rm_acc_rings_reyes.xl" ] && [[ "$OUT" == *"Reyes Accessories needs The Community Palette Project, which is not here"* ]] && [[ "$OUT" == *"The Community Palette Project: https://www.nexusmods.com/cyberpunk2077/mods/10437?tab=files"* ]]' "$OUT"
+expect "without Phantom Liberty, Iconic Shops is left out, and said so" '[ ! -e "$G/r6/scripts/iconicshop" ] && [[ "$OUT" == *"Phantom Liberty is not installed: Iconic Shops, "* ]]' "$OUT"
+mkdir -p "$T/bare-two/One" "$T/bare-two/Two"; printf 'RDAR one' > "$T/bare-two/One/palette.archive"; printf 'RDAR two' > "$T/bare-two/Two/palette.archive"
+(cd "$T/bare-two" && python3 -I -m zipfile -c "$D/The Community Palette Project 10437 1.2 2026-11-20T09-00Z Co8doe62j.zip" One Two)
+run update --yes
+expect "a download of bare .archive files in two folders (versions to choose from) is not installed" '[ $RC = 0 ] && [[ "$OUT" == *"Co8doe62j.zip has no game folders (r6, archive, bin, red4ext) or .archive files in it"* ]] && [ ! -e "$G/archive/pc/mod/palette.archive" ] && [[ "$OUT" == *"The Community Palette Project is left out: none of its downloads can be used"* ]]' "$OUT"
+
 # ------------------------------------------------- Cyber Engine Tweaks ----
 section "Cyber Engine Tweaks installed alongside"
 newworld cet native cet; OSR="$T/os-arch"
 run install --yes
-expect "version.dll override added too" '[ $RC = 0 ] && [ "$(hp reg-get "$PFX/user.reg" "$REG_KEY" version)" = native,builtin ] && [ "$(launch_opts)" = "WINEDLLOVERRIDES=\\\"winmm,version=n,b\\\" gamemoderun %command% --launcher-skip" ]' "$OUT"
+expect "version.dll override added too" '[ $RC = 0 ] && [ "$(hp reg-get "$PFX/user.reg" "$REG_KEY" version)" = native,builtin ] && [ "$(launch_opts)" = "WINEDLLOVERRIDES=\\\"winmm,version=n,b\\\" %command% --launcher-skip" ]' "$OUT"
 
 # ------------------------------------------------ newer RED4ext installed ----
 section "A newer RED4ext is already installed"
@@ -503,25 +620,25 @@ set_lo "%command% -skipStartScreen"
 run check
 expect "check: game-performance and MangoHud are installed, neither in use yet" '[[ "$OUT" == *"game-performance:"*"installed; run"*"to start the game with it"* ]] && [[ "$OUT" == *"MangoHud:"*"installed;"*"--mangohud"* ]]' "$OUT"
 run install --yes
-expect "CachyOS: game-performance goes in right before %command%; MangoHud only when asked" '[ $RC = 0 ] && [ "$(launch_opts)" = "WINEDLLOVERRIDES=\\\"winmm=n,b\\\" game-performance %command% --launcher-skip -skipStartScreen" ] && [[ "$OUT" == *"game-performance found: the game will run in the performance power profile"* ]] && [[ "$OUT" == *"MangoHud is installed: --mangohud shows its overlay in the game"* ]]' "$OUT"
+expect "CachyOS: game-performance goes in right before %command%; MangoHud only when asked; the line is replaced whole" '[ $RC = 0 ] && [ "$(launch_opts)" = "WINEDLLOVERRIDES=\\\"winmm=n,b\\\" game-performance %command% --launcher-skip" ] && [[ "$OUT" == *"game-performance found: the game will run in the performance power profile"* ]] && [[ "$OUT" == *"MangoHud is installed: --mangohud shows its overlay in the game"* ]]' "$OUT"
 run install --yes --mangohud
-expect "--mangohud adds MANGOHUD=1 after the DLL overrides" '[ $RC = 0 ] && [ "$(launch_opts)" = "WINEDLLOVERRIDES=\\\"winmm=n,b\\\" MANGOHUD=1 game-performance %command% --launcher-skip -skipStartScreen" ] && [[ "$OUT" == *"MANGOHUD=1 shows its overlay"* ]]' "$OUT"
+expect "--mangohud adds MANGOHUD=1 after the DLL overrides" '[ $RC = 0 ] && [ "$(launch_opts)" = "WINEDLLOVERRIDES=\\\"winmm=n,b\\\" MANGOHUD=1 game-performance %command% --launcher-skip" ] && [[ "$OUT" == *"MANGOHUD=1 shows its overlay"* ]]' "$OUT"
 run install --yes
-expect "a later run keeps both and has nothing to do" '[ $RC = 0 ] && [[ "$(launch_opts)" == *"MANGOHUD=1 game-performance %command%"* ]] && [[ "$OUT" == *"everything is up to date; nothing to do"* ]]' "$OUT"
+expect "a later run keeps both (MangoHud without --mangohud too) and has nothing to do" '[ $RC = 0 ] && [[ "$(launch_opts)" == *"MANGOHUD=1 game-performance %command%"* ]] && [[ "$OUT" == *"everything is up to date; nothing to do"* ]]' "$OUT"
 run check
 expect "check: both in use" '[[ "$OUT" == *"game-performance:"*"in the launch options"* ]] && [[ "$OUT" == *"MangoHud:"*"in the launch options"* ]] && [[ "$OUT" != *"will not start"* ]]' "$OUT"
 run install --yes --no-mangohud --no-game-performance
-expect "--no-mangohud and --no-game-performance take both out" '[ $RC = 0 ] && [ "$(launch_opts)" = "WINEDLLOVERRIDES=\\\"winmm=n,b\\\" %command% --launcher-skip -skipStartScreen" ] && [[ "$OUT" == *"game-performance: taken out of the launch options"* ]] && [[ "$OUT" == *"MangoHud: taken out of the launch options"* ]]' "$OUT"
+expect "--no-mangohud and --no-game-performance take both out" '[ $RC = 0 ] && [ "$(launch_opts)" = "WINEDLLOVERRIDES=\\\"winmm=n,b\\\" %command% --launcher-skip" ] && [[ "$OUT" == *"game-performance: taken out of the launch options"* ]] && [[ "$OUT" == *"MangoHud: taken out of the launch options"* ]]' "$OUT"
 run install --yes
 expect "--no-game-performance is remembered" '[ $RC = 0 ] && [[ "$(launch_opts)" != *game-performance* ]] && [[ "$OUT" == *"game-performance: left out of the launch options"* ]] && [[ "$OUT" == *"everything is up to date; nothing to do"* ]]' "$OUT"
 run install --yes --dry-run --game-performance
 run install --yes
 expect "a dry run does not change what is remembered" '[[ "$(launch_opts)" != *game-performance* ]]' "$(launch_opts)"
 run install --yes --game-performance
-expect "--game-performance puts it back" '[ $RC = 0 ] && [ "$(launch_opts)" = "WINEDLLOVERRIDES=\\\"winmm=n,b\\\" game-performance %command% --launcher-skip -skipStartScreen" ]' "$(launch_opts)"
+expect "--game-performance puts it back" '[ $RC = 0 ] && [ "$(launch_opts)" = "WINEDLLOVERRIDES=\\\"winmm=n,b\\\" game-performance %command% --launcher-skip" ]' "$(launch_opts)"
 set_lo "gamescope -W 1920 -H 1080 -- %command%"
 run install --yes --mangohud
-expect "in gamescope, --mangohud points to its --mangoapp, and game-performance goes inside it" '[ $RC = 0 ] && [ "$(launch_opts)" = "WINEDLLOVERRIDES=\\\"winmm=n,b\\\" gamescope -W 1920 -H 1080 -- game-performance %command% --launcher-skip" ] && [[ "$OUT" == *"MangoHud is not added: the launch options run the game in gamescope"*"--mangoapp"* ]]' "$OUT"
+expect "a gamescope wrapper is replaced too, so MangoHud and game-performance go in" '[ $RC = 0 ] && [ "$(launch_opts)" = "WINEDLLOVERRIDES=\\\"winmm=n,b\\\" MANGOHUD=1 game-performance %command% --launcher-skip" ] && [[ "$OUT" != *"gamescope"* ]]' "$OUT"
 
 newworld wrapgp native; OSR="$T/os-cachyos"; TOOLS="$T/tools-gp"
 set_lo "game-performance %command%"
@@ -558,12 +675,53 @@ expect "with the extension only for an older runtime, --mangohud names the one t
 
 newworld wraparch native; OSR="$T/os-arch"
 run install --yes --mangohud
-expect "Arch without MangoHud: --mangohud says how to install it; other wrappers stay" '[ $RC = 0 ] && [ "$(launch_opts)" = "WINEDLLOVERRIDES=\\\"winmm=n,b\\\" gamemoderun %command% --launcher-skip" ] && [[ "$OUT" == *"MangoHud is not added: it is not installed (sudo pacman -S mangohud)"* ]]' "$OUT"
+expect "Arch without MangoHud: --mangohud says how to install it; other wrappers go" '[ $RC = 0 ] && [ "$(launch_opts)" = "WINEDLLOVERRIDES=\\\"winmm=n,b\\\" %command% --launcher-skip" ] && [[ "$OUT" == *"MangoHud is not added: it is not installed (sudo pacman -S mangohud)"* ]]' "$OUT"
 set_lo "mangohud %command%"
 run check
-expect "check: the mangohud wrapper without MangoHud stops the game" '[[ "$OUT" == *"MangoHud:"*"in the launch options, but it is not installed (sudo pacman -S mangohud)"* ]] && [[ "$OUT" == *"install MangoHud, or run"*"--no-mangohud"* ]]' "$OUT"
+expect "check: the mangohud wrapper without MangoHud stops the game" '[[ "$OUT" == *"MangoHud:"*"in the launch options, but it is not installed (sudo pacman -S mangohud)"* ]] && [[ "$OUT" == *"install MangoHud, or run"*"with Steam closed to take it out"* ]]' "$OUT"
+run install --yes --mangohud
+expect "--mangohud with the wrapper but no MangoHud: taken out, saying why" '[ $RC = 0 ] && [ "$(launch_opts)" = "WINEDLLOVERRIDES=\\\"winmm=n,b\\\" %command% --launcher-skip" ] && [[ "$OUT" == *"MangoHud: taken out of the launch options: it is not installed (sudo pacman -S mangohud)"* ]] && [[ "$OUT" != *"already in the launch options"* ]]' "$OUT"
+set_lo "mangohud %command%"
+run install --yes
+expect "a plain run takes it out too" '[ $RC = 0 ] && [ "$(launch_opts)" = "WINEDLLOVERRIDES=\\\"winmm=n,b\\\" %command% --launcher-skip" ] && [[ "$OUT" == *"MangoHud: taken out of the launch options: it is not installed"* ]]' "$OUT"
+set_lo "mangohud %command%"
 run install --yes --no-mangohud
 expect "--no-mangohud takes the wrapper out" '[ $RC = 0 ] && [ "$(launch_opts)" = "WINEDLLOVERRIDES=\\\"winmm=n,b\\\" %command% --launcher-skip" ]' "$(launch_opts)"
+
+# ---------------------------------------------------------------- REDmod ----
+section "REDmod: -modded only with --redmod, which is remembered"
+newworld redmod native; OSR="$T/os-arch"
+set_lo "gamemoderun %command% -modded"
+run install --yes
+expect "an earlier -modded goes with the rest of the line, and the run says how to keep it" '[ $RC = 0 ] && [ "$(launch_opts)" = "WINEDLLOVERRIDES=\\\"winmm=n,b\\\" %command% --launcher-skip" ] && [[ "$OUT" == *"the launch options had -modded, which REDmod mods need"* ]] && [[ "$OUT" == *"Run this again with --redmod to keep it"* ]]' "$OUT"
+mkdir -p "$G/mods/Some REDmod"; printf '{"name": "Some REDmod", "version": "1.0"}\n' > "$G/mods/Some REDmod/info.json"
+mkdir -p "$G/mods/not a REDmod"; printf 'notes\n' > "$G/mods/not a REDmod/readme.txt"
+run check
+expect "check: a REDmod mod in mods/ (a folder with info.json) without -modded is named, with the option" '[[ "$OUT" == *"REDmod:"*"1 mod(s) in mods/, which load only with -modded"*"--redmod"* ]]' "$OUT"
+run install --yes
+expect "install says so too, and leaves the line as it is" '[ $RC = 0 ] && [[ "$OUT" == *"REDmod: 1 mod(s) in the game'"'"'s mods folder load only with -modded; --redmod adds it"* ]] && [[ "$(launch_opts)" != *-modded* ]]' "$OUT"
+run install --yes --redmod
+expect "--redmod puts -modded after --launcher-skip; without the REDmod DLC, it says to install it" '[ $RC = 0 ] && [ "$(launch_opts)" = "WINEDLLOVERRIDES=\\\"winmm=n,b\\\" %command% --launcher-skip -modded" ] && [[ "$OUT" == *"REDmod: -modded goes in the launch options"* ]] && [[ "$OUT" == *"install the free REDmod DLC in Steam"* ]]' "$OUT"
+run install --yes
+expect "--redmod is remembered: a later run keeps -modded and has nothing to do" '[ $RC = 0 ] && [[ "$(launch_opts)" == *"%command% --launcher-skip -modded" ]] && [[ "$OUT" == *"everything is up to date; nothing to do"* ]]' "$OUT"
+run check
+expect "check: -modded in the launch options, the mod counted, the REDmod DLC missing" '[[ "$OUT" == *"REDmod:"*"-modded in the launch options; 1 mod(s) in mods/; the REDmod DLC is not installed"* ]]' "$OUT"
+mkdir -p "$G/tools/redmod/bin"; printf 'MZ redmod' > "$G/tools/redmod/bin/redMod.exe"
+run install --yes --no-launcher-skip
+expect "with --no-launcher-skip, -modded alone follows %command%" '[ $RC = 0 ] && [ "$(launch_opts)" = "WINEDLLOVERRIDES=\\\"winmm=n,b\\\" %command% -modded" ]' "$(launch_opts)"
+set_lo "gamemoderun %command%"
+run install --yes
+expect "with the DLC there and the launcher skipped, the run says how REDmod mods get deployed" '[ $RC = 0 ] && [[ "$(launch_opts)" == *"--launcher-skip -modded" ]] && [[ "$OUT" == *"REDmod mods need a deploy after each change"* ]] && [[ "$OUT" == *"tools/redmod/bin/redMod.exe deploy"* ]] && [[ "$OUT" != *"install the free REDmod DLC"* ]]' "$OUT"
+run check
+expect "check: the REDmod DLC is installed" '[[ "$OUT" == *"REDmod:"*"-modded in the launch options; 1 mod(s) in mods/; the REDmod DLC is installed"* ]]' "$OUT"
+run install --yes --no-redmod
+expect "--no-redmod takes it out again" '[ $RC = 0 ] && [ "$(launch_opts)" = "WINEDLLOVERRIDES=\\\"winmm=n,b\\\" %command% --launcher-skip" ] && [[ "$OUT" == *"REDmod: -modded taken out of the launch options (--no-redmod)"* ]] && [ ! -e "$H/.local/share/nightcoop-linux/settings.tsv" ]' "$OUT"
+run install --yes --dry-run --redmod
+run install --yes
+expect "a dry run does not remember --redmod" '[ $RC = 0 ] && [[ "$(launch_opts)" != *-modded* ]]' "$(launch_opts)"
+run install --yes --redmod --no-game-performance
+run install --yes --game-performance
+expect "--redmod and --no-game-performance are remembered side by side; one choice does not drop the other" '[ $RC = 0 ] && [[ "$(launch_opts)" == *"-modded" ]] && grep -q "^redmod" "$H/.local/share/nightcoop-linux/settings.tsv" && ! grep -q "^game-performance" "$H/.local/share/nightcoop-linux/settings.tsv"' "$(cat "$H/.local/share/nightcoop-linux/settings.tsv" 2>/dev/null)"
 
 # ----------------------------------------------------------- refusals ----
 section "Refusals"

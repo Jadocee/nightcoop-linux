@@ -71,8 +71,8 @@ The main menu then shows a **Co-op** entry ("Совместная игра" in R
    places:
    - It adds `winmm = native,builtin` for `Cyberpunk2077.exe` to the prefix's registry.
      This works while Steam is open.
-   - When Steam is closed, it also merges `WINEDLLOVERRIDES="winmm=n,b"` into the game's
-     launch options, keeping every other option.
+   - When Steam is closed, it also writes the game's launch options, starting with
+     `WINEDLLOVERRIDES="winmm=n,b"` (see [Launch options](#launch-options)).
 
    If Cyber Engine Tweaks is installed, by you or with the mod set, its `version.dll`
    loader gets the same override.
@@ -130,18 +130,21 @@ prefix to another Proton version, it replaces only Wine's own files.
 ## Launch options
 
 Steam's launch options take the form `[variables] [wrappers] %command% [game arguments]`.
-The script merges its parts into what is already there and keeps everything else, such as
-`gamemoderun`, `prime-run` or `gamescope … --`.
+The script writes the whole line from the parts below and nothing else: other variables,
+wrappers (`gamemoderun`, `prime-run`, `gamescope … --`) and game arguments are replaced.
+The earlier line is kept in the run's backup folder (`launch-options.txt`), and the script
+says so; add anything you need back under Properties after the run.
 
 | Part | Added | What it does |
 | --- | --- | --- |
 | `WINEDLLOVERRIDES="winmm=n,b"` | Always. It becomes `winmm,version` once Cyber Engine Tweaks is installed. | Required: without it, Wine ignores RED4ext's loader (and Cyber Engine Tweaks'). |
 | `game-performance` | When it can run: native Steam, CachyOS's `game-performance`, and `powerprofilesctl` (power-profiles-daemon). A newer `game-performance` that supports TLP's `tlpctl` can use that instead; cachyos-settings 1.4.1 does not. | Runs the game in the performance power profile, and restores the previous profile when the game exits. It goes last, right before `%command%`. |
-| `MANGOHUD=1` | Only with `--mangohud`, and only when MangoHud is installed. | Shows MangoHud's overlay in the game. |
+| `MANGOHUD=1` | With `--mangohud`, or when the line had MangoHud already; only where MangoHud is installed. | Shows MangoHud's overlay in the game. |
 | `--launcher-skip` | Unless `--no-launcher-skip` is given. | Starts the game without CDPR's launcher window, which adds nothing under Proton. |
+| `-modded` | Only with `--redmod`, which is remembered; `--no-redmod` takes it out. | Loads REDmod mods once they are deployed (see below). It goes after the other game arguments. |
 
-Nothing else is required. No mod in the sets is a REDmod, so `-modded` is not needed, and
-Audioware, Mod Settings and the other frameworks need no variables.
+Nothing else is required: no mod in the sets is a REDmod, and Audioware, Mod Settings and
+the other frameworks need no variables.
 
 - **game-performance** stops the game from starting where it cannot run:
   - under Flatpak Steam, which starts the game inside its sandbox, without the host's
@@ -157,11 +160,26 @@ Audioware, Mod Settings and the other frameworks need no variables.
     The wrapper sets it too, along with an OpenGL hook the game does not use. Unlike the
     wrapper, the variable cannot stop the game from starting if MangoHud is removed later.
   - It is not added on SteamOS, whose own performance overlay (Quick Access menu >
-    Performance) shows the same. Nor is it added when the game runs in gamescope, where
-    MangoHud's overlay is not supported; use gamescope's `--mangoapp` instead.
+    Performance) shows the same.
+  - Once in the line, it stays on later runs while MangoHud can run there.
   - Flatpak Steam needs the `org.freedesktop.Platform.VulkanLayer.MangoHud` extension for
     Steam's runtime; the script names the one to install.
   - `--no-mangohud` takes MangoHud out again, including the `mangohud` wrapper.
+- **REDmod** is CDPR's own mod format: mods in `mods/<name>/`, each with an `info.json`. The
+  game loads them only when started with `-modded`, after a deploy that compiles them into
+  `r6/cache/modded`. No mod in the sets is one, so the script leaves `-modded` out unless
+  you run it with `--redmod`, which it remembers.
+  - A `-modded` that was in the line before goes with the rest of it. The script says so
+    and names `--redmod`, as it does when REDmod mods are in `mods/` without `-modded`;
+    `check` shows them.
+  - Deploying needs the free REDmod DLC (the game's Properties > DLC in Steam). CDPR's
+    launcher deploys when its mods setting is on, but `--launcher-skip` skips the launcher:
+    after adding or changing a REDmod mod, run the script once with `--no-launcher-skip`,
+    or run `tools/redmod/bin/redMod.exe deploy` in the game's Proton prefix. The script
+    does not deploy.
+  - redscript compiles its scripts on top of the deployed ones. NightCoop cannot check
+    REDmod script mods (`mods/<name>/scripts/`) for overlaps with what co-op relies on,
+    since they replace whole game script files, so try each one in co-op first.
 
 On CachyOS with Cyber Engine Tweaks installed, a run with `--mangohud` gives:
 
@@ -187,6 +205,7 @@ WINEDLLOVERRIDES="winmm,version=n,b" MANGOHUD=1 game-performance %command% --lau
 | `--no-launcher-skip` | Do not add `--launcher-skip` to the launch options. |
 | `--no-game-performance` | Do not start the game with `game-performance`, and take it out of the launch options. Remembered in `~/.local/share/nightcoop-linux/settings.tsv`; `--game-performance` undoes it. |
 | `--mangohud` | Show MangoHud's overlay in the game (`MANGOHUD=1` in the launch options). Not on SteamOS. `--no-mangohud` takes it out. |
+| `--redmod` | Start the game with `-modded`, which loads REDmod mods. Remembered; `--no-redmod` takes it out. |
 | `--close-steam` | Close Steam to write its settings (launch options, Proton choice), then reopen it. Desktop Mode only. |
 | `--force` | Reinstall every mod file, even those that already match the latest build. |
 | `--backup-saves` | Copy the saves before an update too. By default only the first install copies them. |
@@ -197,8 +216,10 @@ WINEDLLOVERRIDES="winmm,version=n,b" MANGOHUD=1 game-performance %command% --lau
 | `--steam-root DIR` | Use this Steam installation instead of detecting one. |
 | `--with-flight` | Also install Let There Be Flight and the mods it needs (see below). Later runs keep them up to date. |
 | `--without-flight` | Remove Let There Be Flight again. The mods it needed stay, because other mods use them too. |
-| `--with-mods` | Also install the mod set: Virtual Atelier with clothing and item stores and seven Zenitex outfits, Virtual Car Dealer with car and bike packs, Drive an Aerial Vehicle, Vehicle Customizer, Cyber Drift, Quick Stash, No Intro Videos, and the frameworks they need (see below). Later runs keep it up to date. |
+| `--with-mods` | Also install the mod set: Virtual Atelier with clothing and item stores and their outfits (Zenitex, The RVC00N Dumpster, Nola Dreamer, Street Ninja), hairstyles, Virtual Car Dealer with car and bike packs, Drive an Aerial Vehicle, Vehicle Customizer, Cyber Drift, Impact FX, Immersive Audio Distance, Quick Stash, No Intro Videos, and the frameworks they need (see below). Later runs keep it up to date. |
 | `--without-mods` | Remove the mod set's mods again. The frameworks stay. |
+| `--with-equipment-ex` | Also install Equipment-EX, to wear layered outfits, and with `--with-mods` raem's jewellery made for its slots (see below). Every partner in a session needs it too. |
+| `--without-equipment-ex` | Remove Equipment-EX again. |
 | `--mods-from DIR` | Look for the Nexus Mods downloads in DIR instead of your Downloads folder. |
 
 When Steam is running, its two settings are not written, but the registry override alone
@@ -257,6 +278,26 @@ work with the patch.
 | Iconic Shops | [7215](https://www.nexusmods.com/cyberpunk2077/mods/7215?tab=files) | 3.6.1 or newer | Every iconic item, 74 clothes among them |
 | Zenitex Virtual Atelier | [10090](https://www.nexusmods.com/cyberpunk2077/mods/10090?tab=files) | 4.13 or newer | ScorpionTank's Zenitex military gear |
 | Zenitex Ballistic Mask, Tactical Harness, Combat Jacket, Armor Pads, Panam Pants, Combat Gloves, and Comfy Boots | [12422](https://www.nexusmods.com/cyberpunk2077/mods/12422?tab=files), [9774](https://www.nexusmods.com/cyberpunk2077/mods/9774?tab=files), [19119](https://www.nexusmods.com/cyberpunk2077/mods/19119?tab=files), [12044](https://www.nexusmods.com/cyberpunk2077/mods/12044?tab=files), [10842](https://www.nexusmods.com/cyberpunk2077/mods/10842?tab=files), [19432](https://www.nexusmods.com/cyberpunk2077/mods/19432?tab=files), [11212](https://www.nexusmods.com/cyberpunk2077/mods/11212?tab=files) | 4.1, 4.0, 2.0.1, 4.1, 4.0, 2.0.1, 1.1 | Seven of the outfits the Zenitex store sells: each main file (not Alt. Colors or GS); for Comfy Boots, the Female V and Male V file |
+| Zenitex Military Combat Armor, Ballistic Vest, Combat Boots and Underwear | [13212](https://www.nexusmods.com/cyberpunk2077/mods/13212?tab=files), [14348](https://www.nexusmods.com/cyberpunk2077/mods/14348?tab=files), [14781](https://www.nexusmods.com/cyberpunk2077/mods/14781?tab=files), [20394](https://www.nexusmods.com/cyberpunk2077/mods/20394?tab=files) | 3.3, 3.6, 3.4, 1.5 or newer | Four more Zenitex outfits, each main file (not Garment Support or Alt. Colors) |
+| Zenitex Ops-Core FAST Helmet, Pistol Holsters and Backpack | [13557](https://www.nexusmods.com/cyberpunk2077/mods/13557?tab=files), [18002](https://www.nexusmods.com/cyberpunk2077/mods/18002?tab=files), [18152](https://www.nexusmods.com/cyberpunk2077/mods/18152?tab=files) | 3.4, 1.5, 1.5 or newer | Three more, each main file; they need Phantom Liberty, and are left out without it |
+| Zenitex Combat Goggles and Balaclava Pack | [17049](https://www.nexusmods.com/cyberpunk2077/mods/17049?tab=files), [17411](https://www.nexusmods.com/cyberpunk2077/mods/17411?tab=files) | 1.4, 2.1 or newer | Military accessories: goggles and balaclavas, each main file |
+| The RVC00N Dumpster 3 | [25981](https://www.nexusmods.com/cyberpunk2077/mods/25981?tab=files) | 21.0.0 or newer | PinkyDude's store: on computers, and at its own shop behind Dakota's garage (VendorsXL) |
+| The RVC00N Dumpster: Goliath Coat and Cityfolk Hoodie | [36516](https://www.nexusmods.com/cyberpunk2077/mods/36516?tab=files), [37493](https://www.nexusmods.com/cyberpunk2077/mods/37493?tab=files) | 1.0.0, 1.0.2 or newer | Two of PinkyDude's garments for game 2.5 |
+| The RVC00N Dumpster: the other 24 garments its store sells | [26000](https://www.nexusmods.com/cyberpunk2077/mods/26000?tab=files), [26996](https://www.nexusmods.com/cyberpunk2077/mods/26996?tab=files), [27128](https://www.nexusmods.com/cyberpunk2077/mods/27128?tab=files), [27304](https://www.nexusmods.com/cyberpunk2077/mods/27304?tab=files), [33439](https://www.nexusmods.com/cyberpunk2077/mods/33439?tab=files), [34748](https://www.nexusmods.com/cyberpunk2077/mods/34748?tab=files), [27709](https://www.nexusmods.com/cyberpunk2077/mods/27709?tab=files), [27736](https://www.nexusmods.com/cyberpunk2077/mods/27736?tab=files), [31662](https://www.nexusmods.com/cyberpunk2077/mods/31662?tab=files), [20042](https://www.nexusmods.com/cyberpunk2077/mods/20042?tab=files), [12757](https://www.nexusmods.com/cyberpunk2077/mods/12757?tab=files), [26048](https://www.nexusmods.com/cyberpunk2077/mods/26048?tab=files), [26873](https://www.nexusmods.com/cyberpunk2077/mods/26873?tab=files), [31111](https://www.nexusmods.com/cyberpunk2077/mods/31111?tab=files), [16402](https://www.nexusmods.com/cyberpunk2077/mods/16402?tab=files), [26049](https://www.nexusmods.com/cyberpunk2077/mods/26049?tab=files), [26050](https://www.nexusmods.com/cyberpunk2077/mods/26050?tab=files), [26818](https://www.nexusmods.com/cyberpunk2077/mods/26818?tab=files), [35536](https://www.nexusmods.com/cyberpunk2077/mods/35536?tab=files), [26982](https://www.nexusmods.com/cyberpunk2077/mods/26982?tab=files), [32638](https://www.nexusmods.com/cyberpunk2077/mods/32638?tab=files), [32329](https://www.nexusmods.com/cyberpunk2077/mods/32329?tab=files), [28660](https://www.nexusmods.com/cyberpunk2077/mods/28660?tab=files), [27455](https://www.nexusmods.com/cyberpunk2077/mods/27455?tab=files) | the current file of each | Knife Bandolier, Bunny Slippers, Saul's Pants, Collarless CrystalJock Bomber, Master Chief Evolved Suit, Indiana Jones Outfit, The Fifth Element Collection (its ALL IN ONE file), Cityfolk Short Jacket, Jackie's Jacket, Stinky Burnt Top, Stinky Slashed Top, Stinky Croptop, Yeehaw Collar Shirt, Chuckwalla Tight T-Shirt, Stinky Mechanic Pants, Stinky Quilted Pants, Stinky Bootcut Jeans, Stinky Leather Jeans, David Martinez's Pants, Yeehaw Spur Boots, Latex Succubus Tail, Trauma Team Jumpsuit, Dexter DeShawn's outfit (Pants, Vest and Shoes), PinkyBlume Croptop Shirt |
+| Street Ninja Remake: its MAIN file and its Streetwear Shop | [36978](https://www.nexusmods.com/cyberpunk2077/mods/36978?tab=files) | 1.14.0, 1.12.0 or newer | 652 streetwear pieces for both V, in four layers |
+| Nola Dreamer's Accessories store, with AirPods Max and six accessories | [14299](https://www.nexusmods.com/cyberpunk2077/mods/14299?tab=files), [28288](https://www.nexusmods.com/cyberpunk2077/mods/28288?tab=files), [14371](https://www.nexusmods.com/cyberpunk2077/mods/14371?tab=files), [16722](https://www.nexusmods.com/cyberpunk2077/mods/16722?tab=files), [11685](https://www.nexusmods.com/cyberpunk2077/mods/11685?tab=files), [15704](https://www.nexusmods.com/cyberpunk2077/mods/15704?tab=files), [14324](https://www.nexusmods.com/cyberpunk2077/mods/14324?tab=files), [14269](https://www.nexusmods.com/cyberpunk2077/mods/14269?tab=files) | 1.8, 1.1 and the current file of each | AirPods Max, Barbed accessories, Bracelets collection, heart choker and garters, Mini dress and glasses, Moon accessories, Spiked Collar. The store sells the glasses of Mini dress and glasses; Nola Dreamer Virtual Boutique (below) sells the dress |
+| Nola Dreamer Virtual Boutique: ND_female_virtual_boutique | [5114](https://www.nexusmods.com/cyberpunk2077/mods/5114?tab=files) | 7.6 or newer | Nola Dreamer's clothes store; of what the set installs, it sells the mini dress |
+
+**Hair** (the character creator, a mirror in an apartment, or a ripperdoc)
+
+| Mod | Nexus | For game 2.5 | What it is |
+| --- | --- | --- | --- |
+| Preem Hair: its 2K file | [8223](https://www.nexusmods.com/cyberpunk2077/mods/8223?tab=files) | 3.0.0 or newer | Sharper textures for the game's own hairstyles, V's and NPCs' (it replaces them) |
+| Wolfcut Hair Collection: Messy Wolfcut, Emo Wolfcut, Hime Short, Hime Medium and Hime Long Jelly, each its CCXL file | [16697](https://www.nexusmods.com/cyberpunk2077/mods/16697?tab=files) | 2.0 or newer | 14 wolfcut hairstyles with physics; Messy and Emo for both V, the Hime cuts for Fem V |
+| Subleader Hair Pack: its AllInOne file | [19268](https://www.nexusmods.com/cyberpunk2077/mods/19268?tab=files) | 1.09 or newer | 14 hairstyles for Fem V (a rar archive) |
+| Hyst Hair Collection: its ALL IN ONE file | [21766](https://www.nexusmods.com/cyberpunk2077/mods/21766?tab=files) | 1.2 or newer | 7 hairstyles for Fem V |
+| Original Collection (meluminary): its HAIR MEGAPAK | [19197](https://www.nexusmods.com/cyberpunk2077/mods/19197?tab=files) | 5.0.0 or newer | 20 hairstyles for Fem V |
+| Undercut Hair Collection: HAIR 01 to 04 | [19907](https://www.nexusmods.com/cyberpunk2077/mods/19907?tab=files) | 1.0, 1.0, 1.0, 1.1 or newer | Four undercuts for Masc V |
 
 **Vehicles** (Virtual Car Dealer, on in-game computers)
 
@@ -270,6 +311,10 @@ work with the patch.
 | Porsche 911 GT3 RS, its Main File, with Material and Texture Override's Legacy file | [11180](https://www.nexusmods.com/cyberpunk2077/mods/11180?tab=files), [5266](https://www.nexusmods.com/cyberpunk2077/mods/5266?tab=files) | 1.2, 1.2 or newer | A 911 GT3 RS |
 | Drive an Aerial Vehicle | [13842](https://www.nexusmods.com/cyberpunk2077/mods/13842?tab=files) | 3.5.0 or newer | Fly AVs and helicopters, with an autopilot; buy them at Virtual Car Dealer |
 | Vehicle Customizer (stolen vehicles edition): SVE 3dot0, then its 3dot1 update | [9034](https://www.nexusmods.com/cyberpunk2077/mods/9034?tab=files) | 3.0, 3.1 or newer | Switch a car you own or claim between the appearances the game has for it |
+| Apollo Intensa Emozione, Lamborghini Countach LPI 800-4 and Countach Liberty Walk | [37233](https://www.nexusmods.com/cyberpunk2077/mods/37233?tab=files), [37234](https://www.nexusmods.com/cyberpunk2077/mods/37234?tab=files), [37235](https://www.nexusmods.com/cyberpunk2077/mods/37235?tab=files) | 1 or newer | xa1res's cars, tested on 2.5 |
+| VAZ Oka Yozakura Sport | [36381](https://www.nexusmods.com/cyberpunk2077/mods/36381?tab=files) | 4 or newer | A VAZ-1111 Oka in a night-sakura livery; hood and hatch on two CET hotkeys you bind |
+| Toyota GR Yaris: its All Purpose Drive Spec and its Rocket Bunny Kit | [34357](https://www.nexusmods.com/cyberpunk2077/mods/34357?tab=files) | 3.3, 3.2 or newer | A GR Yaris with an optional widebody kit |
+| Nissan Silvia S14 'Marked One', its main file, with Vehicle Manufacturers Resource | [25997](https://www.nexusmods.com/cyberpunk2077/mods/25997?tab=files), [7855](https://www.nexusmods.com/cyberpunk2077/mods/7855?tab=files) | 1.1, 1.1 or newer | A nomad-tuned S14 (a 7z archive) |
 
 **Gameplay**
 
@@ -279,11 +324,40 @@ work with the patch.
 | Quick Stash | [30016](https://www.nexusmods.com/cyberpunk2077/mods/30016?tab=files) | 1.1 or newer | Moves your inventory to V's stash or your car in one go (not equipped or quest items) |
 | No Intro Videos, its archive file | [533](https://www.nexusmods.com/cyberpunk2077/mods/533?tab=files) | 0.5 or newer | Skips the logo videos at start-up |
 | Native Settings UI | [3518](https://www.nexusmods.com/cyberpunk2077/mods/3518?tab=files) | 1.97 or newer | The settings pages of Drive an Aerial Vehicle and Cyber Drift |
+| Impact FX | [36631](https://www.nexusmods.com/cyberpunk2077/mods/36631?tab=files) | 0.8.3.3 or newer | Dust, smoke and debris that linger after a gunfight |
+| Immersive Audio Distance, its file for 2.5 | [36809](https://www.nexusmods.com/cyberpunk2077/mods/36809?tab=files) | 1.2.0 or newer | Voices, TVs, adverts and radios fade with distance |
+| Immersive First Person, its main file | [2675](https://www.nexusmods.com/cyberpunk2077/mods/2675?tab=files) | 2.2.0 or newer | A first-person camera that shows more of V's body, FreeLook (look around without turning V), and a height slider in Cyber Engine Tweaks' overlay |
+| Katana Pack 2, its file with every blade | [36164](https://www.nexusmods.com/cyberpunk2077/mods/36164?tab=files) | 1.1 or newer | Seventeen katanas and swords, some with charged attacks (a RAR archive) |
+| Curbside | [35922](https://www.nexusmods.com/cyberpunk2077/mods/35922?tab=files) | 1.0.1 or newer | A summoned car or bike comes to your level, stops beside you, and follows you if you walk off |
 
 **Frameworks**, downloaded from GitHub by the script: Mod Settings 0.2.28 (which Virtual
 Atelier needs), Audioware 1.11.1 (mods' own sounds), Cyber Engine Tweaks 1.38.1 (Lua mods),
 Codeware 1.21.2, TweakXL 1.12.0, ArchiveXL 1.28.6 and redscript 0.5.32 (the script mods,
-NightCoop's included).
+NightCoop's included). From Nexus Mods: VendorsXL 2.2.0 and Deceptious Quest Core 3.3.3, which
+The RVC00N Dumpster 3's shop in the world needs; Zenitex Core Dependency 5.1.8 ([16356](https://www.nexusmods.com/cyberpunk2077/mods/16356?tab=files), its
+main file, not No Camo, Black Decals or a colour set), whose stats and class bonuses every
+Zenitex outfit refers to; and Browser Extension 0.9.7 ([10038](https://www.nexusmods.com/cyberpunk2077/mods/10038?tab=files), its
+BrowserExtensionFramework file), which lists every site, Virtual Atelier's among them, on
+the in-game browser's home page.
+
+**Equipment-EX** (`--with-equipment-ex`, from Nexus Mods,
+[6945](https://www.nexusmods.com/cyberpunk2077/mods/6945?tab=files), 1.2.10 or newer, its main file)
+wears clothes in layers, such as Street Ninja's four layers.
+Every piece of the set is wearable without it, one per game slot. It is a set of its own
+because NightCoop lists it as a known overlap: NightCoop sends looks by its slots, so a
+partner without it sees other slots, and it overrides photo-mode functions. Use it only if
+everyone you play with does. `--without-equipment-ex` removes it again.
+
+With the mod set too, it brings raem's jewellery, made for Equipment-EX's neck, wrist and
+hand slots (without it, a ring would take the whole torso slot):
+
+| Mod | Nexus | Version | What it adds |
+| --- | --- | --- | --- |
+| V's Bullet Necklace, its main file | [15076](https://www.nexusmods.com/cyberpunk2077/mods/15076?tab=files) | 1.1 or newer | V's bullet necklace, with physics |
+| Chain Jewelry Collection, its main file | [15861](https://www.nexusmods.com/cyberpunk2077/mods/15861?tab=files) | 1.2 or newer | Six chain necklaces and two bracelets |
+| Reyes Accessories, its main file | [17069](https://www.nexusmods.com/cyberpunk2077/mods/17069?tab=files) | 1.1 or newer | Reyes' watch, bracelets and rings |
+| The Community Palette Project | [10437](https://www.nexusmods.com/cyberpunk2077/mods/10437?tab=files) | 1.1 or newer | The colours Chain Jewelry and Reyes Accessories use: a bare `.archive`, installed into `archive/pc/mod` |
+| raem's Atelier Store: Accessories - Main Store, among the optional files | [14210](https://www.nexusmods.com/cyberpunk2077/mods/14210?tab=files) | 2.0 or newer | The store that sells them (not raem's other stores, which would stay empty) |
 
 A download older than its minimum is passed over, with the reason. Nexus Mods does not let
 scripts download files (a browser check, and an API that needs each user's key; downloads
@@ -305,7 +379,10 @@ so you download the Nexus mods yourself:
 
 Each archive's game folders (`archive`, `bin`, `engine`, `mods`, `r6`, `red4ext`) are
 installed, without read-me files or installer data, also when an archive wraps them in a
-folder of its own. Zip archives need nothing extra; 7z and RAR archives are unpacked with
+folder of its own. An archive without game folders that holds only `.archive` and `.xl` files
+(and notes), at its root or in one folder, is installed into `archive/pc/mod`, as mod
+managers do; one with such files in several folders (versions to choose from) is passed
+over. Zip archives need nothing extra; 7z and RAR archives are unpacked with
 `bsdtar` from libarchive, which SteamOS, CachyOS and Arch include. A download the script
 cannot use (damaged, without game folders, or a 7z or RAR archive with no `bsdtar`) is
 reported and passed over for an older copy, if there is one. A mod whose requirement is
@@ -329,14 +406,43 @@ new release of the mod changes the file it ships, and your copy is backed up fir
   since needs Mod Settings.)
 - **Clothing.** NightCoop sends your look by its items. A.G.I.S., Night City Marketplace,
   All Vanilla Clothes and Iconic Shops sell the game's own items, which every partner's game
-  has (Phantom Liberty pieces only where the partner owns it). A Zenitex outfit shows for a
+  has (Phantom Liberty pieces only where the partner owns it). An outfit of a mod shows for a
   partner only when they have the same outfit mod; otherwise NightCoop shows a plain game
-  piece for that body part, and head, face and accessories stay empty. The Zenitex store
-  sells 33 outfit mods, and ten of them need Equipment-EX, which NightCoop's guide lists for
-  changing clothing slots (partners without it see other slots) and overriding photo mode.
-  The set takes seven of the most endorsed that need neither; you can add others of the 23
-  by hand. NC Fashion, the most downloaded store, is left out for the same reason: it needs
-  Equipment-EX.
+  piece for that body part, and head, face and accessories stay empty.
+- **Clothes that ask for Equipment-EX** still work without it. In every outfit of the set,
+  each item keeps a game slot first (checked in each mod's TweakXL files): Equipment-EX
+  only adds its own slots, so that layered pieces can be worn together. NightCoop sends
+  looks by the game slot when Equipment-EX is absent. This also holds for the seven Zenitex
+  outfits whose pages list Equipment-EX, which earlier versions of this script left out
+  (an earlier note here said ten); the set has them now. NC Fashion's store lists
+  Equipment-EX as mandatory and is left out.
+- **Hairstyles.** NightCoop draws a partner's V from their character-creator choices, with
+  your game's own files, and leaves out an option your game does not have. Preem Hair
+  replaces the textures of the game's own hairstyles: a partner without it sees the game's.
+  The other hair mods add hairstyles to the character creator (ArchiveXL's CCXL; choose them
+  there, at a mirror or at a ripperdoc), so a partner without the same mod sees your V
+  without that hairstyle. Keep the mod set the same for everyone, and switch V to a game
+  hairstyle before you remove the set.
+- **Phantom Liberty.** Three Zenitex pieces need it: the Ops-Core FAST Helmet, the Pistol
+  Holsters and the Backpack. So does Iconic Shops, which sells the expansion's iconic items
+  too. Without the expansion (no `archive/pc/ep1` in the game folder) the installer leaves
+  them out and says so; a partner without it sees no helmet, and plain game pieces for the
+  others.
+- **Zenitex Core Dependency** holds the stats and class bonuses that every Zenitex outfit's
+  items refer to (checked in each outfit's TweakXL files; eight of their pages list it).
+  Earlier versions of this script installed the outfits without it; they are now left out
+  until it is downloaded.
+- **The RVC00N Dumpster 3, VendorsXL and Deceptious Quest Core.** VendorsXL places vendors
+  in the world. It replaces the game's vendor restocking for every vendor, with a copy that
+  raises stock limits; NightCoop does not list that function. Deceptious Quest Core is
+  quest data (a journal and a streaming block), and the store adds its shop area and a
+  computer to the world. Everyone in a session should have them, like the outfits.
+- **Clothes made for photo mode are left out**, by their authors' own words: Veegee's ("My
+  clothes are made for photo mode"), with Veegee Shop 3, which sells only them, and the Dolly
+  Go-Go Mini Set ("intended for Photo Mode rather than regular gameplay"). Their downloads are
+  passed over; a game folder where an earlier version installed them loses them on the next
+  run. Two of Nola Dreamer's accessories are marked adult on Nexus and are left out too; the
+  store skips them.
 - **Cars and AVs of mods.** A partner sees your modded car, or your Drive an Aerial Vehicle
   AV, only when they have the mod that adds it; otherwise NightCoop shows a game vehicle
   with as many seats in its place. A car bought from Virtual Car Dealer opens in a guest's
@@ -347,6 +453,24 @@ new release of the mod changes the file it ships, and your copy is backed up fir
   Pack - Basic (2023), the Porsche (2023), Material and Texture Override (2023), and
   Bikes of the Dark Future with its Vehicle Exit Fix, which was made for patch 2.3. Vehicle
   mods are mostly data and usually outlast patches, but try each once.
+- **This round's cars.** Their scripts wrap game functions and call the originals: the
+  speedometer and tachometer of the HUD, and the Countach's spoiler and air brake (none in
+  NightCoop's tables). They are built on game vehicles with the game's seats, so a partner
+  riding along sits properly. The VAZ Oka's hood and hatch hotkeys are unbound until you
+  bind them in Cyber Engine Tweaks. The GR Yaris and the Silvia are data only. The Silvia
+  also ships a file for Dedka Car Dealership, which Dedka reads if you install it and is
+  inert otherwise. The GR Yaris's newest kit (3.2) is a version behind its main file (3.3),
+  and the car was tested on 2.31; try the kit once.
+- **Six cars are left out: the Porsche 992 GT3 R and SDH0's five Garage cars** (Porsche 911
+  Targa 4 GTS, Porsche Singer 911 Armed and three Mazda RX7s). They need AudioXL for their
+  engine sounds, and AudioXL watches whichever player body appeared last. NightCoop's
+  partners' bodies are player bodies too, so in co-op AudioXL's underwater muffling can
+  follow a partner instead of you.
+- **Impact FX** wraps hit and attach functions and calls the originals. When a partner's
+  body appears it re-applies its own local settings once. Its smoke and debris are local:
+  each player with the mod sees their own.
+- **Immersive Audio Distance** hooks nothing. It retunes how far sounds carry in the game's
+  audio data when that loads, in your game only.
 - **Customising a car.** Vehicle Customizer switches a car between the appearances the
   game itself has for it, so the appearance exists in every partner's game; NightCoop
   shows partners your car's appearance and its CrystalCoat paint (the game's own colour
@@ -364,13 +488,45 @@ new release of the mod changes the file it ships, and your copy is backed up fir
 - **No Intro Videos**: the archive file replaces the start-up videos rather than hooking
   the game. The script never installs its redscript file, which hooks the start-up where
   NightCoop skips the intro itself.
-- **Browser Extension is left out.** It adds Virtual Atelier to the in-game browser, but
-  players report it broken since patch 2.3, and no update for 2.5 was found. Virtual
-  Atelier's stores open from in-game computers without it.
+- **Browser Extension** only adds to the in-game browser: its hooks wrap the browser's
+  functions and call the originals, and none is in NightCoop's tables. An earlier note
+  here said players report it broken since patch 2.3 and left it out; that was wrong for
+  2.3, which its 0.9.6 fixed. Its last release (0.9.7, September 2025) predates patch 2.5,
+  and its page names 2.31 as tested, though players report it working on 2.5 and
+  Fullscreen Browser's 2.5 release requires it. Try it once.
+- **Immersive First Person** changes only your own camera. Its hooks observe or wrap game
+  functions and call the originals. Its plugin hooks one native function, which is not
+  among those NightCoop detours. NPCs look at your V's face rather than its chest;
+  partners' bodies keep the game's aim. Its height slider is at 0 cm until you move it; a
+  partner without the mod sees your V at the game's height.
+- **Katana Pack 2.** A partner without it sees a game blade of the same kind in your hands
+  (NightCoop's fallback for weapons), and the charge effects show only on your screen. The
+  hits count for everyone, as damage claims. Its scripts wrap the game's melee, charge and
+  damage functions and call the originals; none is in NightCoop's tables. One blade, the
+  Cyberfang, can also shock enemies hit by bullets it deflects. In co-op that shock would
+  show only on your screen for NPCs a partner leads, but its chance is 0 as shipped.
+- **Curbside** drives only your own summoned car. A partner sees it arrive through
+  NightCoop's car sync, including the jumps it makes when it moves a car out of sight.
 - **CPU Optimization (and its Plus edition) is left out.** It makes crowds spawn and
   despawn around V, while in co-op the host leads the crowd for every player, so NPCs
   would pop in and vanish near partners. The Plus edition also needs the Ultra Plus
-  graphics mod.
+  graphics mod. Its v3 is no different: each of its four files turns pedestrians off, lets
+  crowds spawn in view (NightCoop keeps them from popping in where any player looks), and
+  changes how police cars chase, which the host leads too.
+- **Cyberware-EX and Immersive Third Person are left out for now**: each needs a small
+  bridge first. Cyberware-EX replaces the function that starts focus-mode slow motion
+  (NightCoop's "time and pause" table) and starts it while a Sandevistan runs, which in a
+  session would slow the shared world. Immersive Third Person switches the camera from
+  callbacks of player bodies, and partners' bodies are player bodies too, so a partner
+  changing view would move yours. A bridge can skip both in a session, through NightCoop's
+  SDK; none is shipped until it has been compiled and tried.
+- **Equipment-EX NightCoop Compatibility Bridge is left out.** It replaces NightCoop's
+  plugin (`red4ext/plugins/NightCoop/NightCoop.dll`) with a copy of 0.2.0-beta whose machine
+  code is patched in nine places. It works only with that release and Equipment-EX 1.2.10,
+  every player must install it, and its author lists its current release as untested in
+  game. NightCoop asks mods to ship only their own files. If you install it by hand,
+  `check` reports NightCoop's plugin as changed, and the next run puts the official one back
+  (the other is kept in the backup).
 - **Quick Stash in co-op:** everyone in a session plays in the host's world, so the stash a
   guest opens there is not the guest's own. Move items in your own game, or as the host;
   the script reminds you of this.
@@ -421,7 +577,8 @@ new release of the mod changes the file it ships, and your copy is backed up fir
 - **Remove NightCoop completely:** run `uninstall`. This restores the game folder
   exactly, keeping other RED4ext plugins you installed yourself, and puts back the
   prefix runtime and registry. Steam's launch options and Proton choice are left as they
-  are; change them under Properties if you wish. Saves are never touched.
+  are; change them under Properties if you wish (the line from before the first install is
+  in its backup folder, `launch-options.txt`). Saves are never touched.
 - Backups made by the earlier Bazzite script (`~/nightcoop-backup-*`) can still be
   restored.
 
@@ -518,8 +675,11 @@ installation. It covers:
   - `game-performance` added on CachyOS, and taken out where it cannot run (SteamOS,
     Flatpak Steam, no power-profile tool it supports), with `--no-game-performance`
     remembered;
-  - `--mangohud` and `--no-mangohud`, refused on SteamOS and in gamescope, and with Flatpak
-    Steam only when the extension for Steam's runtime is installed;
+  - `--mangohud` and `--no-mangohud`, refused on SteamOS, taken out where MangoHud cannot
+    run, and with Flatpak Steam only when the extension for Steam's runtime is installed;
+  - `--redmod`: `-modded` only when asked, remembered, and taken out by `--no-redmod`; an
+    earlier `-modded` dropped with a note; REDmod mods in `mods/` named; the REDmod DLC
+    and the deploy;
 - a hand-copied old NightCoop build;
 - updates in place: nothing changed when current, only differing files replaced, saves
   copied once, `--force` and `--backup-saves`;
@@ -544,6 +704,25 @@ installation. It covers:
     over for a copy that works;
   - `--without-mods` removing only the mods, those inside Cyber Engine Tweaks' folder
     too, while the flight set keeps the frameworks it shares;
+  - the mods added in 3.4.0 (six cars, the clothes of three stores, Impact FX, Immersive
+    Audio Distance) from archives with the real downloads' names and entries, as read from Nexus:
+    each mod's file rule against its other files, folders that wrap an archive, read-me
+    files and code lists left out, a missing requirement holding its store back, and the
+    photo-mode clothes passed over;
+  - mods that an earlier version installed and the set no longer has, removed on the next
+    run, by name;
+- Zenitex's military gear, Nola Dreamer's boutique and the hairstyles, with the
+  files each rule passes over (Preem Hair's 4K file, Garment Support and Alt. Colors files,
+  single hairs beside an all-in-one file, old replacer versions, raem's other stores), and
+  the Zenitex pieces that need Phantom Liberty left out, with the reason, where it is missing;
+- Equipment-EX: only with `--with-equipment-ex`, alone or with the mod set, and removed
+  again with `--without-equipment-ex`; raem's jewellery only with both;
+- what the mods need: Zenitex Core Dependency for the Zenitex outfits (not its colour sets),
+  The Community Palette Project for the jewellery (a bare `.archive` installed into
+  `archive/pc/mod`, and bare files in two folders passed over), Phantom Liberty for Iconic
+  Shops; Immersive First Person (not its file for Immersive Third Person), Katana Pack 2's
+  file with every blade, Browser Extension's framework file and Curbside;
+- the fixtures' add-on table matching the installer's, so that a change to one shows;
 - install, update, restore and uninstall back to a byte-identical game folder.
 
 `tests/mkfixtures.py` generates the PE files, archives (shaped like nightcoop.net's, the
