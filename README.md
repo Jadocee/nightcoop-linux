@@ -216,7 +216,7 @@ WINEDLLOVERRIDES="winmm,version=n,b" MANGOHUD=1 game-performance %command% --lau
 | `--steam-root DIR` | Use this Steam installation instead of detecting one. |
 | `--with-flight` | Also install Let There Be Flight and the mods it needs, without the rest of the mod set, which includes it (see below). Later runs keep them up to date. |
 | `--without-flight` | Remove Let There Be Flight again, unless the mod set is on. The mods it needed stay, because other mods use them too. |
-| `--with-mods` | Also install the mod set: Virtual Atelier with clothing and item stores and their outfits (Zenitex, The RVC00N Dumpster, Nola Dreamer, Street Ninja), hairstyles, Virtual Car Dealer with car and bike packs, Drive an Aerial Vehicle, Vehicle Customizer, Cyber Drift, Impact FX, Immersive Audio Distance, Quick Stash, No Intro Videos, and the frameworks they need (see below). Later runs keep it up to date. |
+| `--with-mods` | Also install the mod set: Virtual Atelier with clothing and item stores and their outfits (Zenitex, The RVC00N Dumpster, Nola Dreamer, Street Ninja), hairstyles, Let There Be Flight, Virtual Car Dealer with car and bike packs, Drive an Aerial Vehicle, Vehicle Customizer, Curbside, Cyber Drift, Impact FX, Immersive Audio Distance, Immersive First Person, Katana Pack 2, Quick Stash, No Intro Videos, and the frameworks they need (see below). Later runs keep it up to date. |
 | `--without-mods` | Remove the mod set's mods again. The frameworks stay. |
 | `--with-equipment-ex` | Also install Equipment-EX, to wear layered outfits, and with `--with-mods` raem's jewellery made for its slots (see below). Every partner in a session needs it too. |
 | `--without-equipment-ex` | Remove Equipment-EX again. |
