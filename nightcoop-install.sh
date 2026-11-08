@@ -47,18 +47,21 @@
 #   --vcredist FILE       use a downloaded VC_redist.x64.exe
 #   --steam-root DIR      use this Steam installation instead of detecting one
 #   --with-flight         also install Let There Be Flight (flying cars), which NightCoop
-#                         supports in co-op, with what it needs; kept up to date afterwards
-#   --without-flight      remove Let There Be Flight again (the mods it needed stay)
+#                         supports in co-op, with what it needs; kept up to date afterwards.
+#                         The mod set includes it: this installs it without the rest
+#   --without-flight      remove Let There Be Flight again (the mods it needed stay), unless
+#                         the mod set is on
 #   --with-mods           also install Virtual Atelier with clothing and item stores and their
 #                         outfits (Zenitex, The RVC00N Dumpster, Nola Dreamer, Street Ninja),
-#                         hairstyles (Preem Hair and packs for the character creator),
-#                         Virtual Car Dealer with car and bike packs, Drive an Aerial Vehicle,
-#                         Vehicle Customizer, Curbside, Cyber Drift, Impact FX, Immersive Audio
-#                         Distance, Immersive First Person, Katana Pack 2, Quick Stash and No
-#                         Intro Videos (download them from Nexus Mods; the installer lists them),
-#                         with the frameworks they need (Cyber Engine Tweaks, Codeware, TweakXL,
-#                         ArchiveXL, redscript, Mod Settings, Audioware, VendorsXL, Zenitex Core
-#                         Dependency, Browser Extension and more); kept up to date
+#                         hairstyles (Preem Hair and packs for the character creator), Let
+#                         There Be Flight, Virtual Car Dealer with car and bike packs, Drive an
+#                         Aerial Vehicle, Vehicle Customizer, Curbside, Cyber Drift, Impact FX,
+#                         Immersive Audio Distance, Immersive First Person, Katana Pack 2,
+#                         Quick Stash and No Intro Videos (download them from Nexus Mods; the
+#                         installer lists them), with the frameworks they need (Cyber Engine
+#                         Tweaks, Codeware, TweakXL, ArchiveXL, redscript, Input Loader, Mod
+#                         Settings, Audioware, VendorsXL, Zenitex Core Dependency, Browser
+#                         Extension and more); kept up to date
 #   --without-mods        remove those mods again (the frameworks stay)
 #   --with-equipment-ex   also install Equipment-EX (from Nexus Mods), to wear layered outfits,
 #                         and with --with-mods jewellery made for its slots; every partner in a
@@ -101,13 +104,14 @@ MIN_GAME_FILEVER="3.0.88.46235" MIN_GAME_PATCH="2.5"
 # Add-on sets, matched to the game patch:
 #   flight (--with-flight)  Let There Be Flight, which NightCoop supports in co-op: its
 #                           archive ships the port (r6/scripts/NightCoopFlight), which
-#                           compiles to nothing without it.
+#                           compiles to nothing without it. The mod set includes it too.
 #   mods (--with-mods)      Virtual Atelier with stores of the game's own items and the stores of
 #                           Zenitex, The RVC00N Dumpster 3, Nola Dreamer and Street Ninja with
-#                           their outfits, hairstyles, Virtual Car Dealer with car and bike packs,
-#                           Drive an Aerial Vehicle, Vehicle Customizer, Curbside, Cyber Drift (Light),
-#                           Impact FX, Immersive Audio Distance, Immersive First Person, Katana Pack 2,
-#                           Quick Stash and No Intro Videos, and the frameworks they need.
+#                           their outfits, hairstyles, Let There Be Flight, Virtual Car Dealer with
+#                           car and bike packs, Drive an Aerial Vehicle, Vehicle Customizer,
+#                           Curbside, Cyber Drift (Light), Impact FX, Immersive Audio Distance,
+#                           Immersive First Person, Katana Pack 2, Quick Stash and No Intro Videos,
+#                           and the frameworks they need.
 #   eqex (--with-equipment-ex)  Equipment-EX, which wears clothes in layers. NightCoop sends looks by
 #                           its slots: a partner without it sees other slots.
 #   mods+eqex               Only with both: raem's jewellery, made for Equipment-EX's slots, the
@@ -133,8 +137,8 @@ ADDON_SETS="
 redscript                     2.5 flight,mods,eqex lib  -     engine/tools/scc_lib.dll                                    0.5.32 https://github.com/jac3km4/redscript/releases/download/v0.5.32/redscript-v0.5.32-windows.zip 882c57a80b07e453bc8a34cd8430f460aceed789581de8743638e19dcfb7936f
 ArchiveXL                     2.5 flight,mods,eqex lib  minor red4ext/plugins/ArchiveXL/ArchiveXL.dll                     1.28.6 https://github.com/psiberx/cp2077-archive-xl/releases/download/v1.28.6/ArchiveXL-1.28.6.zip 25d0493a1b3e8ec4c26b7144a4d8f1a1def4d6dc840fff94b4c91c908583da09
 TweakXL                       2.5 flight,mods,eqex lib  minor red4ext/plugins/TweakXL/TweakXL.dll                         1.12.0 https://github.com/psiberx/cp2077-tweak-xl/releases/download/v1.12.0/TweakXL-1.12.0.zip a7c39b769e6c51d9f27412a101fb87e6a1fb8452f0e37ee0d1d1f3f44e656fa8
-Input_Loader                  2.5 flight      lib  game  red4ext/plugins/input_loader/input_loader.dll               0.2.6  https://github.com/jackhumbert/cyberpunk2077-input-loader/releases/download/v0.2.6/input_loader_v0.2.6.zip 6b420ba1e27b2e13c275a576a37a17d48771a0d35e52731f08e3584444a3e2b9
-Let_There_Be_Flight           2.5 flight      mod  game  red4ext/plugins/let_there_be_flight/let_there_be_flight.dll 0.3.20 https://github.com/jackhumbert/let_there_be_flight/releases/download/v0.3.20/let_there_be_flight_v0.3.20.zip b265d3c6a711f0647d34835374652f5a84b7f3110df944e6d9059aaa7cbfa243
+Input_Loader                  2.5 flight,mods lib  game  red4ext/plugins/input_loader/input_loader.dll               0.2.6  https://github.com/jackhumbert/cyberpunk2077-input-loader/releases/download/v0.2.6/input_loader_v0.2.6.zip 6b420ba1e27b2e13c275a576a37a17d48771a0d35e52731f08e3584444a3e2b9
+Let_There_Be_Flight           2.5 flight,mods mod  game  red4ext/plugins/let_there_be_flight/let_there_be_flight.dll 0.3.20 https://github.com/jackhumbert/let_there_be_flight/releases/download/v0.3.20/let_there_be_flight_v0.3.20.zip b265d3c6a711f0647d34835374652f5a84b7f3110df944e6d9059aaa7cbfa243
 Codeware                      2.5 mods,eqex   lib  minor red4ext/plugins/Codeware/Codeware.dll                       1.21.2 https://github.com/psiberx/cp2077-codeware/releases/download/v1.21.2/Codeware-1.21.2.zip 269b65b8b97d26ea85d4516f5eb34c01a19dc85e299be57fb4f764e16c164dd2
 Cyber_Engine_Tweaks           2.5 mods        lib  minor bin/x64/plugins/cyber_engine_tweaks.asi                     1.38.1 https://github.com/maximegmd/CyberEngineTweaks/releases/download/v1.38.1/cet_1_38_1.zip 2e52be4ed431fad787e64ecbf75db346b4224577d2b89894912bc3f159020e73
 Mod_Settings                  2.5 mods        lib  game  red4ext/plugins/mod_settings/mod_settings.dll               0.2.28 https://github.com/jackhumbert/mod_settings/releases/download/v0.2.28/mod_settings_v0.2.28.zip b9488daa7da85c0430853df4570dbf94dd768d11c4dabee97d732072746d40e7
@@ -2730,10 +2734,15 @@ step_addons() {   # the add-on sets (--with-flight, --with-mods), matched to the
         if [ "$w" = + ] || { [ -z "$w" ] && [[ " $SETS_RECORDED " == *" $s "* ]]; }; then on+=" $s"; fi
         if [ "$w" = - ]; then
             if [[ " $SETS_RECORDED " == *" $s "* ]]; then SETS_DROPPED+=" $s"
-            else info "--without-${s/eqex/equipment-ex}: this script has not installed $(set_label "$s"); nothing to remove"; fi
+            elif [ "$s" != flight ] || [[ " $SETS_RECORDED " != *" mods "* ]] || [[ " ${SET_WANT[*]} " == *" -mods "* ]]; then
+                info "--without-${s/eqex/equipment-ex}: this script has not installed $(set_label "$s"); nothing to remove"
+            fi
         fi
     done
     SETS_ON="${on# }"
+    if [[ " ${SET_WANT[*]} " == *" -flight "* ]] && [[ " $SETS_ON " == *" mods "* ]]; then
+        info "Let There Be Flight stays: the mod set includes it (--without-mods takes it out with the rest)"
+    fi
     [ -n "$SETS_ON$SETS_RECORDED" ] || return 0
     bold "Add-ons${SETS_ON:+: ${SETS_ON// /, }}"
     lines="$(addon_lines)"
@@ -2927,6 +2936,8 @@ addon_rows() {   # check: each add-on set
             v="${mods[0]:-}"; v="${v#Let There Be Flight}"; v="${v# }"
             if [[ " $SETS_RECORDED " == *" flight "* ]]; then
                 row "Let There Be Flight" "${v:-missing}, with $(listing "${libs[@]:-nothing}") (kept up to date by this script)"
+            elif [[ " $SETS_RECORDED " == *" mods "* ]]; then
+                row "Let There Be Flight" "${v:-missing}, with the mod set (kept up to date by this script)"
             elif [ -n "$v" ]; then row "Let There Be Flight" "$v (installed by hand; --with-flight keeps it and what it needs up to date)"
             else row "Let There Be Flight" "not installed; NightCoop supports it in co-op (add --with-flight)"; fi
         elif [ "$set" = eqex ]; then
@@ -3333,9 +3344,9 @@ do_install() {
     do_check
     echo
     print_followups
-    if [[ " $SETS_ON " != *" flight "* ]] && [[ " $SETS_DROPPED " != *" flight "* ]]; then
+    if [[ " $SETS_ON " != *" flight "* ]] && [[ " $SETS_ON " != *" mods "* ]] && [[ " $SETS_DROPPED " != *" flight "* ]]; then
         info "Optional: NightCoop supports flying cars in co-op with Let There Be Flight. Add --with-flight"
-        info "to install it with what it needs; every player in a session should have it."
+        info "(or --with-mods, which includes it) to install it with what it needs; every player in a session should have it."
     fi
     echo
     if [ "$OS_FAMILY" = steamos ]; then
