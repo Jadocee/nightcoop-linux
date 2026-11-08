@@ -386,13 +386,13 @@ def archives(fix):
         'red4ext/plugins/TweakXL/TweakXL.dll': f'{pe}/txl/TweakXL.dll',
         'red4ext/plugins/TweakXL/Scripts/TweakXL.reds': b'// TweakXL 1.12.0\n'})
     make_pe(f'{pe}/il/input_loader.dll', '0.2.6', '2.50', linker=(14, 44), imports=CRT, strings={'Comments': 'Built for 2.50'})
-    github('Input_Loader', 'flight', 'lib', 'game', 'red4ext/plugins/input_loader/input_loader.dll', '0.2.6', 'input_loader_v0.2.6.zip', {
+    github('Input_Loader', 'flight,mods', 'lib', 'game', 'red4ext/plugins/input_loader/input_loader.dll', '0.2.6', 'input_loader_v0.2.6.zip', {
         'red4ext/plugins/input_loader/input_loader.dll': f'{pe}/il/input_loader.dll',
         'r6/cache/inputContexts.xml': b'<bindings loader="0.2.6"/>\r\n',
         'r6/cache/inputUserMappings.xml': b'<mappings loader="0.2.6"/>\r\n',
         'engine/config/platform/pc/input_loader.ini': b'[Player/Input]\r\n'})
     make_pe(f'{pe}/ltbf/let_there_be_flight.dll', '0.3.20', '2.50', linker=(14, 44), imports=CRT, strings={'Comments': 'Built for 2.50'})
-    github('Let_There_Be_Flight', 'flight', 'mod', 'game', 'red4ext/plugins/let_there_be_flight/let_there_be_flight.dll', '0.3.20',
+    github('Let_There_Be_Flight', 'flight,mods', 'mod', 'game', 'red4ext/plugins/let_there_be_flight/let_there_be_flight.dll', '0.3.20',
            'let_there_be_flight_v0.3.20.zip', {
                'red4ext/plugins/let_there_be_flight/let_there_be_flight.dll': f'{pe}/ltbf/let_there_be_flight.dll',
                'red4ext/plugins/let_there_be_flight/packed.reds': b'// LTBF 0.3.20\n',

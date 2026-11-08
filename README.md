@@ -214,9 +214,9 @@ WINEDLLOVERRIDES="winmm,version=n,b" MANGOHUD=1 game-performance %command% --lau
 | `--red4ext-zip FILE` | Use a RED4ext release archive, for example a newer one than the script pins. |
 | `--vcredist FILE` | Use a `VC_redist.x64.exe` you downloaded yourself. |
 | `--steam-root DIR` | Use this Steam installation instead of detecting one. |
-| `--with-flight` | Also install Let There Be Flight and the mods it needs (see below). Later runs keep them up to date. |
-| `--without-flight` | Remove Let There Be Flight again. The mods it needed stay, because other mods use them too. |
-| `--with-mods` | Also install the mod set: Virtual Atelier with clothing and item stores and their outfits (Zenitex, The RVC00N Dumpster, Nola Dreamer, Street Ninja), hairstyles, Virtual Car Dealer with car and bike packs, Drive an Aerial Vehicle, Vehicle Customizer, Cyber Drift, Impact FX, Immersive Audio Distance, Quick Stash, No Intro Videos, and the frameworks they need (see below). Later runs keep it up to date. |
+| `--with-flight` | Also install Let There Be Flight and the mods it needs, without the rest of the mod set, which includes it (see below). Later runs keep them up to date. |
+| `--without-flight` | Remove Let There Be Flight again, unless the mod set is on. The mods it needed stay, because other mods use them too. |
+| `--with-mods` | Also install the mod set: Virtual Atelier with clothing and item stores and their outfits (Zenitex, The RVC00N Dumpster, Nola Dreamer, Street Ninja), hairstyles, Let There Be Flight, Virtual Car Dealer with car and bike packs, Drive an Aerial Vehicle, Vehicle Customizer, Curbside, Cyber Drift, Impact FX, Immersive Audio Distance, Immersive First Person, Katana Pack 2, Quick Stash, No Intro Videos, and the frameworks they need (see below). Later runs keep it up to date. |
 | `--without-mods` | Remove the mod set's mods again. The frameworks stay. |
 | `--with-equipment-ex` | Also install Equipment-EX, to wear layered outfits, and with `--with-mods` raem's jewellery made for its slots (see below). Every partner in a session needs it too. |
 | `--without-equipment-ex` | Remove Equipment-EX again. |
@@ -234,18 +234,20 @@ the sets below, and `uninstall` keeps everything else. Mods built for NightCoop'
 in co-op with partners who have them too. Other mods are not synced, so it is safest for
 everyone in a session to use the same ones.
 
-Add either optional set once; later runs keep it up to date:
+Add an optional set once; later runs keep it up to date. The mod set includes Let There Be
+Flight:
 
 ```bash
-nightcoop-install --with-flight --with-mods
+nightcoop-install --with-mods
 ```
 
-### Let There Be Flight (`--with-flight`)
+### Let There Be Flight (in the mod set, or `--with-flight` alone)
 
 **Let There Be Flight** (flying cars, by Jack Humbert) is the one mod NightCoop supports
 out of the box. NightCoop's archive already holds its co-op port, which the script
 installs. The port shows your flight on your partners' screens, and does nothing until Let
-There Be Flight is installed.
+There Be Flight is installed. The mod set installs it with the rest; `--with-flight`
+installs it on its own, with only what it needs.
 
 | Mod | Game 2.5 | Why it is needed |
 | --- | --- | --- |
@@ -259,13 +261,15 @@ There Be Flight is installed.
   names the partners who lack it. Without it, a partner sees your car flying without
   wheels.
 - **Settings:** the key bindings are in
-  `red4ext/plugins/let_there_be_flight/inputs.xml`. The optional Mod Settings menu is not
-  installed, for the reason given below.
+  `red4ext/plugins/let_there_be_flight/inputs.xml`. Its optional Mod Settings menu comes
+  with the mod set, which installs Mod Settings for Virtual Atelier (see below why that
+  is safe); `--with-flight` alone does not install Mod Settings.
 
 ### The mod set (`--with-mods`)
 
-The Nexus numbers link to each mod's files; "for game 2.5" is the oldest release known to
-work with the patch.
+The set includes Let There Be Flight and what it needs (above), and the mods below. The
+Nexus numbers link to each mod's files; "for game 2.5" is the oldest release known to work
+with the patch.
 
 **Stores and outfits** (Virtual Atelier, on in-game computers)
 
@@ -332,7 +336,8 @@ work with the patch.
 
 **Frameworks**, downloaded from GitHub by the script: Mod Settings 0.2.28 (which Virtual
 Atelier needs), Audioware 1.11.1 (mods' own sounds), Cyber Engine Tweaks 1.38.1 (Lua mods),
-Codeware 1.21.2, TweakXL 1.12.0, ArchiveXL 1.28.6 and redscript 0.5.32 (the script mods,
+Input Loader 0.2.6 (Let There Be Flight's key bindings), Codeware 1.21.2, TweakXL 1.12.0,
+ArchiveXL 1.28.6 and redscript 0.5.32 (the script mods,
 NightCoop's included). From Nexus Mods: VendorsXL 2.2.0 and Deceptious Quest Core 3.3.3, which
 The RVC00N Dumpster 3's shop in the world needs; Zenitex Core Dependency 5.1.8 ([16356](https://www.nexusmods.com/cyberpunk2077/mods/16356?tab=files), its
 main file, not No Camo, Black Decals or a colour set), whose stats and class bonuses every
@@ -546,8 +551,9 @@ new release of the mod changes the file it ships, and your copy is backed up fir
   patch is kept. Any other copy is replaced, and backed up like every file the script
   replaces. redscript and Audioware have no readable version, so they are always the
   paired build.
-- **Removing them:** `--without-flight` removes Let There Be Flight, and `--without-mods`
-  removes the mods of the set, those inside Cyber Engine Tweaks' folder too. The
+- **Removing them:** `--without-flight` removes Let There Be Flight unless the mod set is
+  on, and `--without-mods` removes the mods of the set, those inside Cyber Engine Tweaks'
+  folder too, and Let There Be Flight unless `--with-flight` is on. The
   frameworks stay, Native Settings UI among them, because many other mods need them.
   `uninstall` removes everything the script installed and puts back the game files it
   replaced: the game's script compiler, which redscript replaces, and the input files
@@ -687,6 +693,8 @@ installation. It covers:
   - paired with the game patch, and left as it is on an unknown patch;
   - a newer copy installed by hand kept;
   - `--without-flight` removing only Let There Be Flight;
+  - the mod set bringing Let There Be Flight, `--without-flight` leaving it there while the
+    mod set is on, and `--without-mods` taking it out;
   - an archive with the wrong SHA-256 refused;
 - the mod set:
   - the frameworks from GitHub, Cyber Engine Tweaks' override from the first run;
