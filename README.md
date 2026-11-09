@@ -986,7 +986,9 @@ mods' GitHub releases and Nexus Mods' downloads), the stand-in Nexus Mods API (i
 as files) and a stand-in Proton, so the suite needs neither Steam, Wine nor network access.
 
 CI runs the suite in Arch Linux, CachyOS and SteamOS (holo) containers and on Ubuntu. It
-also builds the PKGBUILD with `makepkg`, checks it with `namcap`, and runs shellcheck.
+also builds the PKGBUILD with `makepkg`, checks it with `namcap`, and runs shellcheck. It runs
+on pull requests into `main` or `dev`, not on every push; a new push to the pull request
+cancels the run it replaces. It can also be started by hand from the Actions tab.
 
 [`sandbox/`](sandbox) recreates the verification environments as Docker Compose services:
 
