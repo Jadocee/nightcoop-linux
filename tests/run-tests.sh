@@ -169,7 +169,7 @@ run install --yes
 expect "install succeeds"             '[ $RC = 0 ]' "$OUT"
 expect "the 2.5 archive was chosen"   '[[ "$OUT" == *"NightCoop 0.2.0-beta (for game 2.5, protocol 164, bundles RED4ext 1.31.0)"* ]]' "$OUT"
 expect "NightCoop in existing Plugins folder (no case duplicate)" '[ -f "$G/red4ext/Plugins/NightCoop/NightCoop.dll" ] && [ ! -e "$G/red4ext/plugins" ]'
-expect "other plugin untouched"       '[ -f "$G/red4ext/Plugins/OtherMod/other.dll" ]'
+expect "another user's plugin is cleared, into the backup" '[ ! -e "$G/red4ext/Plugins/OtherMod/other.dll" ] && [ -f "$(newest_backup)game/red4ext/Plugins/OtherMod/other.dll" ]'
 expect "bundled RED4ext 1.31 used, nothing downloaded" '[ "$(hp pever "$G/red4ext/RED4ext.dll" product)" = 1.31.0 ] && [[ "$OUT" == *"using RED4ext 1.31.0 from the NightCoop archive"* ]] && [[ "$OUT" != *"downloading red4ext"* ]]' "$OUT"
 expect "old build's leftover removed, as NightCoop's guide says" '[ ! -e "$G/red4ext/Plugins/NightCoop/old-helper.dll" ]'
 expect "servers.txt and logs kept"    '[ -f "$G/red4ext/Plugins/NightCoop/servers.txt" ] && [ -f "$G/red4ext/Plugins/NightCoop/logs/nightcoop-last-crash.log" ]'
@@ -311,7 +311,7 @@ run update --yes --force --backup-saves
 expect "--force replaces every file, --backup-saves copies the saves" '[ $RC = 0 ] && [[ "$OUT" == *", 0 unchanged; backup"* ]] && [ -f "$(newest_backup)Saved Games/ManualSave-0/sav.dat" ]' "$OUT"
 mkdir -p "$H/.local/share/nightcoop-linux/backups/2099-01-01-000000/game"   # an install stopped while copying the saves
 run restore --yes
-expect "an interrupted backup is passed over" '[ $RC = 0 ] && [[ "$OUT" != *"2099-01-01-000000"* ]] && [ -f "$G/red4ext/Plugins/OtherMod/other.dll" ] && [ -f "$G/red4ext/RED4ext.dll" ]' "$OUT"
+expect "an interrupted backup is passed over" '[ $RC = 0 ] && [[ "$OUT" != *"2099-01-01-000000"* ]] && [ -f "$G/red4ext/RED4ext.dll" ]' "$OUT"
 run restore --yes
 run check
 expect "after undoing the repair, the hand-copied DLL is told apart again" '[[ "$OUT" == *"NightCoop:"*"0.2.1.0"*"changed since this script installed 0.2.0-beta"* ]]' "$OUT"
@@ -347,7 +347,7 @@ run update --yes --without-flight
 expect "--without-flight removes Let There Be Flight, folder and all" '[ $RC = 0 ] && [ ! -e "$P/let_there_be_flight" ]' "$OUT"
 expect "the mods it needed stay" '[ -f "$P/ArchiveXL/ArchiveXL.dll" ] && [ -f "$P/TweakXL/TweakXL.dll" ] && [ -f "$P/input_loader/input_loader.dll" ] && [ -f "$G/engine/tools/scc_lib.dll" ]' "$OUT"
 run update --yes
-expect "and stay on the next run too" '[ $RC = 0 ] && [ -f "$P/ArchiveXL/ArchiveXL.dll" ] && [ -f "$G/engine/tools/scc_lib.dll" ]' "$OUT"
+expect "and stay on the next run too, still this script's: clearing other mods leaves them" '[ $RC = 0 ] && [ -f "$P/ArchiveXL/ArchiveXL.dll" ] && [ -f "$P/input_loader/input_loader.dll" ] && [ -f "$G/engine/tools/scc_lib.dll" ] && [[ "$OUT" != *"mods this script did not install"* ]]' "$OUT"
 run check
 expect "check shows Let There Be Flight off again" '[[ "$OUT" == *"Let There Be Flight:"*"not installed; NightCoop supports it in co-op"* ]]' "$OUT"
 cp "$FIX/pe/Cyberpunk2077-2.5.exe" "$G/bin/x64/Cyberpunk2077.exe"
@@ -361,6 +361,33 @@ cp "$T/good.zip" "$Z"
 expect "an archive that does not match its SHA-256 is refused before anything changes" '[ $RC != 0 ] && [[ "$OUT" == *"SHA-256 mismatch for TweakXL-1.12.0.zip"* ]] && [ "$BEFORE" = "$(snapshot "$G")" ]' "$OUT"
 
 # ----------------------------------------------------------------- mods ----
+section "Mods this script did not install: cleared on install, into the backup (--keep-other-mods leaves them)"
+newworld others native; OSR="$T/os-arch"
+others() {   # mods installed by hand, in each place of mods, and the game's own DLL beside their loaders
+    mkdir -p "$G/archive/pc/mod" "$G/r6/scripts/Other" "$G/r6/tweaks/Other" "$G/red4ext/Plugins/OtherPlugin" "$G/mods/OtherRedmod" \
+             "$G/bin/x64/plugins/cyber_engine_tweaks/mods/OtherCet" "$G/red4ext/logs"
+    printf 'RDAR' > "$G/archive/pc/mod/other.archive"; printf '// other\n' > "$G/r6/scripts/Other/other.reds"
+    printf 'x: 1\n' > "$G/r6/tweaks/Other/other.yaml"; printf 'MZ other' > "$G/red4ext/Plugins/OtherPlugin/other.dll"
+    printf '{"name": "other"}\n' > "$G/mods/OtherRedmod/info.json"; printf -- '-- other\n' > "$G/bin/x64/plugins/cyber_engine_tweaks/mods/OtherCet/init.lua"
+    printf 'MZ asi' > "$G/bin/x64/other.asi"; printf 'MZ loader' > "$G/bin/x64/version.dll"; printf 'log\n' > "$G/red4ext/logs/red4ext.log"
+}
+others; GAME_DLLS="$(ls "$G/bin/x64")"; WITH_OTHERS="$(snapshot "$G")"
+run install --yes --keep-other-mods
+expect "--keep-other-mods leaves the mods installed by hand where they are" '[ $RC = 0 ] && [ -f "$G/r6/scripts/Other/other.reds" ] && [ -f "$G/archive/pc/mod/other.archive" ] && [ -f "$G/bin/x64/version.dll" ] && [[ "$OUT" != *"mods this script did not install"* ]]' "$OUT"
+run uninstall --yes
+run install --yes
+expect "by default an install clears every mod it did not install, in every place of mods, and says so" '[ $RC = 0 ] && [ ! -e "$G/archive/pc/mod/other.archive" ] && [ ! -e "$G/r6/scripts/Other/other.reds" ] && [ ! -e "$G/r6/tweaks/Other/other.yaml" ] && [ ! -e "$G/red4ext/Plugins/OtherPlugin/other.dll" ] && [ ! -e "$G/mods/OtherRedmod/info.json" ] && [ ! -e "$G/bin/x64/plugins/cyber_engine_tweaks/mods/OtherCet/init.lua" ] && [ ! -e "$G/bin/x64/other.asi" ] && [ ! -e "$G/bin/x64/version.dll" ] && [[ "$OUT" == *"file(s) of mods this script did not install, into the backup"* ]]' "$OUT"
+expect "NightCoop, RED4ext, its log and the game's own DLLs stay" '[ -f "$G/red4ext/Plugins/NightCoop/NightCoop.dll" ] && [ -f "$G/red4ext/RED4ext.dll" ] && [ -f "$G/bin/x64/winmm.dll" ] && [ -f "$G/red4ext/logs/red4ext.log" ] && [ -f "$G/bin/x64/Cyberpunk2077.exe" ]' "$(ls -R "$G/red4ext" "$G/bin/x64")"
+expect "what was cleared is in the backup" '[ -f "$(newest_backup)game/r6/scripts/Other/other.reds" ] && [ -f "$(newest_backup)game/bin/x64/version.dll" ]' "$(newest_backup)"
+run update --yes
+expect "the next run has nothing to clear" '[ $RC = 0 ] && [[ "$OUT" == *"everything is up to date; nothing to do"* ]]' "$OUT"
+run uninstall --yes
+expect "uninstall brings the mods installed by hand back, exactly" '[ $RC = 0 ] && [ "$WITH_OTHERS" = "$(snapshot "$G")" ]' "$(diff <(echo "$WITH_OTHERS") <(snapshot "$G"))"
+run install --yes --with-flight
+mkdir -p "$G/red4ext/Plugins/let_there_be_flight"; printf '{"mine": 1}\n' > "$G/red4ext/Plugins/let_there_be_flight/settings.json"
+run update --yes
+expect "the script's own mods keep what they write while playing" '[ $RC = 0 ] && grep -q mine "$G/red4ext/Plugins/let_there_be_flight/settings.json" && [[ "$OUT" == *"everything is up to date; nothing to do"* ]]' "$OUT"
+
 section "A GitHub download that fails (GitHub answers 504 for redscript's releases at times)"
 newworld ghdown native; OSR="$T/os-arch"; D="$H/Downloads"; mkdir -p "$D"
 RS="redscript-v0.5.32-windows.zip"
@@ -576,7 +603,7 @@ expect "uninstall puts the game folder back exactly" '[ $RC = 0 ] && [ "$PRISTIN
 newworld round4nopl native; OSR="$T/os-arch"; D="$H/Downloads"; mkdir -p "$D"   # a game without Phantom Liberty
 cp "${R4_DL[@]}" "$D/"
 run install --yes --with-mods
-expect "without Phantom Liberty, the helmet, holsters and backpack that need it are left out, and said so; the rest is installed" '[ $RC = 0 ] && [ ! -e "$G/r6/tweaks/scorpiontank/scorpion_military_opscore_helmet.yaml" ] && [ ! -e "$G/r6/tweaks/scorpiontank/scorpion_military_dual_pistol_holsters.yaml" ] && [ ! -e "$G/r6/tweaks/scorpiontank/scorpion_military_zenitex_backpack.yaml" ] && [ -f "$G/r6/tweaks/scorpiontank/scorpion_military_combat_boots.yaml" ] && [[ "$OUT" == *"Phantom Liberty is not installed: Iconic Shops, Zenitex FAST Helmet, Zenitex Pistol Holsters, Zenitex Military Backpack, which need it, are left out"* ]]' "$OUT"
+expect "without Phantom Liberty, the helmet, holsters and backpack that need it are left out, and said so; the rest is installed" '[ $RC = 0 ] && [ ! -e "$G/r6/tweaks/scorpiontank/scorpion_military_opscore_helmet.yaml" ] && [ ! -e "$G/r6/tweaks/scorpiontank/scorpion_military_dual_pistol_holsters.yaml" ] && [ ! -e "$G/r6/tweaks/scorpiontank/scorpion_military_zenitex_backpack.yaml" ] && [ -f "$G/r6/tweaks/scorpiontank/scorpion_military_combat_boots.yaml" ] && [[ "$OUT" == *"Phantom Liberty is not installed: Iconic Shops, Zenitex FAST Helmet, Zenitex Pistol Holsters, Zenitex Military Backpack, "*"which need it, are left out"* ]]' "$OUT"
 run check
 expect "check does not count them as missing" '[ $RC = 0 ] && [[ "$OUT" != *"FAST Helmet"* ]] && [[ "$OUT" != *"Pistol Holsters"* ]]' "$OUT"
 
@@ -615,6 +642,27 @@ mkdir -p "$T/bare-two/One" "$T/bare-two/Two"; printf 'RDAR one' > "$T/bare-two/O
 (cd "$T/bare-two" && python3 -I -m zipfile -c "$D/The Community Palette Project 10437 1.2 2026-11-20T09-00Z Co8doe62j.zip" One Two)
 run update --yes
 expect "a download of bare .archive files in two folders (versions to choose from) is not installed" '[ $RC = 0 ] && [[ "$OUT" == *"Co8doe62j.zip has no game folders (r6, archive, bin, red4ext) or .archive files in it"* ]] && [ ! -e "$G/archive/pc/mod/palette.archive" ] && [[ "$OUT" == *"The Community Palette Project is left out: none of its downloads can be used"* ]]' "$OUT"
+
+section "Mods (--with-mods): round 7: the clubs and the Afterlife opened, Here's Brendan, traffic, cars, menus, clothes and eyes"
+R7_DL=("$FIX/nexus/Virtual Atelier 2987 1.6.4 2026-10-25T17-42Z HncQn22j7.zip" "$FIX/nexus/Virtual Car Dealer 4454 2.3.0 2026-10-25T11-18Z lcXrcZZMt.zip"
+       "$FIX/nexus/Native Settings UI 1.97 3518 1.97 2026-10-22T15-26Z cB3xB00Va.zip" "$FIX/style/VMF-28744-1-0-1775609654.zip")
+newworld round7 native; OSR="$T/os-arch"; D="$H/Downloads"; mkdir -p "$D" "$G/archive/pc/ep1"
+PRISTINE_R7="$(snapshot "$G")"; AM="$G/archive/pc/mod"; CETM="$G/bin/x64/plugins/cyber_engine_tweaks/mods"
+cp "${R7_DL[@]}" "$FIX/round3/Deceptious Quest Core "* "$FIX"/round7/* "$D/"
+run install --yes --with-mods
+expect "the clubs and the Afterlife by their files for 2.5 (not the 2.31 builds, Remastered, No Bouncers or Doors), and Here's Brendan" '[ $RC = 0 ] && [ -f "$AM/The_Empathy_Club_Unlocked.xl" ] && [ ! -e "$AM/The_Empathy_Club_Remastered.xl" ] && [ ! -e "$AM/The_Empathy_Club_No_Bouncers_2.5.xl" ] && [ ! -e "$AM/The_Empathy_Club_Unlocked_1.1.xl" ] && [ -f "$AM/Dicky_Twister_Club_Unlocked.xl" ] && [ ! -e "$AM/Dicky_Twister_Club_Unlocked_1.0.xl" ] && [ -f "$AM/Heavy_Hearts_Club_Unlocked.xl" ] && [ ! -e "$AM/Heavy_Hearts_Club_Unlocked_1.0.xl" ] && [ -f "$AM/Afterlife_Unlocked_&_Remastered.xl" ] && [ ! -e "$AM/Afterlife_Unlocked_&_Remastered_Doors_1.1.xl" ] && [ -f "$G/r6/tweaks/HeresBrendan/heresbrendan.yaml" ]' "$OUT"
+expect "Night City Traffic Overhaul v2.51 (not v3.04), Bike Overhaul (not its ArchV4 patch), the three cars, the Polestar without its spoiler patch" '[ -f "$G/r6/scripts/NightCityTrafficOverhaul/NCTO.reds" ] && [ ! -e "$G/r6/scripts/NightCityTrafficOverhaul/NCTOexternal.reds" ] && [ -f "$G/r6/tweaks/BikeOverhaul/apollo.yaml" ] && [ ! -e "$G/r6/tweaks/ArchV4_Fyrn.tweak" ] && [ -f "$AM/oranje3_edgerunner_emperor.xl" ] && [ -f "$G/r6/scripts/cornmilf_cars/supra_a70_pop_up.reds" ] && [ -f "$AM/aabdii_polestar_1_hero.xl" ] && [ ! -e "$AM/!_polestar_1_no_spoiler_patch.archive" ]' "$OUT"
+expect "the menus and loot icons: Loot Icons Extension's Light file (no DLL), Fluff Vendor Fixes' main file, Unified Mod Settings" '[ -f "$G/r6/scripts/clear_skill_checks.reds" ] && [ -f "$G/r6/scripts/filter_saves.reds" ] && [ -f "$AM/LootIconsExtensionLight.archive" ] && [ ! -e "$AM/LootIconsExtension.archive" ] && [ ! -e "$G/red4ext/Plugins/loot_icons_extension_fix" ] && grep -q "6ZNKZczf8" "$G/r6/scripts/FluffVendorFixes/FluffVendorFixes.reds" && [ -f "$CETM/UnifiedModSettings/init.lua" ]' "$OUT"
+expect "FPP Speedometer without its toggle (Let There Be Flight takes O), the clothes, the shoes with their store, the eyes (not the no-highlights file)" '[ -f "$G/r6/scripts/FPPSpeedometer/FPPSpeedometer.reds" ] && [ ! -e "$G/r6/input/fpp_speedometer.xml" ] && [ -f "$AM/Dusty_MaxTacSuit.archive" ] && [ -f "$AM/prestigeglasses.archive" ] && [ -f "$AM/DrCatherwood_Nike_AirJordan_Euro.archive" ] && [ -f "$G/r6/scripts/drcatherwood/drcatherwoodatelier-atelier-store.reds" ] && [ -f "$AM/BeautifulExoticsCCXL.archive" ] && [ ! -e "$AM/BeautifulExoticsNoHighlightsCCXL.archive" ]' "$OUT"
+expect "the co-op notes: places, eyes, traffic, vendors, the speedometer, the console codes and the MaxTac layers" '[[ "$OUT" == *"a partner without them sees locked doors and walls where you walk"* ]] && [[ "$OUT" == *"sees your V with one of the game'"'"'s eye colours"* ]] && [[ "$OUT" == *"the host'"'"'s traffic is everyone'"'"'s"* ]] && [[ "$OUT" == *"Fluff Vendor Fixes changes the street vendors'"'"' records"* ]] && [[ "$OUT" == *"its toggle key is left out"* ]] && [[ "$OUT" == *"No store of the set sells MaxTac Suit or Prestige Glasses"* ]] && [[ "$OUT" == *"MaxTac Suit'"'"'s pieces are worn together with Equipment-EX"* ]]' "$OUT"
+run update --yes
+expect "a rerun changes nothing" '[ $RC = 0 ] && [[ "$OUT" == *"everything is up to date; nothing to do"* ]]' "$OUT"
+run uninstall --yes
+expect "uninstall puts the game folder back exactly" '[ $RC = 0 ] && [ "$PRISTINE_R7" = "$(snapshot "$G")" ]' "$(diff <(echo "$PRISTINE_R7") <(snapshot "$G"))"
+newworld round7nopl native; OSR="$T/os-arch"; D="$H/Downloads"; mkdir -p "$D"   # no Phantom Liberty
+cp "${R7_DL[@]}" "$FIX"/round7/* "$D/"
+run install --yes --with-mods
+expect "without Phantom Liberty the clubs, the Afterlife, the traffic overhaul and the MaxTac Suit wait, said so" '[ $RC = 0 ] && [ ! -e "$G/archive/pc/mod/The_Empathy_Club_Unlocked.xl" ] && [ ! -e "$G/r6/scripts/NightCityTrafficOverhaul" ] && [ ! -e "$G/archive/pc/mod/Dusty_MaxTacSuit.archive" ] && [[ "$OUT" == *"Phantom Liberty is not installed:"*"The Empathy Club Unlocked"*"Night City Traffic Overhaul"*"MaxTac Suit"* ]] && [ -f "$G/archive/pc/mod/prestigeglasses.archive" ]' "$OUT"
 
 # ------------------------------------------------------ Nexus Mods API ----
 section "Nexus Mods API: with a Premium account's key, the script downloads the Nexus mods itself"
@@ -707,7 +755,7 @@ expect "--nexus-key-file: Equipment-EX comes from Nexus Mods" '[ $RC = 0 ] && [[
 # ------------------------------------------------- Cyber Engine Tweaks ----
 section "Cyber Engine Tweaks installed alongside"
 newworld cet native cet; OSR="$T/os-arch"
-run install --yes
+run install --yes --keep-other-mods
 expect "version.dll override added too" '[ $RC = 0 ] && [ "$(hp reg-get "$PFX/user.reg" "$REG_KEY" version)" = native,builtin ] && [ "$(launch_opts)" = "WINEDLLOVERRIDES=\\\"winmm,version=n,b\\\" %command% --launcher-skip" ]' "$OUT"
 
 # ------------------------------------------------ newer RED4ext installed ----
@@ -810,7 +858,7 @@ mkdir -p "$G/mods/Some REDmod"; printf '{"name": "Some REDmod", "version": "1.0"
 mkdir -p "$G/mods/not a REDmod"; printf 'notes\n' > "$G/mods/not a REDmod/readme.txt"
 run check
 expect "check: a REDmod mod in mods/ (a folder with info.json) without -modded is named, with the option" '[[ "$OUT" == *"REDmod:"*"1 mod(s) in mods/, which load only with -modded"*"--redmod"* ]]' "$OUT"
-run install --yes
+run install --yes --keep-other-mods   # by default an install clears mods/ with the other mods, unless --redmod
 expect "install says so too, and leaves the line as it is" '[ $RC = 0 ] && [[ "$OUT" == *"REDmod: 1 mod(s) in the game'"'"'s mods folder load only with -modded; --redmod adds it"* ]] && [[ "$(launch_opts)" != *-modded* ]]' "$OUT"
 run install --yes --redmod
 expect "--redmod puts -modded after --launcher-skip; without the REDmod DLC, it says to install it" '[ $RC = 0 ] && [ "$(launch_opts)" = "WINEDLLOVERRIDES=\\\"winmm=n,b\\\" %command% --launcher-skip -modded" ] && [[ "$OUT" == *"REDmod: -modded goes in the launch options"* ]] && [[ "$OUT" == *"install the free REDmod DLC in Steam"* ]]' "$OUT"

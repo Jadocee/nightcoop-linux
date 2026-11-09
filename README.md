@@ -224,6 +224,7 @@ WINEDLLOVERRIDES="winmm,version=n,b" MANGOHUD=1 game-performance %command% --lau
 | `--save-nexus-key` | Ask for your Nexus Mods API key (it is not shown) and keep it in `~/.config/nightcoop-linux/nexus-api-key`, readable by you alone. With a Premium account's key, this run and later ones download the Nexus mods themselves (see [Downloads through the Nexus Mods API](#downloads-through-the-nexus-mods-api)). |
 | `--nexus-key-file FILE` | Read the key from FILE this time. Without this option the key comes from `NEXUS_API_KEY`, or else from the file above. |
 | `--no-nexus-api` | Do not use a Nexus Mods API key this time. |
+| `--keep-other-mods` | Leave mods the script did not install in the game folder. By default an install clears them (see [Other mods are cleared](#other-mods-are-cleared)). |
 | `--no-github-downloads` | Download nothing from GitHub: take RED4ext and the frameworks' release archives (redscript, ArchiveXL, TweakXL and the rest) from your Downloads folder, or the `--mods-from` folder, under their release names. Each is checked against the SHA-256 the script pins; the run lists the links of any it does not find. |
 
 When Steam is running, its two settings are not written, but the registry override alone
@@ -295,8 +296,11 @@ with the patch.
 | Street Ninja Remake: its MAIN file and its Streetwear Shop | [36978](https://www.nexusmods.com/cyberpunk2077/mods/36978?tab=files) | 1.14.0, 1.12.0 or newer | 652 streetwear pieces for both V, in four layers |
 | Nola Dreamer's Accessories store, with AirPods Max and six accessories | [14299](https://www.nexusmods.com/cyberpunk2077/mods/14299?tab=files), [28288](https://www.nexusmods.com/cyberpunk2077/mods/28288?tab=files), [14371](https://www.nexusmods.com/cyberpunk2077/mods/14371?tab=files), [16722](https://www.nexusmods.com/cyberpunk2077/mods/16722?tab=files), [11685](https://www.nexusmods.com/cyberpunk2077/mods/11685?tab=files), [15704](https://www.nexusmods.com/cyberpunk2077/mods/15704?tab=files), [14324](https://www.nexusmods.com/cyberpunk2077/mods/14324?tab=files), [14269](https://www.nexusmods.com/cyberpunk2077/mods/14269?tab=files) | 1.8, 1.1 and the current file of each | AirPods Max, Barbed accessories, Bracelets collection, heart choker and garters, Mini dress and glasses, Moon accessories, Spiked Collar. The store sells the glasses of Mini dress and glasses; Nola Dreamer Virtual Boutique (below) sells the dress |
 | Nola Dreamer Virtual Boutique: ND_female_virtual_boutique | [5114](https://www.nexusmods.com/cyberpunk2077/mods/5114?tab=files) | 7.6 or newer | Nola Dreamer's clothes store; of what the set installs, it sells the mini dress |
+| MaxTac Suit | [26517](https://www.nexusmods.com/cyberpunk2077/mods/26517?tab=files) | 1.0 or newer | MaxTac's armour in 33 pieces for both bodies, added in Cyber Engine Tweaks' console (layers with Equipment-EX); needs Phantom Liberty |
+| Prestige Glasses | [27118](https://www.nexusmods.com/cyberpunk2077/mods/27118?tab=files) | 1.11 or newer | 24 pairs of glasses for both bodies, added in Cyber Engine Tweaks' console |
+| Nike Jordan 1s x Off-White, with Catherwood's - Virtual Atelier Shop | [27597](https://www.nexusmods.com/cyberpunk2077/mods/27597?tab=files), [27599](https://www.nexusmods.com/cyberpunk2077/mods/27599?tab=files) | 1.12.0, 1.0.2 or newer | Sneakers for both bodies, and the store that sells them |
 
-**Hair** (the character creator, a mirror in an apartment, or a ripperdoc)
+**Hair and eyes** (the character creator, a mirror in an apartment, or a ripperdoc)
 
 | Mod | Nexus | For game 2.5 | What it is |
 | --- | --- | --- | --- |
@@ -306,6 +310,7 @@ with the patch.
 | Hyst Hair Collection: its ALL IN ONE file | [21766](https://www.nexusmods.com/cyberpunk2077/mods/21766?tab=files) | 1.2 or newer | 7 hairstyles for Fem V |
 | Original Collection (meluminary): its HAIR MEGAPAK | [19197](https://www.nexusmods.com/cyberpunk2077/mods/19197?tab=files) | 5.0.0 or newer | 20 hairstyles for Fem V |
 | Undercut Hair Collection: HAIR 01 to 04 | [19907](https://www.nexusmods.com/cyberpunk2077/mods/19907?tab=files) | 1.0, 1.0, 1.0, 1.1 or newer | Four undercuts for Masc V |
+| Beautiful Exotics Eyes Pack - CCXL Version, its main file | [25718](https://www.nexusmods.com/cyberpunk2077/mods/25718?tab=files) | 1.0 or newer | 39 eye colours (not the NO EYE HIGHLIGHTS file); a partner without it sees one of the game's |
 
 **Vehicles** (Virtual Car Dealer, on in-game computers)
 
@@ -323,6 +328,11 @@ with the patch.
 | VAZ Oka Yozakura Sport | [36381](https://www.nexusmods.com/cyberpunk2077/mods/36381?tab=files) | 4 or newer | A VAZ-1111 Oka in a night-sakura livery; hood and hatch on two CET hotkeys you bind |
 | Toyota GR Yaris: its All Purpose Drive Spec and its Rocket Bunny Kit | [34357](https://www.nexusmods.com/cyberpunk2077/mods/34357?tab=files) | 3.3, 3.2 or newer | A GR Yaris with an optional widebody kit |
 | Nissan Silvia S14 'Marked One', its main file, with Vehicle Manufacturers Resource | [25997](https://www.nexusmods.com/cyberpunk2077/mods/25997?tab=files), [7855](https://www.nexusmods.com/cyberpunk2077/mods/7855?tab=files) | 1.1, 1.1 or newer | A nomad-tuned S14 (a 7z archive) |
+| Edgerunner Emperor (Oranje3) | [28185](https://www.nexusmods.com/cyberpunk2077/mods/28185?tab=files) | 1.0.2 or newer | A four-seat armoured car; Virtual Car Dealer sells it |
+| Toyota Supra Mk3 | [27955](https://www.nexusmods.com/cyberpunk2077/mods/27955?tab=files) | 1.1 or newer | A two-seat Supra with pop-up headlights; Virtual Car Dealer sells it (a 137 MB download) |
+| Polestar 1 Hero Edition, its main file | [26891](https://www.nexusmods.com/cyberpunk2077/mods/26891?tab=files) | 1.1 or newer | A two-seat Polestar 1; Virtual Car Dealer sells it (not the spoiler delete patch) |
+| Bike Overhaul - TweakXL, its Handling Only file | [27989](https://www.nexusmods.com/cyberpunk2077/mods/27989?tab=files) | 1.0 or newer | Reworked bike handling and lean (not the ArchV4 compatibility patch, which overwrites Bikes of the Dark Future's files) |
+| Night City Traffic Overhaul v2.51 | [25552](https://www.nexusmods.com/cyberpunk2077/mods/25552?tab=files) | 2.51 or newer of v2 | Traffic and crowds by district (v3 needs frameworks the set does not have) |
 
 **Gameplay**
 
@@ -337,6 +347,31 @@ with the patch.
 | Immersive First Person, its main file | [2675](https://www.nexusmods.com/cyberpunk2077/mods/2675?tab=files) | 2.2.0 or newer | A first-person camera that shows more of V's body, FreeLook (look around without turning V), and a height slider in Cyber Engine Tweaks' overlay |
 | Katana Pack 2, its file with every blade | [36164](https://www.nexusmods.com/cyberpunk2077/mods/36164?tab=files) | 1.1 or newer | Seventeen katanas and swords, some with charged attacks (a RAR archive) |
 | Curbside | [35922](https://www.nexusmods.com/cyberpunk2077/mods/35922?tab=files) | 1.0.1 or newer | A summoned car or bike comes to your level, stops beside you, and follows you if you walk off |
+| The Empathy Club Unlocked, its file for 2.5 | [27380](https://www.nexusmods.com/cyberpunk2077/mods/27380?tab=files) | 1.2 or newer | Opens the club's closed sections (not Remastered or No Bouncers); needs Phantom Liberty |
+| Dicky Twister Club Unlocked | [27101](https://www.nexusmods.com/cyberpunk2077/mods/27101?tab=files) | 1.1 or newer | Opens the backstage and VIP floor; needs Phantom Liberty |
+| Heavy Hearts Club Unlocked, its file for 2.5 | [27108](https://www.nexusmods.com/cyberpunk2077/mods/27108?tab=files) | 1.3 or newer | Opens the VIP areas in Dogtown; needs Phantom Liberty |
+| Afterlife Unlocked and Remastered | [27242](https://www.nexusmods.com/cyberpunk2077/mods/27242?tab=files) | 1.3 or newer | Opens back rooms and dresses the club up, with caged dancers (not the Doors file); needs Phantom Liberty |
+| Here's Brendan | [25629](https://www.nexusmods.com/cyberpunk2077/mods/25629?tab=files) | 1.1.4 or newer | A short quest that ends with Brendan, the talking vending machine, in V's H10 apartment (with Deceptious Quest Core) |
+| Clear Skill Checks | [2805](https://www.nexusmods.com/cyberpunk2077/mods/2805?tab=files) | 1.1.1 or newer | A passed dialogue check shows your value and the one needed |
+| Filter Saves by Lifepath and Type | [3400](https://www.nexusmods.com/cyberpunk2077/mods/3400?tab=files) | 1.7.0 or newer | Filters and a quest search in the Load and Save menus |
+| Loot Icons Extension, its Light file | [16386](https://www.nexusmods.com/cyberpunk2077/mods/16386?tab=files) | 1.60 or newer | Richer loot icons (the Light file has no DLL) |
+| Fluff Vendor Fixes | [27795](https://www.nexusmods.com/cyberpunk2077/mods/27795?tab=files) | 1.1.2 or newer | Street vendors keep their stock and get a name (not Street Vendors - Only Drinks) |
+| FPP Speedometer | [26156](https://www.nexusmods.com/cyberpunk2077/mods/26156?tab=files) | 1.3.0 or newer | The speedometer in first person; its toggle key is left out, as Let There Be Flight uses O |
+| Unified Mod Settings | [28308](https://www.nexusmods.com/cyberpunk2077/mods/28308?tab=files) | 2.8 or newer | One searchable menu for the settings of Native Settings UI and Mod Settings |
+
+**Requested and left out for now.** Each was checked against patch 2.5 and NightCoop's guides:
+
+- **No build for 2.5 yet**, and patch 2.5 changed the world sectors that their edits target (ArchiveXL skips edits that do not match): More H10 Interactions and Viktor Vektor's clinic overhaul. Their interactions also run on Native Interactions Framework, whose quest facts NightCoop shares from the host, so they need a bridge first.
+- **A bridge or a native check first:**
+  - Consumable Animations plays its animations through quest facts that NightCoop shares from the host, so one player's snack would animate everyone.
+  - Vehicle Navigation System needs three new frameworks and four DLLs, one of which detours the game's GPS functions.
+  - Preem Menu replaces the main-menu and pause-menu widgets, where NightCoop's Co-op entry and shared pause live, with copies from patch 2.31.
+- **Nothing to use in the set:**
+  - Garage Manager only manages SDH0's cars, which the set does not have.
+  - V49 Footwear Atelier is a store for about 45 shoe mods published separately.
+- **Not for co-op play:**
+  - Kai Silva Outfit is made for photo mode, its author says.
+  - Teeth and Braces CCXL removes every V's teeth until a set is chosen, and needs Character Customization Anywhere, which replaces the mirror's editor.
 
 **Frameworks**, downloaded from GitHub by the script: Mod Settings 0.2.28 (which Virtual
 Atelier needs), Audioware 1.11.1 (mods' own sounds), Cyber Engine Tweaks 1.38.1 (Lua mods),
@@ -618,6 +653,29 @@ tolerates personal API keys in tools for personal use or testing, and asks tools
 wider audience to register with it, which also lets their users sign in through Nexus Mods
 instead of pasting a key. This script is not registered.
 
+## Other mods are cleared
+
+Every partner in a session should run the same mods, so an install leaves only NightCoop
+and the script's sets in the game folder. Every other mod goes, whoever installed it:
+
+- the folders of mods: `archive/pc/mod`, `mods` (REDmod), `r6/scripts`, `r6/tweaks`,
+  `r6/audioware`, `r6/input`, `r6/config/redsUserHints`, `r6/config/cybercmd`,
+  `r6/cache/modded`, `red4ext` and `bin/x64/plugins` (Cyber Engine Tweaks and its mods);
+- the loaders in `bin/x64`: `version.dll`, `global.ini`, `dinput8.dll`, `powrprof.dll`,
+  `d3d11.dll`, `dxgi.dll` (ReShade among them) and `*.asi` files. The game's own DLLs there
+  stay.
+
+What stays: NightCoop with your `servers.txt`, `hub.txt` and logs, RED4ext with its logs
+and `config.ini`, and the script's sets, with everything their mods write while you play
+(the settings of Mod Settings, the databases of the Cyber Engine Tweaks mods, Cyber
+Engine Tweaks' own settings and key bindings).
+
+With `--redmod`, the REDmod mods you put in `mods/` stay, with their deployed cache.
+
+What goes is moved into that install's backup and listed in the plan before you confirm:
+`restore` and `uninstall` bring it back. Add `--keep-other-mods` to leave other mods
+where they are; NightCoop's guides explain what a partner without one of them sees.
+
 ## Updating and undoing
 
 - **New NightCoop build:** run the script again (`update` is another name for
@@ -639,8 +697,8 @@ instead of pasting a key. This script is not registered.
   others run the script again too.
 - **Undo the last update:** run `restore`.
 - **Remove NightCoop completely:** run `uninstall`. This restores the game folder
-  exactly, keeping other RED4ext plugins you installed yourself, and puts back the
-  prefix runtime and registry. Steam's launch options and Proton choice are left as they
+  exactly, the other mods an install cleared included, and puts back the prefix runtime
+  and registry. Steam's launch options and Proton choice are left as they
   are; change them under Properties if you wish (the line from before the first install is
   in its backup folder, `launch-options.txt`). Saves are never touched.
 - Backups made by the earlier Bazzite script (`~/nightcoop-backup-*`) can still be
@@ -811,6 +869,14 @@ installation. It covers:
   - the key from `NEXUS_API_KEY`, `--nexus-key-file` or the key file (with a warning when
     others can read it), `--no-nexus-api`, a file without a key, an API that does not
     answer, and the key found nowhere but in its file afterwards;
+- the mods of round 7 by their files for 2.5 (the clubs' and the Afterlife's 2.5 builds over
+  their 2.31 builds, Remastered, No Bouncers and Doors files; Night City Traffic Overhaul v2.51
+  over v3.04; Loot Icons Extension's Light file; no ArchV4, spoiler or no-highlights patch),
+  FPP Speedometer without its toggle file, their co-op notes, and those needing Phantom
+  Liberty left out without it;
+- mods the script did not install cleared on install into the backup, put back by uninstall,
+  and left alone with `--keep-other-mods`, while the script's own mods keep what they write;
+- a GitHub download that fails, and the copy downloaded in a browser taken from Downloads;
 - the fixtures' add-on table matching the installer's, so that a change to one shows;
 - install, update, restore and uninstall back to a byte-identical game folder.
 
