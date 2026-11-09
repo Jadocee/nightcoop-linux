@@ -283,16 +283,29 @@ Browser_Extension             2.5 mods        lib  -     -                      
 Immersive_First_Person        2.5 mods        mod  -     -                                                           2.2.0  nexus:2675:-:~itp_compatibility
 Katana_Pack_2                 2.5 mods        mod  -     -                                                           1.1    nexus:36164:+katana_pack_2
 Curbside                      2.5 mods        mod  -     -                                                           1.0.1  nexus:35922
+Apex_Grapple                  2.5 mods        mod  -     -                                                           1.0.7  nexus:36443:-:v2.31,kobat
+Stealth_Fixes                 2.5 mods        mod  -     -                                                           1.0.1  nexus:35951
+Dual_Wielding_Fix             2.5 mods        mod  -     -                                                           1.0.1  nexus:36738
+Silent_Silencers              2.5 mods        mod  -     -                                                           1.6.3  nexus:4070
+Stealth_Finishers             2.5 mods        mod  -     -                                                           2.1.0  nexus:9360
+No_Crowd_Panic_From_Devices   2.5 mods        mod  -     -                                                           1.2.0  nexus:7353:+redscript
+Crowd_Voice_Unlocked          2.5 mods        mod  -     -                                                           1.1.0  nexus:36527
+Sit_Anywhere                  2.5 mods        mod  -     -                                                           1.4    nexus:7299
 The_Empathy_Club_Unlocked     2.5 mods        mod  -     -                                                           1.2    nexus:27380:+_2.5:bouncers,remastered
 Dicky_Twister_Club_Unlocked   2.5 mods        mod  -     -                                                           1.1    nexus:27101
 Heavy_Hearts_Club_Unlocked    2.5 mods        mod  -     -                                                           1.3    nexus:27108:+_2.5
 Afterlife_Unlocked_and_Remastered 2.5 mods        mod  -     -                                                           1.3    nexus:27242:-:doors
 Heres_Brendan                 2.5 mods        mod  -     -                                                           1.1.4  nexus:25629
+Immersive_Rippers             2.5 mods        mod  -     -                                                           2.6.2  nexus:7064
+Immersive_Bartenders          2.5 mods        mod  -     -                                                           2.0.3  nexus:7203
+Parking_Spots_Enhanced        2.5 mods        mod  -     -                                                           1.2.5  nexus:15708:-:alt
 Night_City_Traffic_Overhaul   2.5 mods        mod  -     -                                                           2.50   nexus:25552:+v2.
+Fixed_NPC_Vehicle_Reactions   2.5 mods        mod  -     -                                                           1.0.0  nexus:19530
 Bike_Overhaul                 2.5 mods        mod  -     -                                                           1.0    nexus:27989:-:archv4
 Edgerunner_Emperor            2.5 mods        mod  -     -                                                           1.0.2  nexus:28185
 Toyota_Supra_Mk3              2.5 mods        mod  -     -                                                           1.1    nexus:27955
 Polestar_1_Hero               2.5 mods        mod  -     -                                                           1.1    nexus:26891:-:spoiler
+Nissan_240SX                  2.5 mods        mod  -     -                                                           1.32   nexus:8730:+nissan_240sx
 FPP_Speedometer               2.5 mods        mod  -     -                                                           1.3.0  nexus:26156
 Clear_Skill_Checks            2.5 mods        mod  -     -                                                           1.1.1  nexus:2805
 Filter_Saves                  2.5 mods        mod  -     -                                                           1.7.0  nexus:3400
@@ -401,7 +414,12 @@ Violet_Hair:ArchiveXL Updo_Hair_Collection:ArchiveXL Himiko_Buns_Hair:ArchiveXL,
 Xyla_Shag_Mullet:ArchiveXL Geralt_of_Rivia_Hair:ArchiveXL Soft_Blunt_Bob:ArchiveXL Beautiful_Makeup:ArchiveXL
 Beautiful_Makeup_II:ArchiveXL Mecha_Robotic_Eyes:ArchiveXL,TweakXL Mecha_Robotic_Eyes_2:ArchiveXL,TweakXL
 Modded_Save_Loading_Screen_Fix:redscript,TweakXL Always_First_Equip:redscript,ArchiveXL,Input_Loader,Mod_Settings
-Reset_Attributes_Always_Available:redscript Mark_To_Sell:redscript,Input_Loader"
+Reset_Attributes_Always_Available:redscript Mark_To_Sell:redscript,Input_Loader
+Apex_Grapple:redscript,Codeware,TweakXL,Mod_Settings Stealth_Fixes:redscript Dual_Wielding_Fix:redscript,Codeware,TweakXL
+Silent_Silencers:redscript,ArchiveXL,TweakXL,Cyber_Engine_Tweaks,Native_Settings_UI Stealth_Finishers:redscript,Cyber_Engine_Tweaks
+No_Crowd_Panic_From_Devices:redscript Crowd_Voice_Unlocked:redscript,Codeware,Immersive_Audio_Distance Sit_Anywhere:Cyber_Engine_Tweaks
+Immersive_Rippers:redscript,Codeware,ArchiveXL Parking_Spots_Enhanced:ArchiveXL,Deceptious_Quest_Core
+Fixed_NPC_Vehicle_Reactions:TweakXL Nissan_240SX:ArchiveXL,TweakXL,Material_and_Texture_Override,Virtual_Car_Dealer"
 # Outfit mods: in co-op, a partner without the same mod sees a plain game piece in their place.
 OUTFITS="Zenitex_Ballistic_Mask Zenitex_Tactical_Harness Zenitex_Combat_Jacket Zenitex_Armor_Pads Zenitex_Panam_Pants
 Zenitex_Combat_Gloves Comfy_Boots Goliath_Coat Cityfolk_Hoodie Knife_Bandolier Bunny_Slippers Saul_Pants CrystalJock_Bomber
@@ -422,7 +440,10 @@ EYES="Beautiful_Exotics_Eyes Mecha_Robotic_Eyes Mecha_Robotic_Eyes_2"
 # Eye makeup added to the character creator: in co-op, a partner without the same mod sees none there.
 MAKEUP="Beautiful_Makeup Beautiful_Makeup_II"
 # Places the mods open or change, and their quests: every partner needs the same files.
-WORLD="The_Empathy_Club_Unlocked Dicky_Twister_Club_Unlocked Heavy_Hearts_Club_Unlocked Afterlife_Unlocked_and_Remastered Heres_Brendan"
+WORLD="The_Empathy_Club_Unlocked Dicky_Twister_Club_Unlocked Heavy_Hearts_Club_Unlocked Afterlife_Unlocked_and_Remastered Heres_Brendan
+Immersive_Rippers Immersive_Bartenders Parking_Spots_Enhanced"
+# Mods that change how NPCs act: the game that leads an NPC applies them, so every partner needs the same.
+NPC_MODS="Silent_Silencers Stealth_Fixes Stealth_Finishers No_Crowd_Panic_From_Devices Fixed_NPC_Vehicle_Reactions"
 # Files a mod writes to while the game runs (its settings, its database, what it has learned):
 # the player's copy stays, and is replaced only when a new release changes the file it ships.
 # "*" is every component; a "*" in a pattern also matches across folders.
@@ -434,6 +455,7 @@ Drive_an_Aerial_Vehicle bin/x64/plugins/cyber_engine_tweaks/mods/DriveAerialVehi
 Vehicle_Customizer      bin/x64/plugins/cyber_engine_tweaks/mods/VehicleCustomizerSVE/*
 Night_City_Traffic_Overhaul r6/scripts/NightCityTrafficOverhaul/NCTOmoddedVehicles.reds
 Night_City_Traffic_Overhaul r6/tweaks/NightCityTrafficOverhaul/YourCustomVehicles.yaml
+Sit_Anywhere            bin/x64/plugins/cyber_engine_tweaks/mods/sitAnywhere/config/config.json
 "
 # Settings the script writes for co-op on every install and update (the player's other settings
 # stay): files a mod or its framework keeps, with values every partner should share, or keys moved
@@ -447,6 +469,11 @@ Night_City_Traffic_Overhaul r6/tweaks/NightCityTrafficOverhaul/YourCustomVehicle
 #     neither NightCoop nor any mod of the sets uses. Drive an Aerial Vehicle: its appearance key 5 moved to 9,
 #     as NightCoop's quickhack wheel uses 1-8. Always First Equip: its keys moved off F2 and F3, which NightCoop's
 #     F-key quickhack set uses, to F11 and Insert (Mod Settings sets them from its file over the input file).
+#   Apex Grapple: pulling people to V off in its five profiles, as it would act only on your copy of an NPC a
+#     partner leads. Silent Silencers: the game that leads an NPC applies these, so they are the same for everyone;
+#     its cover debuff is off, as it goes to that game's own V (a partner's silenced hit put it on the host's V).
+#   Sit Anywhere: the HUD stays on while V sits, as hiding it sets V's scene tier to 3, which NightCoop reads as a
+#     scene holding V (a talk, for the story NPCs around).
 ADDON_CONFIG="
 Loot_Icons_Extension        ini  red4ext/plugins/mod_settings/user.ini LootIconsExtension.LootIconsExtensionSSX fMS_ADSOpacity 100.0
 Immersive_Audio_Distance    ini  red4ext/plugins/mod_settings/user.ini ImmersiveAudioDistance.IAD_Settings quest 200.0
@@ -461,6 +488,22 @@ Always_First_Equip          ini  red4ext/plugins/mod_settings/user.ini AlwaysFir
 Always_First_Equip          ini  red4ext/plugins/mod_settings/user.ini AlwaysFirstEquip.FirstEquipConfig afeAdditionalHotkey IK_Insert
 Always_First_Equip          xml  r6/input/AlwaysFirstEquip.xml AlwaysFirstEquip_Button IK_F2 IK_F11
 Always_First_Equip          xml  r6/input/AlwaysFirstEquip.xml SafeWeapon_Button IK_F3 IK_Insert
+Apex_Grapple                ini  red4ext/plugins/mod_settings/user.ini ApexGrappleSettings pullPeople false
+Apex_Grapple                ini  red4ext/plugins/mod_settings/user.ini ApexGrappleProfile2 pullPeople false
+Apex_Grapple                ini  red4ext/plugins/mod_settings/user.ini ApexGrappleProfile3 pullPeople false
+Apex_Grapple                ini  red4ext/plugins/mod_settings/user.ini ApexGrappleProfile4 pullPeople false
+Apex_Grapple                ini  red4ext/plugins/mod_settings/user.ini ApexGrappleProfile5 pullPeople false
+Silent_Silencers            json bin/x64/plugins/cyber_engine_tweaks/mods/SilentSilencersAndKnives/settings.json / afterStealthHitNoKillDebuff false
+Silent_Silencers            json bin/x64/plugins/cyber_engine_tweaks/mods/SilentSilencersAndKnives/settings.json / afterStealthHitKillDebuff false
+Silent_Silencers            json bin/x64/plugins/cyber_engine_tweaks/mods/SilentSilencersAndKnives/settings.json / shouldSilencedGunshotsBeStealthy true
+Silent_Silencers            json bin/x64/plugins/cyber_engine_tweaks/mods/SilentSilencersAndKnives/settings.json / shouldThrownKnivesBeStealthy true
+Silent_Silencers            json bin/x64/plugins/cyber_engine_tweaks/mods/SilentSilencersAndKnives/settings.json / silencedGunshotMinDistance 2.0
+Silent_Silencers            json bin/x64/plugins/cyber_engine_tweaks/mods/SilentSilencersAndKnives/settings.json / thrownKnifeMinDistance 2.0
+Silent_Silencers            json bin/x64/plugins/cyber_engine_tweaks/mods/SilentSilencersAndKnives/settings.json / autoDetectionHitCount 0
+Silent_Silencers            json bin/x64/plugins/cyber_engine_tweaks/mods/SilentSilencersAndKnives/settings.json / baseDetectionChance 0
+Silent_Silencers            json bin/x64/plugins/cyber_engine_tweaks/mods/SilentSilencersAndKnives/settings.json / perHitDetectionChance 0
+Silent_Silencers            json bin/x64/plugins/cyber_engine_tweaks/mods/SilentSilencersAndKnives/settings.json / secondsToDetect 0
+Sit_Anywhere                json bin/x64/plugins/cyber_engine_tweaks/mods/sitAnywhere/config/config.json / hideUI false
 "
 # Files of a mod that are not installed, for its default configuration in co-op:
 #   component              file (relative to the game folder)
@@ -3101,6 +3144,7 @@ addon_parts() {   # each component once: name sets kind rule version-file
 name_of() { echo "${1//_/ }"; }   # name_of <component>: its name for people
 set_label() { case "$1" in flight) echo "Let There Be Flight" ;; eqex) echo "Equipment-EX" ;; *) echo "the mod set" ;; esac; }
 listing() { local IFS=,; local s="$*"; echo "${s//,/, }"; }   # listing <items...>: "a, b, c"
+listing_and() { listing "$@" | sed 's/, \([^,]*\)$/ and \1/'; }   # listing_and <items...>: "a, b and c"
 in_sets_on() {   # in_sets_on <sets>: one of its comma-separated sets is on ("mods+eqex": both of them)
     local s p
     for s in ${1//,/ }; do
@@ -3218,6 +3262,10 @@ nexus_file() {   # nexus_file <component>: which file to download, of a mod with
         Makeup_Enhancer) echo "MAKE UP - ENHANCER - 256x256 pixels, not the 64x64 file" ;;
         Beautiful_Makeup) echo "Beautiful MAKEUP - BASE of 2 May 2026 (38.6 MB), for the basegame head, not the 5 MB file of the same name" ;;
         Beautiful_Makeup_II) echo "the main file for the basegame head, Beautiful MAKEUP II - BASE - Basegame Head, not EKT and Custom Head" ;;
+        Apex_Grapple) echo "the main file ApexGrapple, not the one For v2.31 Kobat" ;;
+        No_Crowd_Panic_From_Devices) echo "the redscript file, not the CET one" ;;
+        Parking_Spots_Enhanced) echo "the main file, not Parking Spots Enhanced (alt), a build for patch 2.21" ;;
+        Nissan_240SX) echo "the main file Nissan 240SX, not the bodykit, colour, wheel or interior options" ;;
     esac
 }
 nexus_avoided() {   # nexus_avoided <component>: what a file of it that is never installed is
@@ -3584,9 +3632,11 @@ step_addons() {   # the add-on sets (--with-flight, --with-mods), matched to the
     if [[ "$ADDON_HAVE" == *" Vehicle_Customizer "* ]]; then
         info "Vehicle Customizer works only with the game's language set to English."
     fi
-    local world=0 eyes=0 makeup=0
+    local world=0 eyes=0 makeup=0 npcs=() scenes=()
     for o in $ADDON_HAVE; do
         if [[ " $WORLD " == *" $o "* ]]; then world=1; fi
+        if [[ " $NPC_MODS " == *" $o "* ]]; then npcs+=("$(name_of "$o")"); fi
+        case "$o" in Immersive_Rippers|Immersive_Bartenders) scenes+=("$(name_of "$o")") ;; esac
         if [[ " $EYES " == *" $o "* ]]; then eyes=1; fi
         if [[ " $MAKEUP " == *" $o "* ]]; then makeup=1; fi
     done
@@ -3599,8 +3649,38 @@ step_addons() {   # the add-on sets (--with-flight, --with-mods), matched to the
         info "glasses or a mask."
     fi
     if [ "$world" = 1 ]; then
-        info "Places of mods in co-op (the clubs and the Afterlife opened, Brendan's quest): every partner needs the same"
-        info "files; a partner without them sees locked doors and walls where you walk. Quests and their progress are the host's."
+        info "Places and scenes of mods in co-op (the clubs and the Afterlife opened, Brendan's quest, the ripperdocs' and"
+        info "bars' scenes, the parking spots): every partner needs the same files;"
+        info "a partner without them sees locked doors and walls where you walk. Quests and their progress are the host's."
+    fi
+    if [ "${#scenes[@]}" -gt 0 ]; then
+        info "$(listing_and "${scenes[@]}") in co-op: a visit is your own (NightCoop keeps a vendor's scene personal), and partners"
+        info "see you in the chair or at the bar. Fingers' apology is quest progress, which in a session is the host's."
+    fi
+    if [[ "$ADDON_HAVE" == *" Parking_Spots_Enhanced "* ]]; then
+        info "Parking Spots Enhanced starts once V has been in the H10 apartment; in a session it is the host's quest, and it"
+        info "moves the host's cars."
+    fi
+    if [ "${#npcs[@]}" -gt 0 ]; then
+        info "Mods that change how NPCs act ($(listing_and "${npcs[@]}")): the game that leads an NPC applies them, so"
+        info "every partner needs the same."
+    fi
+    if [[ "$ADDON_HAVE" == *" Silent_Silencers "* ]]; then
+        info "Silent Silencers in co-op: its settings are written the same for everyone on every run, and its cover debuff is"
+        info "off, as it would go to the V of the game that leads the NPC hit, which may not be yours."
+    fi
+    if [[ "$ADDON_HAVE" == *" Apex_Grapple "* ]]; then
+        info "Apex Grapple in co-op: partners see your V fly, but not its hook, rope or launcher. Pulling people to V stays"
+        info "off (it would act only on your copy of an NPC a partner leads). A profile's own key must be none of NightCoop's"
+        info "keys, as NightCoop cannot see it."
+    fi
+    if [[ "$ADDON_HAVE" == *" Sit_Anywhere "* ]]; then
+        info "Sit Anywhere in co-op: a partner sees you sit only with Sit Anywhere too (otherwise you stand on the spot). The"
+        info "HUD stays on while you sit, as hiding it tells NightCoop that a scene holds your V."
+    fi
+    if [[ "$ADDON_HAVE" == *" Crowd_Voice_Unlocked "* ]]; then
+        info "Crowd Voice Unlocked in co-op: each game voices the people near its own V, so you may hear different lines from"
+        info "the same person; a partner without it hears the game's crowd."
     fi
     if [ "$eyes" = 1 ]; then
         info "Eye colours of mods in co-op: choose them in the character creator, at a mirror or at a ripperdoc. A partner"
