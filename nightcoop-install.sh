@@ -150,7 +150,7 @@ MIN_GAME_FILEVER="3.0.88.46235" MIN_GAME_PATCH="2.5"
 # <prefer> in its name wins ("+word": only such files, for a mod whose files go together, each
 # its own component); one with an <avoid> word in its name is never installed (see
 # nexus_avoided below; "~word": silently, as another component takes it). "_" in a word stands
-# for a space.
+# for a space. "+@<upload time>" takes only that upload, for a mod whose files share one name.
 # The pairings come from each project's README and release notes at the tag, and from the
 # "Built for" game version in the plugins' DLLs.
 # rule: a copy installed by hand stays when it is newer and "game": its DLL names the same
@@ -296,6 +296,11 @@ Polestar_1_Hero               2.5 mods        mod  -     -                      
 FPP_Speedometer               2.5 mods        mod  -     -                                                           1.3.0  nexus:26156
 Clear_Skill_Checks            2.5 mods        mod  -     -                                                           1.1.1  nexus:2805
 Filter_Saves                  2.5 mods        mod  -     -                                                           1.7.0  nexus:3400
+Modded_Save_Loading_Screen_Fix 2.5 mods        mod  -     -                                                           1.0.0  nexus:35867:-:popups
+Always_First_Equip            2.5 mods        mod  -     -                                                           2.2.0  nexus:2557:-:translation
+Reset_Attributes_Always_Available 2.5 mods        mod  -     -                                                           1.0.0.6 nexus:9240
+Mark_To_Sell                  2.5 mods        mod  -     -                                                           2.5.5  nexus:4725
+Purify_The_UI                 2.5 mods        mod  -     -                                                           2.00   nexus:2648:+only_2d:keep
 Loot_Icons_Extension          2.5 mods        mod  -     -                                                           1.60   nexus:16386:+light
 Unified_Mod_Settings          2.5 mods        mod  -     -                                                           2.8    nexus:28308
 Fluff_Vendor_Fixes            2.5 mods        mod  -     -                                                           1.1.2  nexus:27795:-:only_drinks
@@ -304,6 +309,18 @@ Prestige_Glasses              2.5 mods        mod  -     -                      
 Nike_Jordan_1_Off-White       2.5 mods        mod  -     -                                                           1.12.0 nexus:27597
 Catherwood_Atelier_Shop       2.5 mods        mod  -     -                                                           1.0.2  nexus:27599
 Beautiful_Exotics_Eyes        2.5 mods        mod  -     -                                                           1.0    nexus:25718:-:no_eye_highlights
+Violet_Hair                   2.5 mods        mod  -     -                                                           1      nexus:35739
+Updo_Hair_Collection          2.5 mods        mod  -     -                                                           1.4    nexus:26834:+all-in-one
+Himiko_Buns_Hair              2.5 mods        mod  -     -                                                           1      nexus:34688
+Yumeko_Hair                   2.5 mods        mod  -     -                                                           1      nexus:36291
+Xyla_Shag_Mullet              2.5 mods        mod  -     -                                                           1      nexus:36246
+Geralt_of_Rivia_Hair          2.5 mods        mod  -     -                                                           1      nexus:36769
+Soft_Blunt_Bob                2.5 mods        mod  -     -                                                           1      nexus:35463
+Makeup_Enhancer               2.5 mods        mod  -     -                                                           1      nexus:28869:+256x256
+Beautiful_Makeup              2.5 mods        mod  -     -                                                           1      nexus:29336:+@1777732105
+Beautiful_Makeup_II           2.5 mods        mod  -     -                                                           1      nexus:29513:+basegame_head
+Mecha_Robotic_Eyes            2.5 mods        mod  -     -                                                           1      nexus:35373
+Mecha_Robotic_Eyes_2          2.5 mods        mod  -     -                                                           1      nexus:35807
 "
 # <<< add-on sets
 # What a component needs besides RED4ext: without it, it is not installed (a store without
@@ -379,7 +396,12 @@ Polestar_1_Hero:ArchiveXL,TweakXL,Virtual_Car_Dealer FPP_Speedometer:redscript C
 Filter_Saves:redscript,Codeware,ArchiveXL Loot_Icons_Extension:redscript,Codeware,ArchiveXL,TweakXL,Mod_Settings
 Unified_Mod_Settings:redscript,Codeware,Cyber_Engine_Tweaks,Native_Settings_UI,Mod_Settings Fluff_Vendor_Fixes:redscript,TweakXL
 MaxTac_Suit:ArchiveXL,TweakXL,Phantom_Liberty Prestige_Glasses:ArchiveXL,TweakXL Nike_Jordan_1_Off-White:ArchiveXL,TweakXL
-Catherwood_Atelier_Shop:Virtual_Atelier Beautiful_Exotics_Eyes:ArchiveXL,TweakXL"
+Catherwood_Atelier_Shop:Virtual_Atelier Beautiful_Exotics_Eyes:ArchiveXL,TweakXL
+Violet_Hair:ArchiveXL Updo_Hair_Collection:ArchiveXL Himiko_Buns_Hair:ArchiveXL,TweakXL Yumeko_Hair:ArchiveXL
+Xyla_Shag_Mullet:ArchiveXL Geralt_of_Rivia_Hair:ArchiveXL Soft_Blunt_Bob:ArchiveXL Beautiful_Makeup:ArchiveXL
+Beautiful_Makeup_II:ArchiveXL Mecha_Robotic_Eyes:ArchiveXL,TweakXL Mecha_Robotic_Eyes_2:ArchiveXL,TweakXL
+Modded_Save_Loading_Screen_Fix:redscript,TweakXL Always_First_Equip:redscript,ArchiveXL,Input_Loader,Mod_Settings
+Reset_Attributes_Always_Available:redscript Mark_To_Sell:redscript,Input_Loader"
 # Outfit mods: in co-op, a partner without the same mod sees a plain game piece in their place.
 OUTFITS="Zenitex_Ballistic_Mask Zenitex_Tactical_Harness Zenitex_Combat_Jacket Zenitex_Armor_Pads Zenitex_Panam_Pants
 Zenitex_Combat_Gloves Comfy_Boots Goliath_Coat Cityfolk_Hoodie Knife_Bandolier Bunny_Slippers Saul_Pants CrystalJock_Bomber
@@ -390,12 +412,15 @@ Dexter_Pants Dexter_Vest Dexter_Shoes PinkyBlume_Croptop Street_Ninja_Remake Air
 Nola_Barbed_Accessories Nola_Bracelets Nola_Heart_Choker Nola_Mini_Dress Nola_Moon_Accessories
 Nola_Spiked_Collar Zenitex_Combat_Armor Zenitex_FAST_Helmet Zenitex_Ballistic_Vest Zenitex_Combat_Boots
 Zenitex_Pistol_Holsters Zenitex_Military_Backpack Zenitex_Military_Underwear Zenitex_Combat_Goggles Zenitex_Balaclava_Pack
-Bullet_Necklace Chain_Jewelry Reyes_Accessories MaxTac_Suit Prestige_Glasses Nike_Jordan_1_Off-White"
+Bullet_Necklace Chain_Jewelry Reyes_Accessories MaxTac_Suit Prestige_Glasses Nike_Jordan_1_Off-White Himiko_Buns_Hair"
 # Hairstyles added to the character creator: in co-op, a partner without the same mod sees no hair there.
 HAIRS="Wolfcut_Messy Wolfcut_Emo Wolfcut_Hime_Short Wolfcut_Hime_Medium Wolfcut_Hime_Long Subleader_Hair_Pack
-Hyst_Hair_Collection Meluminary_Hair_Megapak Undercut_Slickback Undercut_Sidewave Undercut_ManBun Undercut_Slickback_Braids"
+Hyst_Hair_Collection Meluminary_Hair_Megapak Undercut_Slickback Undercut_Sidewave Undercut_ManBun Undercut_Slickback_Braids
+Violet_Hair Updo_Hair_Collection Himiko_Buns_Hair Yumeko_Hair Xyla_Shag_Mullet Geralt_of_Rivia_Hair Soft_Blunt_Bob"
 # Eye colours added to the character creator: in co-op, a partner without the same mod sees one of the game's.
-EYES="Beautiful_Exotics_Eyes"
+EYES="Beautiful_Exotics_Eyes Mecha_Robotic_Eyes Mecha_Robotic_Eyes_2"
+# Eye makeup added to the character creator: in co-op, a partner without the same mod sees none there.
+MAKEUP="Beautiful_Makeup Beautiful_Makeup_II"
 # Places the mods open or change, and their quests: every partner needs the same files.
 WORLD="The_Empathy_Club_Unlocked Dicky_Twister_Club_Unlocked Heavy_Hearts_Club_Unlocked Afterlife_Unlocked_and_Remastered Heres_Brendan"
 # Files a mod writes to while the game runs (its settings, its database, what it has learned):
@@ -420,7 +445,8 @@ Night_City_Traffic_Overhaul r6/tweaks/NightCityTrafficOverhaul/YourCustomVehicle
 #     pinned for everyone (the vanilla vehicle security; no modded cars or random passengers in traffic).
 #   Cyber Engine Tweaks: its overlay key, when none is set yet (the first-launch popup): ` (tilde), which
 #     neither NightCoop nor any mod of the sets uses. Drive an Aerial Vehicle: its appearance key 5 moved to 9,
-#     as NightCoop's quickhack wheel uses 1-8.
+#     as NightCoop's quickhack wheel uses 1-8. Always First Equip: its keys moved off F2 and F3, which NightCoop's
+#     F-key quickhack set uses, to F11 and Insert (Mod Settings sets them from its file over the input file).
 ADDON_CONFIG="
 Loot_Icons_Extension        ini  red4ext/plugins/mod_settings/user.ini LootIconsExtension.LootIconsExtensionSSX fMS_ADSOpacity 100.0
 Immersive_Audio_Distance    ini  red4ext/plugins/mod_settings/user.ini ImmersiveAudioDistance.IAD_Settings quest 200.0
@@ -431,6 +457,10 @@ Night_City_Traffic_Overhaul ini  red4ext/plugins/mod_settings/user.ini NightCity
 Night_City_Traffic_Overhaul ini  red4ext/plugins/mod_settings/user.ini NightCityTrafficOverhaul.Settings.NCTOSettings autoSetRandomPassengers false
 Cyber_Engine_Tweaks         json-if-unset bin/x64/plugins/cyber_engine_tweaks/bindings.json /cet overlay_key 54043195528445952
 Drive_an_Aerial_Vehicle     json bin/x64/plugins/cyber_engine_tweaks/mods/DriveAerialVehicle/Data/user_setting_v3.json /common_keybind_table[name=toggle_appearance] key \"IK_9\"
+Always_First_Equip          ini  red4ext/plugins/mod_settings/user.ini AlwaysFirstEquip.FirstEquipConfig afeMainHotkey IK_F11
+Always_First_Equip          ini  red4ext/plugins/mod_settings/user.ini AlwaysFirstEquip.FirstEquipConfig afeAdditionalHotkey IK_Insert
+Always_First_Equip          xml  r6/input/AlwaysFirstEquip.xml AlwaysFirstEquip_Button IK_F2 IK_F11
+Always_First_Equip          xml  r6/input/AlwaysFirstEquip.xml SafeWeapon_Button IK_F3 IK_Insert
 "
 # Files of a mod that are not installed, for its default configuration in co-op:
 #   component              file (relative to the game folder)
@@ -1814,7 +1844,11 @@ def nexus_rank(entries, mod_id, prefer, avoid, minver):
     comma-separated <avoid> words in its name, or older than <minver>, is never listed: when there
     is nothing else, the newest such is, as (path, version, "avoided" or "old", None); "~word" is
     never named (another component takes it). In the words "_" stands for a space. Each upload is
-    listed once. "-" means no word or version."""
+    listed once. "-" means no word or version. "+@<upload time>" keeps only that upload, for a mod
+    whose files share one name."""
+    pin = prefer.lstrip('+')[1:] if prefer.lstrip('+').startswith('@') else ''
+    if pin:
+        prefer = '+'
     need = prefer.startswith('+')
     prefer = '' if prefer in ('-', '+') else prefer.lstrip('+').lower().replace('_', ' ')
     avoid = [] if avoid == '-' else [w.replace('_', ' ') for w in avoid.lower().split(',') if w]
@@ -1826,6 +1860,8 @@ def nexus_rank(entries, mod_id, prefer, avoid, minver):
         if not got:
             continue
         name, ver, t = got
+        if pin and str(t) != pin:
+            continue
         low = name.lower().replace('_', ' ')
         if (need and prefer not in low) or any(w in low for w in quiet):
             continue
@@ -3175,12 +3211,20 @@ nexus_file() {   # nexus_file <component>: which file to download, of a mod with
         Loot_Icons_Extension) echo "the Light file, Loot Icons Extension Light, which has no DLL" ;;
         Fluff_Vendor_Fixes) echo "the main file, not Street Vendors - Only Drinks" ;;
         Beautiful_Exotics_Eyes) echo "the main file, Beautiful Exotics Eyes CCXL by protossvoid, not the NO EYE HIGHLIGHTS version" ;;
+        Updo_Hair_Collection) echo "Updo Hair Collection - ALL-IN-ONE, not the single styles" ;;
+        Modded_Save_Loading_Screen_Fix) echo "the main file, Modded Save Loading Screen Fix, not No Load Popups" ;;
+        Always_First_Equip) echo "the main file, not the Translation sources" ;;
+        Purify_The_UI) echo "the main file Disable ONLY 2D Effect For UI And Disable Chrom Ab, not the Keep Vanilla Chrom Ab one" ;;
+        Makeup_Enhancer) echo "MAKE UP - ENHANCER - 256x256 pixels, not the 64x64 file" ;;
+        Beautiful_Makeup) echo "Beautiful MAKEUP - BASE of 2 May 2026 (38.6 MB), for the basegame head, not the 5 MB file of the same name" ;;
+        Beautiful_Makeup_II) echo "the main file for the basegame head, Beautiful MAKEUP II - BASE - Basegame Head, not EKT and Custom Head" ;;
     esac
 }
 nexus_avoided() {   # nexus_avoided <component>: what a file of it that is never installed is
     case "$1" in
         A.G.I.S.) echo "another edition of A.G.I.S. than its main file, PUBLICNET" ;;
         No_Intro_Videos) echo "the redscript file of No Intro Videos, which hooks the game's start-up, where NightCoop skips the intro itself (take the archive file)" ;;
+        Modded_Save_Loading_Screen_Fix) echo "No Load Popups, which replaces the game's Continue step in a menu NightCoop wraps and skips its modded-save checks (take the main file)" ;;
         Bike_Overhaul) echo "the ArchV4 compatibility patch of Bike Overhaul, which overwrites Bikes of the Dark Future's files (take the Handling Only file)" ;;
         *) h="$(nexus_file "$1")"; echo "another file of $(name_of "$1") than the one this script takes${h:+ ($h)}" ;;
     esac
@@ -3540,11 +3584,20 @@ step_addons() {   # the add-on sets (--with-flight, --with-mods), matched to the
     if [[ "$ADDON_HAVE" == *" Vehicle_Customizer "* ]]; then
         info "Vehicle Customizer works only with the game's language set to English."
     fi
-    local world=0 eyes=0
+    local world=0 eyes=0 makeup=0
     for o in $ADDON_HAVE; do
         if [[ " $WORLD " == *" $o "* ]]; then world=1; fi
         if [[ " $EYES " == *" $o "* ]]; then eyes=1; fi
+        if [[ " $MAKEUP " == *" $o "* ]]; then makeup=1; fi
     done
+    if [ "$makeup" = 1 ]; then
+        info "Eye makeup of mods in co-op: choose it in the character creator, at a mirror or at a ripperdoc. A partner"
+        info "without the same makeup mod sees your V without that makeup."
+    fi
+    if [[ "$ADDON_HAVE" == *" Himiko_Buns_Hair "* ]] && [[ "$ADDON_HAVE" != *" Equipment_EX "* ]]; then
+        info "Himiko Buns Hair's bangs are items for the face slot without Equipment-EX (--with-equipment-ex): not with"
+        info "glasses or a mask."
+    fi
     if [ "$world" = 1 ]; then
         info "Places of mods in co-op (the clubs and the Afterlife opened, Brendan's quest): every partner needs the same"
         info "files; a partner without them sees locked doors and walls where you walk. Quests and their progress are the host's."
@@ -3560,12 +3613,19 @@ step_addons() {   # the add-on sets (--with-flight, --with-mods), matched to the
     if [[ "$ADDON_HAVE" == *" Fluff_Vendor_Fixes "* ]]; then
         info "Fluff Vendor Fixes changes the street vendors' records: every partner needs it too."
     fi
+    if [[ "$ADDON_HAVE" == *" Always_First_Equip "* ]]; then
+        info "Always First Equip: its keys are F11 (draw with the first-equip move; with a weapon out, tap for an idle"
+        info "break, hold to inspect) and Insert (lower or raise the weapon), off NightCoop's F-key quickhack set."
+    fi
+    if [[ "$ADDON_HAVE" == *" Reset_Attributes_Always_Available "* ]]; then
+        info "Reset Attributes always available: a reset changes only your own character, in the host's world too."
+    fi
     if [[ "$ADDON_HAVE" == *" FPP_Speedometer "* ]]; then
         info "FPP Speedometer shows the speedometer in first person; its toggle key is left out, as Let There Be Flight"
         info "uses the same key (O)."
     fi
     local console=()
-    for o in MaxTac_Suit Prestige_Glasses; do if [[ "$ADDON_HAVE" == *" $o "* ]]; then console+=("$(name_of "$o")"); fi; done
+    for o in MaxTac_Suit Prestige_Glasses Himiko_Buns_Hair; do if [[ "$ADDON_HAVE" == *" $o "* ]]; then console+=("$(name_of "$o")"); fi; done
     if [ "${#console[@]}" -gt 0 ]; then
         info "No store of the set sells $(listing "${console[@]}" | sed 's/, \([^,]*\)$/ or \1/'): add them in Cyber Engine Tweaks' console"
         info "(Game.AddToInventory), with the codes listed on their Nexus Mods pages."
