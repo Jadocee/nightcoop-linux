@@ -57,7 +57,9 @@
 #                         There Be Flight, Virtual Car Dealer with car and bike packs, Drive an
 #                         Aerial Vehicle, Vehicle Customizer, Curbside, Cyber Drift, Impact FX,
 #                         Immersive Audio Distance, Immersive First Person, Katana Pack 2,
-#                         Quick Stash and No Intro Videos (from Nexus Mods: you download them,
+#                         Quick Stash, No Intro Videos, three clubs and the Afterlife opened,
+#                         Here's Brendan, Night City Traffic Overhaul, Loot Icons Extension, Filter
+#                         Saves, Unified Mod Settings and more (from Nexus Mods: you download them,
 #                         as the installer lists, or it does with a Premium account's API key,
 #                         see --save-nexus-key), with the frameworks they need (Cyber Engine
 #                         Tweaks, Codeware, TweakXL, ArchiveXL, redscript, Input Loader, Mod
@@ -77,6 +79,11 @@
 #   --nexus-key-file FILE read the key from FILE this time (otherwise from NEXUS_API_KEY, or
 #                         from the file above)
 #   --no-nexus-api        do not use a Nexus Mods API key this time
+#   --keep-other-mods     leave mods this script did not install in the game folder. By default
+#                         an install removes them all (archive/pc/mod, mods, r6/scripts, r6/tweaks,
+#                         red4ext/plugins, bin/x64/plugins and the loaders there), so that only
+#                         NightCoop and the script's sets remain, the same for every partner;
+#                         they go into that install's backup, and restore brings them back
 #   --no-github-downloads download nothing from GitHub: take RED4ext and the frameworks'
 #                         release archives from your Downloads folder (or --mods-from), checked
 #                         against their pinned SHA-256; the run lists the links of those missing
@@ -94,7 +101,7 @@
 # SPDX-License-Identifier: MIT
 set -euo pipefail
 
-SCRIPT_VERSION="3.5.1"
+SCRIPT_VERSION="3.6.0"
 APPID=1091500
 GAME_EXE_REL="bin/x64/Cyberpunk2077.exe"
 RED4EXT_VER="1.31.0"
@@ -273,6 +280,27 @@ Browser_Extension             2.5 mods        lib  -     -                      
 Immersive_First_Person        2.5 mods        mod  -     -                                                           2.2.0  nexus:2675:-:~itp_compatibility
 Katana_Pack_2                 2.5 mods        mod  -     -                                                           1.1    nexus:36164:+katana_pack_2
 Curbside                      2.5 mods        mod  -     -                                                           1.0.1  nexus:35922
+The_Empathy_Club_Unlocked     2.5 mods        mod  -     -                                                           1.2    nexus:27380:+_2.5:bouncers,remastered
+Dicky_Twister_Club_Unlocked   2.5 mods        mod  -     -                                                           1.1    nexus:27101
+Heavy_Hearts_Club_Unlocked    2.5 mods        mod  -     -                                                           1.3    nexus:27108:+_2.5
+Afterlife_Unlocked_and_Remastered 2.5 mods        mod  -     -                                                           1.3    nexus:27242:-:doors
+Heres_Brendan                 2.5 mods        mod  -     -                                                           1.1.4  nexus:25629
+Night_City_Traffic_Overhaul   2.5 mods        mod  -     -                                                           2.50   nexus:25552:+v2.
+Bike_Overhaul                 2.5 mods        mod  -     -                                                           1.0    nexus:27989:-:archv4
+Edgerunner_Emperor            2.5 mods        mod  -     -                                                           1.0.2  nexus:28185
+Toyota_Supra_Mk3              2.5 mods        mod  -     -                                                           1.1    nexus:27955
+Polestar_1_Hero               2.5 mods        mod  -     -                                                           1.1    nexus:26891:-:spoiler
+FPP_Speedometer               2.5 mods        mod  -     -                                                           1.3.0  nexus:26156
+Clear_Skill_Checks            2.5 mods        mod  -     -                                                           1.1.1  nexus:2805
+Filter_Saves                  2.5 mods        mod  -     -                                                           1.7.0  nexus:3400
+Loot_Icons_Extension          2.5 mods        mod  -     -                                                           1.60   nexus:16386:+light
+Unified_Mod_Settings          2.5 mods        mod  -     -                                                           2.8    nexus:28308
+Fluff_Vendor_Fixes            2.5 mods        mod  -     -                                                           1.1.2  nexus:27795:-:only_drinks
+MaxTac_Suit                   2.5 mods        mod  -     -                                                           1.0    nexus:26517
+Prestige_Glasses              2.5 mods        mod  -     -                                                           1.11   nexus:27118
+Nike_Jordan_1_Off-White       2.5 mods        mod  -     -                                                           1.12.0 nexus:27597
+Catherwood_Atelier_Shop       2.5 mods        mod  -     -                                                           1.0.2  nexus:27599
+Beautiful_Exotics_Eyes        2.5 mods        mod  -     -                                                           1.0    nexus:25718:-:no_eye_highlights
 "
 # <<< add-on sets
 # What a component needs besides RED4ext: without it, it is not installed (a store without
@@ -337,7 +365,18 @@ Undercut_Slickback_Braids:ArchiveXL Bullet_Necklace:ArchiveXL,TweakXL,Equipment_
 Chain_Jewelry:ArchiveXL,TweakXL,Equipment_EX,The_Community_Palette_Project
 Reyes_Accessories:ArchiveXL,TweakXL,Equipment_EX,The_Community_Palette_Project raem_Accessory_Store:Virtual_Atelier
 Browser_Extension:redscript,Codeware Immersive_First_Person:Cyber_Engine_Tweaks,redscript
-Katana_Pack_2:redscript,Codeware,ArchiveXL,TweakXL,Audioware Curbside:redscript"
+Katana_Pack_2:redscript,Codeware,ArchiveXL,TweakXL,Audioware Curbside:redscript
+The_Empathy_Club_Unlocked:ArchiveXL,Phantom_Liberty Dicky_Twister_Club_Unlocked:ArchiveXL,Phantom_Liberty
+Heavy_Hearts_Club_Unlocked:ArchiveXL,Phantom_Liberty Afterlife_Unlocked_and_Remastered:ArchiveXL,Phantom_Liberty
+Heres_Brendan:ArchiveXL,TweakXL,Deceptious_Quest_Core
+Night_City_Traffic_Overhaul:redscript,Codeware,TweakXL,Mod_Settings,Phantom_Liberty Bike_Overhaul:TweakXL
+Edgerunner_Emperor:ArchiveXL,TweakXL,Virtual_Car_Dealer
+Toyota_Supra_Mk3:redscript,ArchiveXL,TweakXL,Vehicle_Manufacturer_Fix,Virtual_Car_Dealer
+Polestar_1_Hero:ArchiveXL,TweakXL,Virtual_Car_Dealer FPP_Speedometer:redscript Clear_Skill_Checks:redscript
+Filter_Saves:redscript,Codeware,ArchiveXL Loot_Icons_Extension:redscript,Codeware,ArchiveXL,TweakXL,Mod_Settings
+Unified_Mod_Settings:redscript,Codeware,Cyber_Engine_Tweaks,Native_Settings_UI,Mod_Settings Fluff_Vendor_Fixes:redscript,TweakXL
+MaxTac_Suit:ArchiveXL,TweakXL,Phantom_Liberty Prestige_Glasses:ArchiveXL,TweakXL Nike_Jordan_1_Off-White:ArchiveXL,TweakXL
+Catherwood_Atelier_Shop:Virtual_Atelier Beautiful_Exotics_Eyes:ArchiveXL,TweakXL"
 # Outfit mods: in co-op, a partner without the same mod sees a plain game piece in their place.
 OUTFITS="Zenitex_Ballistic_Mask Zenitex_Tactical_Harness Zenitex_Combat_Jacket Zenitex_Armor_Pads Zenitex_Panam_Pants
 Zenitex_Combat_Gloves Comfy_Boots Goliath_Coat Cityfolk_Hoodie Knife_Bandolier Bunny_Slippers Saul_Pants CrystalJock_Bomber
@@ -348,10 +387,14 @@ Dexter_Pants Dexter_Vest Dexter_Shoes PinkyBlume_Croptop Street_Ninja_Remake Air
 Nola_Barbed_Accessories Nola_Bracelets Nola_Heart_Choker Nola_Mini_Dress Nola_Moon_Accessories
 Nola_Spiked_Collar Zenitex_Combat_Armor Zenitex_FAST_Helmet Zenitex_Ballistic_Vest Zenitex_Combat_Boots
 Zenitex_Pistol_Holsters Zenitex_Military_Backpack Zenitex_Military_Underwear Zenitex_Combat_Goggles Zenitex_Balaclava_Pack
-Bullet_Necklace Chain_Jewelry Reyes_Accessories"
+Bullet_Necklace Chain_Jewelry Reyes_Accessories MaxTac_Suit Prestige_Glasses Nike_Jordan_1_Off-White"
 # Hairstyles added to the character creator: in co-op, a partner without the same mod sees no hair there.
 HAIRS="Wolfcut_Messy Wolfcut_Emo Wolfcut_Hime_Short Wolfcut_Hime_Medium Wolfcut_Hime_Long Subleader_Hair_Pack
 Hyst_Hair_Collection Meluminary_Hair_Megapak Undercut_Slickback Undercut_Sidewave Undercut_ManBun Undercut_Slickback_Braids"
+# Eye colours added to the character creator: in co-op, a partner without the same mod sees one of the game's.
+EYES="Beautiful_Exotics_Eyes"
+# Places the mods open or change, and their quests: every partner needs the same files.
+WORLD="The_Empathy_Club_Unlocked Dicky_Twister_Club_Unlocked Heavy_Hearts_Club_Unlocked Afterlife_Unlocked_and_Remastered Heres_Brendan"
 # Files a mod writes to while the game runs (its settings, its database, what it has learned):
 # the player's copy stays, and is replaced only when a new release changes the file it ships.
 # "*" is every component; a "*" in a pattern also matches across folders.
@@ -361,6 +404,35 @@ ADDON_STATE="
 Cyber_Drift             bin/x64/plugins/cyber_engine_tweaks/mods/CyberDrift*/custom/*
 Drive_an_Aerial_Vehicle bin/x64/plugins/cyber_engine_tweaks/mods/DriveAerialVehicle/Data/*
 Vehicle_Customizer      bin/x64/plugins/cyber_engine_tweaks/mods/VehicleCustomizerSVE/*
+Night_City_Traffic_Overhaul r6/scripts/NightCityTrafficOverhaul/NCTOmoddedVehicles.reds
+Night_City_Traffic_Overhaul r6/tweaks/NightCityTrafficOverhaul/YourCustomVehicles.yaml
+"
+# Settings the script writes for co-op on every install and update (the player's other settings
+# stay): files a mod or its framework keeps, with values every partner should share, or keys moved
+# off NightCoop's and other mods' keys. A space in a path is written %20.
+#   component        kind (ini/json/json-if-unset/xml)  path  section, object path or element name  key  value
+#   Loot Icons Extension: icons stay at full opacity while aiming, as its aiming check also runs for partners'
+#     bodies (a partner aiming hid your icons). Immersive Audio Distance: story lines carry about as far as in
+#     the game, for partners further from the speaker. Night City Traffic Overhaul: its co-op-safe defaults
+#     pinned for everyone (the vanilla vehicle security; no modded cars or random passengers in traffic).
+#   Cyber Engine Tweaks: its overlay key, when none is set yet (the first-launch popup): ` (tilde), which
+#     neither NightCoop nor any mod of the sets uses. Drive an Aerial Vehicle: its appearance key 5 moved to 9,
+#     as NightCoop's quickhack wheel uses 1-8.
+ADDON_CONFIG="
+Loot_Icons_Extension        ini  red4ext/plugins/mod_settings/user.ini LootIconsExtension.LootIconsExtensionSSX fMS_ADSOpacity 100.0
+Immersive_Audio_Distance    ini  red4ext/plugins/mod_settings/user.ini ImmersiveAudioDistance.IAD_Settings quest 200.0
+Night_City_Traffic_Overhaul ini  red4ext/plugins/mod_settings/user.ini NightCityTrafficOverhaul.Settings.NCTOSettings modEnabled true
+Night_City_Traffic_Overhaul ini  red4ext/plugins/mod_settings/user.ini NightCityTrafficOverhaul.Settings.NCTOSettings trafficHijackDifficulty VANILLA
+Night_City_Traffic_Overhaul ini  red4ext/plugins/mod_settings/user.ini NightCityTrafficOverhaul.Settings.NCTOSettings betterPanicReaction true
+Night_City_Traffic_Overhaul ini  red4ext/plugins/mod_settings/user.ini NightCityTrafficOverhaul.Settings.NCTOSettings autoDistributeModdedVehicles false
+Night_City_Traffic_Overhaul ini  red4ext/plugins/mod_settings/user.ini NightCityTrafficOverhaul.Settings.NCTOSettings autoSetRandomPassengers false
+Cyber_Engine_Tweaks         json-if-unset bin/x64/plugins/cyber_engine_tweaks/bindings.json /cet overlay_key 54043195528445952
+Drive_an_Aerial_Vehicle     json bin/x64/plugins/cyber_engine_tweaks/mods/DriveAerialVehicle/Data/user_setting_v3.json /common_keybind_table[name=toggle_appearance] key \"IK_9\"
+"
+# Files of a mod that are not installed, for its default configuration in co-op:
+#   component              file (relative to the game folder)
+ADDON_SKIP="
+FPP_Speedometer         r6/input/fpp_speedometer.xml
 "
 DATA_DIR="${XDG_DATA_HOME:-$HOME/.local/share}/nightcoop-linux"
 CONFIG_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/nightcoop-linux"   # the Nexus Mods API key (nexus-api-key)
@@ -385,6 +457,7 @@ NEXUS_KEY_FILE="" # --nexus-key-file; else NEXUS_API_KEY, else $CONFIG_DIR/nexus
 NEXUS_API_USE=1  # 0: --no-nexus-api
 SAVE_NEXUS_KEY=0 # --save-nexus-key: ask for the key and keep it in $CONFIG_DIR/nexus-api-key
 NO_GITHUB=0      # 1: --no-github-downloads, the GitHub release archives come from the Downloads folder only
+KEEP_OTHERS=0    # 1: --keep-other-mods, mods this script did not install stay in the game folder
 FORCE=0
 DRY_RUN=0
 ASSUME_YES=0
@@ -1437,11 +1510,30 @@ PLUGIN_KEEP_FILES = ('servers.txt', 'hub.txt')
 PLUGIN_KEEP_DIRS = ('logs',)
 
 
+OTHERS = set()   # what tree_stale found of mods this script did not install
+
+
+def keep_match(rel, keeps):
+    """rel (lower case) is kept: a file, a folder ("x/"), or a file right in a folder ("x/*")."""
+    for k in keeps:
+        if k.endswith('/*'):
+            if rel.startswith(k[:-1]) and '/' not in rel[len(k) - 1:]:
+                return True
+        elif rel == k or (k.endswith('/') and rel.startswith(k)):
+            return True
+    return False
+
+
 def tree_stale(mapping, game, prev, protect, refresh=''):
     """Files to remove: those the previous install put in place that the new archive no
     longer has, and everything else in the plugin folder (refresh) apart from the user's
     servers.txt, hub.txt and logs, so that no file of an older build stays behind.
-    A protected path ending in "/" protects everything below it."""
+    A protected path ending in "/" protects everything below it. "clean:<path>" entries name
+    the places of other mods (a folder "x/", or files "x/pattern"): what they hold goes too,
+    but for "keep:<path>" entries (keep_match), so that only this install's mods stay."""
+    cleans = [p[6:].lower() for p in protect if p.startswith('clean:')]
+    keeps = [p[5:].lower() for p in protect if p.startswith('keep:')]
+    protect = [p for p in protect if not p.startswith(('clean:', 'keep:'))]
     current = {rel.lower() for _, rel in mapping} | {p.lower() for p in protect if not p.endswith('/')}
     folders = tuple(p.lower() for p in protect if p.endswith('/'))
     stale = []
@@ -1464,6 +1556,27 @@ def tree_stale(mapping, game, prev, protect, refresh=''):
             for fn in sorted(fns):
                 if fn.lower() not in PLUGIN_KEEP_FILES:
                     add(os.path.join(dp, fn))
+
+    def other(p):
+        if not keep_match(os.path.relpath(p, game).replace(os.sep, '/').lower(), keeps):
+            n = len(stale)
+            add(p)
+            OTHERS.update(stale[n:])
+
+    for c in cleans:   # the other mods: what their places hold that this install does not put in place
+        d, _, pat = c.rstrip('/').rpartition('/') if not c.endswith('/') else (c.rstrip('/'), '', '')
+        top = ci_resolve(game, d) if d else None
+        if not top or not os.path.isdir(top) or os.path.islink(top):
+            continue
+        if pat:
+            for fn in sorted(os.listdir(top)):
+                if fnmatch.fnmatchcase(fn.lower(), pat):
+                    other(os.path.join(top, fn))
+            continue
+        for dp, dns, fns in os.walk(top):
+            dns.sort()
+            for fn in sorted(fns):
+                other(os.path.join(dp, fn))
     return stale
 
 
@@ -1505,7 +1618,7 @@ def cmd_tree_plan(stage, game, prev, refresh, force, *protect):
     out(*[sum(1 for e in ents if e[0] == s) for s in STATES])
     for st, rel in ents:
         if st == 'removed':
-            out('stale', rel)
+            out('other' if rel in OTHERS else 'stale', rel)
 
 
 def cmd_tree_apply(stage, game, bgame, manifest, prev, refresh, force, *protect):
@@ -1982,6 +2095,87 @@ def sha256_of(path):
     return h.hexdigest()
 
 
+def cmd_cfg(kind, dst, src, *entries):
+    """Settings of a mod written for co-op: dst gets src (a file, or "-" for none) with each entry set,
+    "where<SEP>key<SEP>value". kind "ini": where is the [section]; a key line is changed in place, or added
+    at the section's end, a section added at the end; other lines stay as they are. kind "json": where is
+    a path of objects ("/" or "/a/b"), value a JSON literal. kind "xml": the element with name="where" has
+    the attribute value key replaced by value (an input binding: IK_O -> IK_K). In a json path, "a[name=x]" is the
+    element of the list a whose "name" is x (left alone when there is none); kind "json-if-unset" sets a member only
+    when it is missing, null or 0, so that a player's own choice stays. When nothing changes, dst is
+    an exact copy of src, so that a rerun finds the file the same. Prints "same" or "changed"."""
+    ents = [e.split(SEP) for e in entries]
+    old = b''
+    if src != '-' and os.path.isfile(src):
+        with open(src, 'rb') as fh:
+            old = fh.read()
+    text = old.decode('utf-8-sig', errors='surrogateescape')
+    new = text
+    if kind == 'ini':
+        lines = text.splitlines(True)
+        for where, key, val in ents:
+            head = next((i for i, l in enumerate(lines) if l.strip().lower() == '[%s]' % where.lower()), None)   # as Mod Settings reads it
+            if head is None:
+                if lines and not lines[-1].endswith('\n'):
+                    lines[-1] += '\n'
+                lines += (['\n'] if lines and lines[-1].strip() else []) + ['[%s]\n' % where, '%s = %s\n' % (key, val)]
+                continue
+            end = next((i for i in range(head + 1, len(lines)) if lines[i].strip().startswith('[')), len(lines))
+            at = next((i for i in range(head + 1, end) if re.match(r'\s*%s\s*=' % re.escape(key), lines[i], re.I)), None)
+            if at is not None:
+                if lines[at].split('=', 1)[1].strip() != val:
+                    lines[at] = '%s = %s\n' % (key, val)
+            else:
+                while end > head + 1 and not lines[end - 1].strip():
+                    end -= 1
+                if not lines[end - 1].endswith('\n'):
+                    lines[end - 1] += '\n'
+                lines.insert(end, '%s = %s\n' % (key, val))
+        new = ''.join(lines)
+    elif kind in ('json', 'json-if-unset'):
+        try:
+            data = json.loads(text) if text.strip() else {}
+        except ValueError:
+            data = {}
+        before = json.dumps(data, sort_keys=True)
+        for where, key, val in ents:
+            node = data
+            for part in [x for x in where.split('/') if x]:
+                m = re.match(r'^(.+)\[(\w+)=(.*)\]$', part)
+                if m:   # an element of a list, chosen by a member's value
+                    lst = node.get(m.group(1)) if isinstance(node, dict) else None
+                    node = next((e for e in lst if isinstance(e, dict) and str(e.get(m.group(2))) == m.group(3)), None) \
+                        if isinstance(lst, list) else None
+                    if node is None:
+                        break
+                    continue
+                if not isinstance(node.get(part), dict):
+                    node[part] = {}
+                node = node[part]
+            if node is None or (kind == 'json-if-unset' and node.get(key) not in (None, 0)):
+                continue
+            node[key] = json.loads(val)
+        if json.dumps(data, sort_keys=True) != before or not text.strip():
+            new = json.dumps(data, indent=2) + '\n'
+    elif kind == 'xml':
+        for where, key, val in ents:
+            m = re.search(r'<(\w+)[^>]*\bname="%s"[^>]*>.*?</\1>' % re.escape(where), new, re.S)
+            if m:
+                block = re.sub(r'(\bid=")%s(")' % re.escape(key), r'\g<1>%s\2' % val, m.group(0))
+                new = new[:m.start()] + block + new[m.end():]
+    else:
+        die('cfg: unknown kind %r' % kind)
+    os.makedirs(os.path.dirname(dst) or '.', exist_ok=True)
+    if new == text and old:
+        if os.path.abspath(src) != os.path.abspath(dst):
+            shutil.copyfile(src, dst)
+        out('same')
+        return
+    with open(dst, 'wb') as fh:
+        fh.write(new.encode('utf-8', errors='surrogateescape'))
+    out('changed')
+
+
 def cmd_keep_state(files, game, recorded, *patterns):
     """Files a mod writes to while the game runs (patterns, matched without case against paths
     relative to the game folder). recorded: a file of "path<TAB>SHA-256" lines, the copy of each
@@ -2010,7 +2204,7 @@ def cmd_keep_state(files, game, recorded, *patterns):
 
 
 CMDS = {
-    'redmods': cmd_redmods, 'roots': cmd_roots, 'split-roots': cmd_split_roots, 'modroot': cmd_modroot, 'nexus-find': cmd_nexus_find, 'keep-state': cmd_keep_state,
+    'cfg': cmd_cfg, 'redmods': cmd_redmods, 'roots': cmd_roots, 'split-roots': cmd_split_roots, 'modroot': cmd_modroot, 'nexus-find': cmd_nexus_find, 'keep-state': cmd_keep_state,
     'nexus-validate': cmd_nexus_validate, 'nexus-sync': cmd_nexus_sync, 'nexus-pick': cmd_nexus_pick,
     'nexus-link': cmd_nexus_link, 'nexus-verify': cmd_nexus_verify,
     'pever': cmd_pever, 'gamever': cmd_gamever, 'r4ok': cmd_r4ok, 'pestr': cmd_pestr, 'vge': cmd_vge, 'builtin': cmd_builtin, 'pecrt': cmd_pecrt,
@@ -2099,6 +2293,7 @@ while [ $# -gt 0 ]; do
         --save-nexus-key) SAVE_NEXUS_KEY=1; shift ;;
         --no-nexus-api)   NEXUS_API_USE=0; shift ;;
         --no-github-downloads) NO_GITHUB=1; shift ;;
+        --keep-other-mods) KEEP_OTHERS=1; shift ;;
         --force)          FORCE=1; shift ;;
         --dry-run)        DRY_RUN=1; shift ;;
         -y|--yes)         ASSUME_YES=1; shift ;;
@@ -2279,7 +2474,8 @@ runtime_kind() {   # prints: microsoft | builtin | missing
     if py builtin "$f"; then echo builtin; else echo microsoft; fi
 }
 dll_overrides() {   # DLLs that must load native-first: RED4ext's loader, plus Cyber Engine Tweaks' if present or about to be
-    if findci "$GAME_DIR" bin/x64/version.dll >/dev/null 2>&1 \
+    # (an install clears a loader it does not install itself, unless --keep-other-mods)
+    if { { [ "$MODE" != install ] || [ "$KEEP_OTHERS" = 1 ]; } && findci "$GAME_DIR" bin/x64/version.dll >/dev/null 2>&1; } \
             || { [ -n "${TMP:-}" ] && findci "$TMP/stage" bin/x64/version.dll >/dev/null 2>&1; }; then echo winmm,version
     else echo winmm; fi
 }
@@ -2371,8 +2567,10 @@ redmod_notes() {   # install: what happens to -modded (REDmod) in the launch opt
     elif [ "$RM_USED" = 1 ]; then
         warn "the launch options had -modded, which REDmod mods need; it is taken out with the rest of the line."
         warn "Run this again with --redmod to keep it (the choice is remembered)"
-    elif [ "$RM_MODS" -gt 0 ]; then
+    elif [ "$RM_MODS" -gt 0 ] && [ "$KEEP_OTHERS" = 1 ]; then
         info "REDmod: $RM_MODS mod(s) in the game's mods folder load only with -modded; --redmod adds it"
+    elif [ "$RM_MODS" -gt 0 ]; then
+        info "REDmod: $RM_MODS mod(s) in the game's mods folder go with the other mods; --redmod keeps them and adds -modded"
     fi
 }
 redmod_rows() {   # check: -modded (REDmod)
@@ -2708,7 +2906,7 @@ do_uninstall() {
 
 # ---------------------------------------------------------------- install ----
 NC_STATUS="" NC_VER="" NC_URL="" NC_SHA="" NC_GAMES="" NC_PROTO="" NC_R4="" NC_MATCHED="" NC_YANKED="" NC_PRESENT=""
-PLAN_ADDED=0 PLAN_REPLACED=0 PLAN_REMOVED=0 PLAN_SAME=0 PLAN_STALE=() FILES_CHANGE=0 PREFIX_CHANGE=0 STEAM_CHANGE=0 SAVE_AUTO=""
+PLAN_ADDED=0 PLAN_REPLACED=0 PLAN_REMOVED=0 PLAN_SAME=0 PLAN_STALE=() PLAN_OTHER=() FILES_CHANGE=0 PREFIX_CHANGE=0 STEAM_CHANGE=0 SAVE_AUTO=""
 SETS_ON="" SETS_DROPPED="" ADDON_ROOTS=() ADDON_VERS=() ADDON_STATE_NEW=() ADDON_PLAN=() ADDON_KEEP=() ADDON_DROP=() ADDON_GONE=() ADDON_NOPL=() ADDON_MISSING=() ADDON_FAILED=() ADDON_HAVE=" " ADDON_USED=" " PROTECT=()
 NC_ROOT="" NC_DLL_REL="" NC_PLUGIN_DIR="" R4_CHOICE="" R4_FINAL="" RT_WANT="" RT_TARGET="" RV="" RK="" NEED_RT=0
 VCREDIST_VER="" REG_STATE="" LO_STATE="" LO_VALUE="" LO_WINMM="" RESTART_STEAM=0 DLLS="winmm"
@@ -2963,12 +3161,23 @@ nexus_file() {   # nexus_file <component>: which file to download, of a mod with
         Browser_Extension) echo "the main file, BrowserExtensionFramework" ;;
         Immersive_First_Person) echo "the main file, not ITP Compatibility" ;;
         Katana_Pack_2) echo "Katana Pack 2, the main file with every blade" ;;
+        The_Empathy_Club_Unlocked) echo "the main file for 2.5, The_Empathy_Club_Unlocked_1.2_2.5, not Remastered or No Bouncers" ;;
+        Dicky_Twister_Club_Unlocked) echo "the main file Dicky Twister Club Unlocked 1.1, for 2.5" ;;
+        Heavy_Hearts_Club_Unlocked) echo "the main file for 2.5, Heavy Hearts Club Unlocked _1.3_2.5" ;;
+        Afterlife_Unlocked_and_Remastered) echo "the main file Afterlife Unlocked and Remastered 1.3, for 2.5, not the Doors file" ;;
+        Night_City_Traffic_Overhaul) echo "the v2.51 main file, not v3.04, which needs frameworks the set does not have" ;;
+        Bike_Overhaul) echo "the main file, Handling Only, not the ArchV4 compatibility patch" ;;
+        Polestar_1_Hero) echo "the main file, not the spoiler delete patch" ;;
+        Loot_Icons_Extension) echo "the Light file, Loot Icons Extension Light, which has no DLL" ;;
+        Fluff_Vendor_Fixes) echo "the main file, not Street Vendors - Only Drinks" ;;
+        Beautiful_Exotics_Eyes) echo "the main file, Beautiful Exotics Eyes CCXL by protossvoid, not the NO EYE HIGHLIGHTS version" ;;
     esac
 }
 nexus_avoided() {   # nexus_avoided <component>: what a file of it that is never installed is
     case "$1" in
         A.G.I.S.) echo "another edition of A.G.I.S. than its main file, PUBLICNET" ;;
         No_Intro_Videos) echo "the redscript file of No Intro Videos, which hooks the game's start-up, where NightCoop skips the intro itself (take the archive file)" ;;
+        Bike_Overhaul) echo "the ArchV4 compatibility patch of Bike Overhaul, which overwrites Bikes of the Dark Future's files (take the Handling Only file)" ;;
         *) h="$(nexus_file "$1")"; echo "another file of $(name_of "$1") than the one this script takes${h:+ ($h)}" ;;
     esac
 }
@@ -3159,7 +3368,8 @@ step_addons() {   # the add-on sets (--with-flight, --with-mods), matched to the
     if [[ " ${SET_WANT[*]} " == *" -flight "* ]] && [[ " $SETS_ON " == *" mods "* ]]; then
         info "Let There Be Flight stays: the mod set includes it (--without-mods takes it out with the rest)"
     fi
-    [ -n "$SETS_ON$SETS_RECORDED" ] || return 0
+    # with no set on, the frameworks an earlier install left are still kept as it left them
+    [ -n "$SETS_ON$SETS_RECORDED" ] || [ "${#ROOTS_REC[@]}" -gt 0 ] || return 0
     bold "Add-ons${SETS_ON:+: ${SETS_ON// /, }}"
     lines="$(addon_lines)"
     while read -r comp; do if [ -n "$comp" ]; then ADDON_GONE+=("$(name_of "$comp")"); fi; done < <(gone_parts)
@@ -3175,7 +3385,10 @@ step_addons() {   # the add-on sets (--with-flight, --with-mods), matched to the
     while read -r comp patch sets kind rule probe ver src sha; do
         if ! in_sets_on "$sets"; then   # its sets are off: a lib stays as it is (no longer managed), a mod goes
             if [ -n "$(recorded_roots "$comp")" ]; then
-                if [ "$kind" = lib ]; then while IFS= read -r r; do PROTECT+=("$r"); done < <(recorded_roots "$comp")
+                # a framework stays as the last install put it, still recorded as this script's, so that
+                # clearing other mods leaves it (redscript replaces the game's script compiler: only
+                # uninstall puts that back)
+                if [ "$kind" = lib ]; then keep_recorded "$comp"
                 else ADDON_DROP+=("$(name_of "$comp")"); fi
             fi
             continue
@@ -3249,6 +3462,9 @@ step_addons() {   # the add-on sets (--with-flight, --with-mods), matched to the
         for t in "$root"/*; do   # the game folders only: no read-me files, installer scripts or fomod data
             case "$(basename "$t" | tr '[:upper:]' '[:lower:]')" in archive|bin|engine|mods|r6|red4ext) cp -a "$t" "$files/" ;; esac
         done
+        while read -r e r; do   # files left out for the mod's default configuration in co-op
+            if [ "$e" = "$comp" ]; then py rmci "$files" "$r" >/dev/null 2>&1 || true; fi
+        done <<<"$ADDON_SKIP"
         state_files "$comp" "$files"
         while IFS= read -r r; do ADDON_ROOTS+=("$comp"$'\t'"$r"); done < <(py roots "$files")
         inst="" ours=""
@@ -3274,8 +3490,9 @@ step_addons() {   # the add-on sets (--with-flight, --with-mods), matched to the
     if [ "${#ADDON_GONE[@]}" -gt 0 ]; then ok "$(listing "${ADDON_GONE[@]}") will be removed: no longer part of the set"; fi
     if [ "${#ADDON_NOPL[@]}" -gt 0 ]; then info "Phantom Liberty is not installed: $(listing "${ADDON_NOPL[@]}"), which need it, are left out"; fi
     if [[ "$ADDON_HAVE" == *" Quick_Stash "* ]]; then
-        info "Quick Stash in co-op: a session plays in the host's world, so a guest's stash there is not their own;"
-        info "transfer items in your own game, or as the host."
+        info "Quick Stash in co-op: NightCoop keeps a guest's stash their own (it starts empty in the host's world, and"
+        info "what you put in comes home with you), but a car there belongs to the host's world: move items into a car"
+        info "only in your own game."
     fi
     if [[ "$ADDON_HAVE" == *" Virtual_Car_Dealer "* ]] || [[ "$ADDON_HAVE" == *" Drive_an_Aerial_Vehicle "* ]]; then
         info "Cars and AVs in co-op: partners see a car of a mod (one Virtual Car Dealer sells, an AV of Drive an"
@@ -3319,6 +3536,40 @@ step_addons() {   # the add-on sets (--with-flight, --with-mods), matched to the
     if [[ "$ADDON_HAVE" == *" Vehicle_Customizer "* ]]; then
         info "Vehicle Customizer works only with the game's language set to English."
     fi
+    local world=0 eyes=0
+    for o in $ADDON_HAVE; do
+        if [[ " $WORLD " == *" $o "* ]]; then world=1; fi
+        if [[ " $EYES " == *" $o "* ]]; then eyes=1; fi
+    done
+    if [ "$world" = 1 ]; then
+        info "Places of mods in co-op (the clubs and the Afterlife opened, Brendan's quest): every partner needs the same"
+        info "files; a partner without them sees locked doors and walls where you walk. Quests and their progress are the host's."
+    fi
+    if [ "$eyes" = 1 ]; then
+        info "Eye colours of mods in co-op: choose them in the character creator, at a mirror or at a ripperdoc. A partner"
+        info "without the same eye mod sees your V with one of the game's eye colours."
+    fi
+    if [[ "$ADDON_HAVE" == *" Night_City_Traffic_Overhaul "* ]]; then
+        info "Night City Traffic Overhaul in co-op: the host's traffic is everyone's. Keep the same version for every partner,"
+        info "and its Traffic Vehicles Security Level at Vanilla, the default."
+    fi
+    if [[ "$ADDON_HAVE" == *" Fluff_Vendor_Fixes "* ]]; then
+        info "Fluff Vendor Fixes changes the street vendors' records: every partner needs it too."
+    fi
+    if [[ "$ADDON_HAVE" == *" FPP_Speedometer "* ]]; then
+        info "FPP Speedometer shows the speedometer in first person; its toggle key is left out, as Let There Be Flight"
+        info "uses the same key (O)."
+    fi
+    local console=()
+    for o in MaxTac_Suit Prestige_Glasses; do if [[ "$ADDON_HAVE" == *" $o "* ]]; then console+=("$(name_of "$o")"); fi; done
+    if [ "${#console[@]}" -gt 0 ]; then
+        info "No store of the set sells $(listing "${console[@]}" | sed 's/, \([^,]*\)$/ or \1/'): add them in Cyber Engine Tweaks' console"
+        info "(Game.AddToInventory), with the codes listed on their Nexus Mods pages."
+    fi
+    if [[ "$ADDON_HAVE" == *" MaxTac_Suit "* ]] && [[ "$ADDON_HAVE" != *" Equipment_EX "* ]]; then
+        info "The MaxTac Suit's pieces are worn together with Equipment-EX (--with-equipment-ex); without it, each piece"
+        info "takes its game slot on its own."
+    fi
     if [ "${#ADDON_FAILED[@]}" -gt 0 ]; then   # GitHub answers 504 for some releases at times, a browser does not
         if [ "$NO_GITHUB" = 1 ]; then warn "not found in $(listing "${NEXUS_DIRS[@]}") (--no-github-downloads): download each in a browser there,"
         else warn "could not be downloaded (see above): download each in a browser into $(listing "${NEXUS_DIRS[@]}"),"; fi
@@ -3347,6 +3598,30 @@ step_addons() {   # the add-on sets (--with-flight, --with-mods), matched to the
     return 0
 }
 
+step_configs() {   # the settings of ADDON_CONFIG, for the mods this install has, written into the stage
+    local comp kind path where key val f rel src st n=0 names=() order=() files
+    declare -A ents=()
+    while read -r comp kind path where key val; do
+        [ -n "$comp" ] && [[ "$ADDON_HAVE" == *" $comp "* ]] || continue
+        f="$kind ${path//%20/ }"
+        if [ -z "${ents[$f]+x}" ]; then order+=("$f"); ents[$f]=""; fi
+        ents[$f]+="$where"$'\x1f'"$key"$'\x1f'"$val"$'\n'
+        [[ " ${names[*]} " == *" $(name_of "$comp") "* ]] || names+=("$(name_of "$comp")")
+    done <<<"$ADDON_CONFIG"
+    [ "${#order[@]}" -gt 0 ] || return 0
+    for f in "${order[@]}"; do
+        kind="${f%% *}" path="${f#* }"
+        rel="$(findci "$GAME_DIR" "$path" 2>/dev/null || true)"; rel="${rel:+${rel#"$GAME_DIR"/}}"; rel="${rel:-$path}"
+        src="$(findci "$TMP/stage" "$rel" 2>/dev/null || true)"   # the mod's copy, or the player's kept one
+        [ -n "$src" ] || src="$(findci "$GAME_DIR" "$rel" 2>/dev/null || true)"
+        if [ "$kind" = xml ] && [ -z "$src" ]; then continue; fi   # a binding in a file the mod does not ship
+        mapfile -t files < <(printf '%s' "${ents[$f]}")
+        st="$(py cfg "$kind" "$TMP/stage/$rel" "${src:--}" "${files[@]}")" || fail "could not write the settings in $rel"
+        if [ "$st" = changed ]; then n=$((n + 1)); fi
+    done
+    ok "settings for co-op: $(listing "${names[@]}") (written on every run; your other settings stay)"
+    return 0
+}
 release_of() {   # release_of <component> <file>: the release this script recorded for it, else what the file says
     local sha e c v h
     sha="$(sha256sum "$2" 2>/dev/null | cut -d' ' -f1)"
@@ -3518,13 +3793,40 @@ step_proton_tool() {
     steam_settings_note
 }
 
+# The places of other mods, cleared on install unless --keep-other-mods: folders ("x/"), and
+# files in a folder ("x/pattern"; bin/x64 holds the game's own DLLs too, so only loaders and plugins)
+OTHER_MODS=(archive/pc/mod/ mods/ r6/scripts/ r6/tweaks/ r6/audioware/ r6/input/ r6/config/redsUserHints/
+            r6/config/cybercmd/ r6/cache/modded/ red4ext/ bin/x64/plugins/ 'bin/x64/*.asi' bin/x64/version.dll
+            bin/x64/global.ini bin/x64/dinput8.dll bin/x64/powrprof.dll bin/x64/d3d11.dll bin/x64/dxgi.dll)
+CLEAN=()
+clean_args() {   # CLEAN: the planner's clean: and keep: entries (see tree_stale), unless --keep-other-mods
+    local e
+    CLEAN=()
+    [ "$KEEP_OTHERS" = 1 ] && return 0
+    for e in "${OTHER_MODS[@]}"; do   # with --redmod, the REDmod mods you install yourself stay
+        if [ "${RM_OPT:-$(setting redmod)}" = on ] && { [ "$e" = mods/ ] || [ "$e" = r6/cache/modded/ ]; }; then continue; fi
+        CLEAN+=("clean:$e")
+    done
+    for e in "${ADDON_ROOTS[@]}"; do CLEAN+=("keep:${e#*$'\t'}"); done   # this install's mods keep what they write while playing
+    CLEAN+=("keep:red4ext/logs/" "keep:red4ext/config.ini" "keep:$NC_PLUGIN_DIR/servers.txt" "keep:$NC_PLUGIN_DIR/hub.txt" "keep:$NC_PLUGIN_DIR/logs/")
+    if [[ "$ADDON_HAVE" == *" Cyber_Engine_Tweaks "* ]]; then   # its settings, key bindings and logs
+        CLEAN+=("keep:bin/x64/plugins/cyber_engine_tweaks/*" "keep:bin/x64/plugins/cyber_engine_tweaks/logs/")
+    fi
+}
+other_summary() {   # the folders the other mods' files are in, with how many each
+    printf '%s\n' "${PLAN_OTHER[@]}" | awk -F/ '{ k = ($1 == "bin" || $1 == "r6" || $1 == "archive") ? $1 "/" $2 (NF > 3 ? "/" $3 : "") : $1; n[k]++ }
+        END { for (k in n) printf "%s%s (%d)", (i++ ? ", " : ""), k, n[k] }'
+}
 plan_files() {   # PLAN_*: what copying the staged files would change in the game folder
-    local plan line
-    plan="$(py tree-plan "$TMP/stage" "$GAME_DIR" "${PREV_BACKUP:+$PREV_BACKUP/manifest.tsv}" "$NC_PLUGIN_DIR" "$FORCE" "${PROTECT[@]}")" \
+    local plan line kind
+    clean_args
+    plan="$(py tree-plan "$TMP/stage" "$GAME_DIR" "${PREV_BACKUP:+$PREV_BACKUP/manifest.tsv}" "$NC_PLUGIN_DIR" "$FORCE" "${PROTECT[@]}" "${CLEAN[@]}")" \
         || fail "the game folder cannot take the new files (see above)"
     IFS=$'\x1f' read -r PLAN_ADDED PLAN_REPLACED PLAN_REMOVED PLAN_SAME <<<"${plan%%$'\n'*}"
-    PLAN_STALE=()
-    while IFS=$'\x1f' read -r _ line; do [ -z "$line" ] || PLAN_STALE+=("$line"); done < <(tail -n +2 <<<"$plan")
+    PLAN_STALE=() PLAN_OTHER=()
+    while IFS=$'\x1f' read -r kind line; do
+        if [ -z "$line" ]; then continue; elif [ "$kind" = other ]; then PLAN_OTHER+=("$line"); else PLAN_STALE+=("$line"); fi
+    done < <(tail -n +2 <<<"$plan")
     FILES_CHANGE=0; [ $((PLAN_ADDED + PLAN_REPLACED + PLAN_REMOVED)) = 0 ] || FILES_CHANGE=1
     # dropping a set always writes a manifest without its mods: otherwise the next run would
     # read the frameworks left in place as leftovers of the previous install and remove them
@@ -3554,7 +3856,11 @@ print_plan() {
         fi
         [ "$PLAN_SAME" = 0 ] || same=", $PLAN_SAME already up to date"
         info "install         NightCoop ${NC_VER:-?}${ADDON_PLAN:+ and the add-ons}: $PLAN_ADDED new, $PLAN_REPLACED replaced file(s) in the game folder$same"
-        [ "$PLAN_REMOVED" = 0 ] || info "remove          $PLAN_REMOVED file(s) of the previous build: ${PLAN_STALE[*]}"
+        [ "${#PLAN_STALE[@]}" = 0 ] || info "remove          ${#PLAN_STALE[@]} file(s) of the previous build: ${PLAN_STALE[*]}"
+        if [ "${#PLAN_OTHER[@]}" -gt 0 ]; then
+            info "remove          ${#PLAN_OTHER[@]} file(s) of mods this script did not install, into the backup (restore brings"
+            info "                them back; --keep-other-mods leaves them): $(other_summary)"
+        fi
         info "RED4ext         $R4_FINAL ($R4_CHOICE)"
         if [ "${#ADDON_PLAN[@]}" -gt 0 ]; then info "add-ons         $(listing "${ADDON_PLAN[@]}") (for game ${GAME_VER:-?})"; fi
         if [ "${#ADDON_KEEP[@]}" -gt 0 ]; then info "keep            $(listing "${ADDON_KEEP[@]}") (installed, newer)"; fi
@@ -3710,6 +4016,7 @@ do_install() {
     step_stage
     step_red4ext
     step_addons
+    step_configs
     step_runtime
     step_override
     step_proton_tool
@@ -3757,7 +4064,7 @@ do_install() {
         if [ "$FILES_CHANGE" = 1 ]; then bold "Installing NightCoop and RED4ext"; else bold "Game folder (no file changes)"; fi
         local added replaced removed same
         IFS=$'\x1f' read -r added replaced removed same < <(py tree-apply "$TMP/stage" "$GAME_DIR" "$BACKUP/game" \
-            "$BACKUP/manifest.tsv" "${PREV_BACKUP:+$PREV_BACKUP/manifest.tsv}" "$NC_PLUGIN_DIR" "$FORCE" "${PROTECT[@]}") \
+            "$BACKUP/manifest.tsv" "${PREV_BACKUP:+$PREV_BACKUP/manifest.tsv}" "$NC_PLUGIN_DIR" "$FORCE" "${PROTECT[@]}" "${CLEAN[@]}") \
             || fail "copying into the game folder failed; undo with: $0 restore \"$BACKUP\""
         ok "$added added, $replaced replaced, $removed stale removed, $same unchanged; backup: $BACKUP"
         local r4; r4="$(red4ext_core_version "$GAME_DIR")"
