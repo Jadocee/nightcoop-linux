@@ -407,6 +407,12 @@ Vehicle_Customizer      bin/x64/plugins/cyber_engine_tweaks/mods/VehicleCustomiz
 Night_City_Traffic_Overhaul r6/scripts/NightCityTrafficOverhaul/NCTOmoddedVehicles.reds
 Night_City_Traffic_Overhaul r6/tweaks/NightCityTrafficOverhaul/YourCustomVehicles.yaml
 "
+# Settings the script writes for co-op on every install and update (the player's other settings
+# stay): files a mod or its framework keeps, with values every partner should share, or keys moved
+# off NightCoop's and other mods' keys. A space in a path is written %20.
+#   component        kind (ini/json/xml)  path  section, object path or element name  key  value
+ADDON_CONFIG="
+"
 # Files of a mod that are not installed, for its default configuration in co-op:
 #   component              file (relative to the game folder)
 ADDON_SKIP="
@@ -2073,6 +2079,75 @@ def sha256_of(path):
     return h.hexdigest()
 
 
+def cmd_cfg(kind, dst, src, *entries):
+    """Settings of a mod written for co-op: dst gets src (a file, or "-" for none) with each entry set,
+    "where<SEP>key<SEP>value". kind "ini": where is the [section]; a key line is changed in place, or added
+    at the section's end, a section added at the end; other lines stay as they are. kind "json": where is
+    a path of objects ("/" or "/a/b"), value a JSON literal. kind "xml": the element with name="where" has
+    the attribute value key replaced by value (an input binding: IK_O -> IK_K). When nothing changes, dst is
+    an exact copy of src, so that a rerun finds the file the same. Prints "same" or "changed"."""
+    ents = [e.split(SEP) for e in entries]
+    old = b''
+    if src != '-' and os.path.isfile(src):
+        with open(src, 'rb') as fh:
+            old = fh.read()
+    text = old.decode('utf-8-sig', errors='surrogateescape')
+    new = text
+    if kind == 'ini':
+        lines = text.splitlines(True)
+        for where, key, val in ents:
+            head = next((i for i, l in enumerate(lines) if l.strip() == '[%s]' % where), None)
+            if head is None:
+                if lines and not lines[-1].endswith('\n'):
+                    lines[-1] += '\n'
+                lines += (['\n'] if lines and lines[-1].strip() else []) + ['[%s]\n' % where, '%s = %s\n' % (key, val)]
+                continue
+            end = next((i for i in range(head + 1, len(lines)) if lines[i].strip().startswith('[')), len(lines))
+            at = next((i for i in range(head + 1, end) if re.match(r'\s*%s\s*=' % re.escape(key), lines[i])), None)
+            if at is not None:
+                if lines[at].split('=', 1)[1].strip() != val:
+                    lines[at] = '%s = %s\n' % (key, val)
+            else:
+                while end > head + 1 and not lines[end - 1].strip():
+                    end -= 1
+                if not lines[end - 1].endswith('\n'):
+                    lines[end - 1] += '\n'
+                lines.insert(end, '%s = %s\n' % (key, val))
+        new = ''.join(lines)
+    elif kind == 'json':
+        try:
+            data = json.loads(text) if text.strip() else {}
+        except ValueError:
+            data = {}
+        before = json.dumps(data, sort_keys=True)
+        for where, key, val in ents:
+            node = data
+            for part in [x for x in where.split('/') if x]:
+                if not isinstance(node.get(part), dict):
+                    node[part] = {}
+                node = node[part]
+            node[key] = json.loads(val)
+        if json.dumps(data, sort_keys=True) != before or not text.strip():
+            new = json.dumps(data, indent=2) + '\n'
+    elif kind == 'xml':
+        for where, key, val in ents:
+            m = re.search(r'<(\w+)[^>]*\bname="%s"[^>]*>.*?</\1>' % re.escape(where), new, re.S)
+            if m:
+                block = re.sub(r'(\bid=")%s(")' % re.escape(key), r'\g<1>%s\2' % val, m.group(0))
+                new = new[:m.start()] + block + new[m.end():]
+    else:
+        die('cfg: unknown kind %r' % kind)
+    os.makedirs(os.path.dirname(dst) or '.', exist_ok=True)
+    if new == text and old:
+        if os.path.abspath(src) != os.path.abspath(dst):
+            shutil.copyfile(src, dst)
+        out('same')
+        return
+    with open(dst, 'wb') as fh:
+        fh.write(new.encode('utf-8', errors='surrogateescape'))
+    out('changed')
+
+
 def cmd_keep_state(files, game, recorded, *patterns):
     """Files a mod writes to while the game runs (patterns, matched without case against paths
     relative to the game folder). recorded: a file of "path<TAB>SHA-256" lines, the copy of each
@@ -2101,7 +2176,7 @@ def cmd_keep_state(files, game, recorded, *patterns):
 
 
 CMDS = {
-    'redmods': cmd_redmods, 'roots': cmd_roots, 'split-roots': cmd_split_roots, 'modroot': cmd_modroot, 'nexus-find': cmd_nexus_find, 'keep-state': cmd_keep_state,
+    'cfg': cmd_cfg, 'redmods': cmd_redmods, 'roots': cmd_roots, 'split-roots': cmd_split_roots, 'modroot': cmd_modroot, 'nexus-find': cmd_nexus_find, 'keep-state': cmd_keep_state,
     'nexus-validate': cmd_nexus_validate, 'nexus-sync': cmd_nexus_sync, 'nexus-pick': cmd_nexus_pick,
     'nexus-link': cmd_nexus_link, 'nexus-verify': cmd_nexus_verify,
     'pever': cmd_pever, 'gamever': cmd_gamever, 'r4ok': cmd_r4ok, 'pestr': cmd_pestr, 'vge': cmd_vge, 'builtin': cmd_builtin, 'pecrt': cmd_pecrt,
@@ -3494,6 +3569,30 @@ step_addons() {   # the add-on sets (--with-flight, --with-mods), matched to the
     return 0
 }
 
+step_configs() {   # the settings of ADDON_CONFIG, for the mods this install has, written into the stage
+    local comp kind path where key val f rel src st n=0 names=() order=() files
+    declare -A ents=()
+    while read -r comp kind path where key val; do
+        [ -n "$comp" ] && [[ "$ADDON_HAVE" == *" $comp "* ]] || continue
+        f="$kind ${path//%20/ }"
+        if [ -z "${ents[$f]+x}" ]; then order+=("$f"); ents[$f]=""; fi
+        ents[$f]+="$where"$'\x1f'"$key"$'\x1f'"$val"$'\n'
+        [[ " ${names[*]} " == *" $(name_of "$comp") "* ]] || names+=("$(name_of "$comp")")
+    done <<<"$ADDON_CONFIG"
+    [ "${#order[@]}" -gt 0 ] || return 0
+    for f in "${order[@]}"; do
+        kind="${f%% *}" path="${f#* }"
+        rel="$(findci "$GAME_DIR" "$path" 2>/dev/null || true)"; rel="${rel:+${rel#"$GAME_DIR"/}}"; rel="${rel:-$path}"
+        src="$(findci "$TMP/stage" "$rel" 2>/dev/null || true)"   # the mod's copy, or the player's kept one
+        [ -n "$src" ] || src="$(findci "$GAME_DIR" "$rel" 2>/dev/null || true)"
+        if [ "$kind" = xml ] && [ -z "$src" ]; then continue; fi   # a binding in a file the mod does not ship
+        mapfile -t files < <(printf '%s' "${ents[$f]}")
+        st="$(py cfg "$kind" "$TMP/stage/$rel" "${src:--}" "${files[@]}")" || fail "could not write the settings in $rel"
+        if [ "$st" = changed ]; then n=$((n + 1)); fi
+    done
+    ok "settings for co-op: $(listing "${names[@]}") (written on every run; your other settings stay)"
+    return 0
+}
 release_of() {   # release_of <component> <file>: the release this script recorded for it, else what the file says
     local sha e c v h
     sha="$(sha256sum "$2" 2>/dev/null | cut -d' ' -f1)"
@@ -3888,6 +3987,7 @@ do_install() {
     step_stage
     step_red4ext
     step_addons
+    step_configs
     step_runtime
     step_override
     step_proton_tool
