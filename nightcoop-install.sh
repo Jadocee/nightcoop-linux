@@ -41,7 +41,10 @@
 #                         not on SteamOS, which has its own); --no-mangohud takes it out again
 #   --redmod              start the game with -modded, which loads REDmod mods (mods/, after a
 #                         REDmod deploy); remembered, --no-redmod takes it out again
-#   --close-steam         close Steam to write its settings, then reopen it
+#   --close-steam         close Steam to write its settings, then reopen it: done by default when
+#                         its settings must change, except in Game Mode, where closing Steam would
+#                         end the session; this insists, and stops in Game Mode
+#   --no-close-steam      never close Steam: its settings wait for a run with Steam closed
 #   --nightcoop-zip FILE  use a downloaded NightCoop archive instead of the latest
 #   --red4ext-zip FILE    use a downloaded RED4ext release archive
 #   --vcredist FILE       use a downloaded VC_redist.x64.exe
@@ -444,7 +447,7 @@ NIGHTCOOP_ZIP=""
 RED4EXT_ZIP=""
 VCREDIST=""
 OPT_STEAM_ROOT=""
-CLOSE_STEAM=0
+CLOSE_STEAM=auto  # auto: close and reopen Steam when its settings must change and it can be (not in Game Mode); 1: --close-steam; 0: --no-close-steam
 PROTON_WANT="auto"
 GAME_ARGS="--launcher-skip"
 GP_OPT=""        # on or off: --game-performance, --no-game-performance (remembered in settings.tsv)
@@ -2272,6 +2275,7 @@ while [ $# -gt 0 ]; do
         --vcredist)       need_arg "$1" $#; VCREDIST="$(readlink -m "$2")"; shift 2 ;;
         --steam-root)     need_arg "$1" $#; OPT_STEAM_ROOT="$(readlink -m "$2")"; shift 2 ;;
         --close-steam)    CLOSE_STEAM=1; shift ;;
+        --no-close-steam) CLOSE_STEAM=0; shift ;;
         --proton)         need_arg "$1" $#; PROTON_WANT="$2"; shift 2 ;;
         --no-launcher-skip) GAME_ARGS=""; shift ;;
         --game-performance) GP_OPT=on; shift ;;
@@ -3744,10 +3748,11 @@ steam_settings_note() {   # how a Steam setting will be written, for the plan
     if [ "$CLOSE_STEAM" = 1 ]; then
         in_game_mode && fail "--close-steam would end the Game Mode session; run this from Desktop Mode"
         steam_launcher_ok || fail "--close-steam: the steam command was not found in PATH"
-        info "Steam will be closed and reopened to write it"
-    else
-        info "Steam is running, so it will not be written (close Steam or use --close-steam; the steps are shown at the end)"
     fi
+    if will_close_steam; then info "Steam will be closed and reopened to write it"
+    elif in_game_mode; then info "Steam is running in Game Mode, so it will not be written now (run this from Desktop Mode; the steps are shown at the end)"
+    elif [ "$CLOSE_STEAM" = 0 ]; then info "Steam is running, so it will not be written (--no-close-steam; the steps are shown at the end)"
+    else info "Steam is running and the steam command was not found, so it will not be written (the steps are shown at the end)"; fi
 }
 
 step_override() {
@@ -3840,7 +3845,7 @@ print_plan() {
     echo
     bold "Plan"
     local later="" same=""
-    steam_running && [ "$CLOSE_STEAM" != 1 ] && later=" (when Steam is closed)"
+    steam_running && ! will_close_steam && later=" (when Steam is closed)"
     if [ "$FILES_CHANGE" = 1 ] || [ "$PREFIX_CHANGE" = 1 ]; then
         if [ -d "$SAVES" ]; then
             if [ "$SAVE_BACKUP" = 1 ]; then info "back up saves   -> $BACKUP/Saved Games ($(du -sh "$SAVES" 2>/dev/null | cut -f1))"
@@ -3944,6 +3949,11 @@ start_steam() {
     else setsid -f steam >/dev/null 2>&1 </dev/null || warn "could not reopen Steam"; fi
 }
 steam_launcher_ok() { if [ "$STEAM_KIND" = flatpak ]; then command -v flatpak >/dev/null 2>&1; else command -v steam >/dev/null 2>&1; fi; }
+will_close_steam() {   # Steam is closed and reopened to write its settings: by default, unless in Game Mode (closing
+    # Steam would end the session) or without the steam command; --close-steam insists, --no-close-steam never
+    case "$CLOSE_STEAM" in 1) return 0 ;; 0) return 1 ;; esac
+    ! in_game_mode && steam_launcher_ok
+}
 
 apply_steam_settings() {
     local need=0 f res
@@ -3951,7 +3961,7 @@ apply_steam_settings() {
     [ "$TOOL_STATE" = pending ] && need=1
     [ "$need" = 1 ] || return 0
     if steam_running; then
-        [ "$CLOSE_STEAM" = 1 ] || return 0
+        will_close_steam || return 0
         bold "Closing Steam to write its settings"
         if close_steam; then RESTART_STEAM=1; else warn "Steam did not close within a minute; its settings were not written"; return 0; fi
     fi
@@ -4030,7 +4040,7 @@ do_install() {
             info "recorded as the installed build, for later update checks"
         fi
         if [ "$STEAM_CHANGE" = 0 ]; then save_settings; ok "everything is up to date; nothing to do"; return 0; fi
-        if steam_running && [ "$CLOSE_STEAM" != 1 ]; then save_settings; echo; print_followups; return 0; fi
+        if steam_running && ! will_close_steam; then save_settings; echo; print_followups; return 0; fi
     fi
     print_plan
     if [ "$DRY_RUN" = 1 ]; then echo; ok "dry run finished; nothing was changed"; return 0; fi

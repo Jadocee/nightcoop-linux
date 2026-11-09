@@ -206,7 +206,7 @@ WINEDLLOVERRIDES="winmm,version=n,b" MANGOHUD=1 game-performance %command% --lau
 | `--no-game-performance` | Do not start the game with `game-performance`, and take it out of the launch options. Remembered in `~/.local/share/nightcoop-linux/settings.tsv`; `--game-performance` undoes it. |
 | `--mangohud` | Show MangoHud's overlay in the game (`MANGOHUD=1` in the launch options). Not on SteamOS. `--no-mangohud` takes it out. |
 | `--redmod` | Start the game with `-modded`, which loads REDmod mods. Remembered; `--no-redmod` takes it out. |
-| `--close-steam` | Close Steam to write its settings (launch options, Proton choice), then reopen it. Desktop Mode only. |
+| `--no-close-steam` | Do not close Steam to write its settings (launch options, Proton choice); they wait for a run with Steam closed. By default the script closes Steam when those settings must change and reopens it afterwards, except in Game Mode, where closing Steam would end the session. `--close-steam` insists, and stops in Game Mode. |
 | `--force` | Reinstall every mod file, even those that already match the latest build. |
 | `--backup-saves` | Copy the saves before an update too. By default only the first install copies them. |
 | `--no-save-backup` | Skip the copy of the saves on the first install. The copy is skipped anyway when disk space is short. |
@@ -227,9 +227,10 @@ WINEDLLOVERRIDES="winmm,version=n,b" MANGOHUD=1 game-performance %command% --lau
 | `--keep-other-mods` | Leave mods the script did not install in the game folder. By default an install clears them (see [Other mods are cleared](#other-mods-are-cleared)). |
 | `--no-github-downloads` | Download nothing from GitHub: take RED4ext and the frameworks' release archives (redscript, ArchiveXL, TweakXL and the rest) from your Downloads folder, or the `--mods-from` folder, under their release names. Each is checked against the SHA-256 the script pins; the run lists the links of any it does not find. |
 
-When Steam is running, its two settings are not written, but the registry override alone
-lets the mod load. The script then prints the launch options and the Proton choice for you
-to set under Properties. Alternatively, rerun it with Steam closed or with `--close-steam`.
+When Steam is running and one of its two settings must change, the script closes Steam,
+writes them and reopens it. In Game Mode (or with `--no-close-steam`) it leaves Steam open:
+the registry override alone lets the mod load, and the script prints the launch options and
+the Proton choice for you to set under Properties, or to write on a run from Desktop Mode.
 
 ## Other mods
 

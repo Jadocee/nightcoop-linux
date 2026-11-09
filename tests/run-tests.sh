@@ -234,6 +234,24 @@ expect "rerun with Steam still open only repeats the recommendations" '[ $RC = 0
 run install --yes
 expect "rerun with Steam closed writes only Steam's settings" '[ $RC = 0 ] && [ "$(launch_opts)" = "WINEDLLOVERRIDES=\\\"winmm=n,b\\\" %command% --launcher-skip" ] && [ "$(tool)" = proton_experimental ] && [[ "$OUT" != *"Backing up"* ]]' "$OUT"
 
+section "Steam open: closed and reopened to write its settings, but not in Game Mode"
+newworld reopen native; OSR="$T/os-arch"
+mkdir -p "$T/steambin"   # a steam command that closes the stand-in Steam on -shutdown and starts it otherwise
+printf '#!/bin/sh\nif [ "$1" = -shutdown ]; then pkill -u "$(id -u)" -x steam; exit 0; fi\nexec "%s/bin/steam"\n' "$T" > "$T/steambin/steam"; chmod +x "$T/steambin/steam"
+mkdir -p "$T/bin"; [ -x "$T/bin/steam" ] || { printf '#!/bin/sh\nwhile :; do sleep 1; done\n' > "$T/bin/steam"; chmod +x "$T/bin/steam"; }
+"$T/bin/steam" & disown
+for _ in 1 2 3 4 5 6 7 8 9 10; do pgrep -u "$(id -u)" -x steam >/dev/null && break; sleep 0.2; done
+RUNENV=(XDG_CURRENT_DESKTOP=gamescope); PATH="$T/steambin:$PATH" run install --yes; RUNENV=()
+expect "in Game Mode Steam stays open, and its settings wait, said so" '[ $RC = 0 ] && pgrep -u "$(id -u)" -x steam >/dev/null && [[ "$OUT" == *"Steam is running in Game Mode, so it will not be written now"* ]] && [[ "$(launch_opts)" != *"winmm=n,b"* ]]' "$OUT"
+PATH="$T/steambin:$PATH" run update --yes --no-close-steam
+expect "--no-close-steam leaves Steam open too" '[ $RC = 0 ] && pgrep -u "$(id -u)" -x steam >/dev/null && [[ "$OUT" == *"(--no-close-steam; the steps are shown at the end)"* ]] && [[ "$(launch_opts)" != *"winmm=n,b"* ]]' "$OUT"
+PATH="$T/steambin:$PATH" run update --yes
+for _ in 1 2 3 4 5 6 7 8 9 10; do pgrep -u "$(id -u)" -x steam >/dev/null && break; sleep 0.2; done
+expect "by default Steam is closed, its settings written, and Steam reopened" '[ $RC = 0 ] && [[ "$OUT" == *"Closing Steam to write its settings"* ]] && [[ "$OUT" == *"reopening Steam"* ]] && [ "$(launch_opts)" = "WINEDLLOVERRIDES=\\\"winmm=n,b\\\" %command% --launcher-skip" ] && [ "$(tool)" = proton_experimental ] && pgrep -u "$(id -u)" -x steam >/dev/null' "$OUT"
+PATH="$T/steambin:$PATH" run update --yes
+expect "and a rerun has nothing to do, so Steam is left alone" '[ $RC = 0 ] && [[ "$OUT" == *"everything is up to date; nothing to do"* ]] && [[ "$OUT" != *"Closing Steam"* ]]' "$OUT"
+pkill -u "$(id -u)" -x steam 2>/dev/null || true
+
 # ---------------------------------------------------------- Flatpak Steam ----
 section "Flatpak Steam (sandbox paths in Steam's files)"
 newworld flat flatpak; OSR="$T/os-arch"
