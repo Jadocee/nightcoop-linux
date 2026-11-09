@@ -35,8 +35,10 @@ pkgver() {
 }
 
 check() {
+    # The helpers' tests, in seconds: this bash and Python run the script's parts as they should.
+    # The whole suite (tests/run-tests.sh, most of an hour) runs in CI on every change.
     cd "$_name"
-    tests/run-tests.sh
+    tests/run-tests.sh --quick
 }
 
 package() {

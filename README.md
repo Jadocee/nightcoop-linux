@@ -206,7 +206,7 @@ WINEDLLOVERRIDES="winmm,version=n,b" MANGOHUD=1 game-performance %command% --lau
 | `--no-game-performance` | Do not start the game with `game-performance`, and take it out of the launch options. Remembered in `~/.local/share/nightcoop-linux/settings.tsv`; `--game-performance` undoes it. |
 | `--mangohud` | Show MangoHud's overlay in the game (`MANGOHUD=1` in the launch options). Not on SteamOS. `--no-mangohud` takes it out. |
 | `--redmod` | Start the game with `-modded`, which loads REDmod mods. Remembered; `--no-redmod` takes it out. |
-| `--close-steam` | Close Steam to write its settings (launch options, Proton choice), then reopen it. Desktop Mode only. |
+| `--no-close-steam` | Do not close Steam to write its settings (launch options, Proton choice); they wait for a run with Steam closed. By default the script closes Steam when those settings must change and reopens it afterwards, except in Game Mode, where closing Steam would end the session. `--close-steam` insists, and stops in Game Mode. |
 | `--force` | Reinstall every mod file, even those that already match the latest build. |
 | `--backup-saves` | Copy the saves before an update too. By default only the first install copies them. |
 | `--no-save-backup` | Skip the copy of the saves on the first install. The copy is skipped anyway when disk space is short. |
@@ -227,9 +227,10 @@ WINEDLLOVERRIDES="winmm,version=n,b" MANGOHUD=1 game-performance %command% --lau
 | `--keep-other-mods` | Leave mods the script did not install in the game folder. By default an install clears them (see [Other mods are cleared](#other-mods-are-cleared)). |
 | `--no-github-downloads` | Download nothing from GitHub: take RED4ext and the frameworks' release archives (redscript, ArchiveXL, TweakXL and the rest) from your Downloads folder, or the `--mods-from` folder, under their release names. Each is checked against the SHA-256 the script pins; the run lists the links of any it does not find. |
 
-When Steam is running, its two settings are not written, but the registry override alone
-lets the mod load. The script then prints the launch options and the Proton choice for you
-to set under Properties. Alternatively, rerun it with Steam closed or with `--close-steam`.
+When Steam is running and one of its two settings must change, the script closes Steam,
+writes them and reopens it. In Game Mode (or with `--no-close-steam`) it leaves Steam open:
+the registry override alone lets the mod load, and the script prints the launch options and
+the Proton choice for you to set under Properties, or to write on a run from Desktop Mode.
 
 ## Other mods
 
@@ -300,7 +301,7 @@ with the patch.
 | Prestige Glasses | [27118](https://www.nexusmods.com/cyberpunk2077/mods/27118?tab=files) | 1.11 or newer | 24 pairs of glasses for both bodies, added in Cyber Engine Tweaks' console |
 | Nike Jordan 1s x Off-White, with Catherwood's - Virtual Atelier Shop | [27597](https://www.nexusmods.com/cyberpunk2077/mods/27597?tab=files), [27599](https://www.nexusmods.com/cyberpunk2077/mods/27599?tab=files) | 1.12.0, 1.0.2 or newer | Sneakers for both bodies, and the store that sells them |
 
-**Hair and eyes** (the character creator, a mirror in an apartment, or a ripperdoc)
+**Hair, makeup and eyes** (the character creator, a mirror in an apartment, or a ripperdoc)
 
 | Mod | Nexus | For game 2.5 | What it is |
 | --- | --- | --- | --- |
@@ -311,6 +312,14 @@ with the patch.
 | Original Collection (meluminary): its HAIR MEGAPAK | [19197](https://www.nexusmods.com/cyberpunk2077/mods/19197?tab=files) | 5.0.0 or newer | 20 hairstyles for Fem V |
 | Undercut Hair Collection: HAIR 01 to 04 | [19907](https://www.nexusmods.com/cyberpunk2077/mods/19907?tab=files) | 1.0, 1.0, 1.0, 1.1 or newer | Four undercuts for Masc V |
 | Beautiful Exotics Eyes Pack - CCXL Version, its main file | [25718](https://www.nexusmods.com/cyberpunk2077/mods/25718?tab=files) | 1.0 or newer | 39 eye colours (not the NO EYE HIGHLIGHTS file); a partner without it sees one of the game's |
+| Violet, Yumeko and Soft Blunt Bob (Atomiic), each its CCXL file | [35739](https://www.nexusmods.com/cyberpunk2077/mods/35739?tab=files), [36291](https://www.nexusmods.com/cyberpunk2077/mods/36291?tab=files), [35463](https://www.nexusmods.com/cyberpunk2077/mods/35463?tab=files) | 1 or newer | Three hairstyles for Fem V |
+| CCXL Updo Hair Collection: its ALL-IN-ONE file | [26834](https://www.nexusmods.com/cyberpunk2077/mods/26834?tab=files) | 1.4 or newer | Nine buns and ponytails for Fem V, with physics (a rar archive; not the single styles). Its Bel Air and Corvette ponytails have no variants for cyberware |
+| Himiko Buns Hair and Bangs | [34688](https://www.nexusmods.com/cyberpunk2077/mods/34688?tab=files) | 1 or newer | Buns for Fem V. The bangs are items, added in Cyber Engine Tweaks' console; without Equipment-EX they take the face slot, so not with glasses or a mask |
+| XYLA Shag Mullet | [36246](https://www.nexusmods.com/cyberpunk2077/mods/36246?tab=files) | 1 or newer | A mullet for Fem V |
+| House of Vesna: Geralt of Rivia CCXL Hair | [36769](https://www.nexusmods.com/cyberpunk2077/mods/36769?tab=files) | 1 or newer | Geralt's hair for Masc V |
+| Makeup Enhancer, its 256x256 file | [28869](https://www.nexusmods.com/cyberpunk2077/mods/28869?tab=files) | 1 or newer | Sharper eye makeup for both V and NPCs; it replaces a texture of the game, so only your screen shows it |
+| Beautiful Makeup and Beautiful Makeup II, each its file for the basegame head | [29336](https://www.nexusmods.com/cyberpunk2077/mods/29336?tab=files), [29513](https://www.nexusmods.com/cyberpunk2077/mods/29513?tab=files) | 1 or newer | 60 eye makeups (casual and gothic) for both V; a partner without them sees none. Beautiful Makeup's two main files share a name: the script takes the one of 2 May 2026 |
+| Mecha Robotic Eyes and its Part 2 (protossvoid) | [35373](https://www.nexusmods.com/cyberpunk2077/mods/35373?tab=files), [35807](https://www.nexusmods.com/cyberpunk2077/mods/35807?tab=files) | 1 or newer | 58 robotic eyes for both V; a partner without them sees one of the game's |
 
 **Vehicles** (Virtual Car Dealer, on in-game computers)
 
@@ -331,8 +340,11 @@ with the patch.
 | Edgerunner Emperor (Oranje3) | [28185](https://www.nexusmods.com/cyberpunk2077/mods/28185?tab=files) | 1.0.2 or newer | A four-seat armoured car; Virtual Car Dealer sells it |
 | Toyota Supra Mk3 | [27955](https://www.nexusmods.com/cyberpunk2077/mods/27955?tab=files) | 1.1 or newer | A two-seat Supra with pop-up headlights; Virtual Car Dealer sells it (a 137 MB download) |
 | Polestar 1 Hero Edition, its main file | [26891](https://www.nexusmods.com/cyberpunk2077/mods/26891?tab=files) | 1.1 or newer | A two-seat Polestar 1; Virtual Car Dealer sells it (not the spoiler delete patch) |
+| 1993 Nissan 240SX (S13), its main file | [8730](https://www.nexusmods.com/cyberpunk2077/mods/8730?tab=files) | 1.32 or newer | A 240SX; Virtual Car Dealer sells it (a rar archive from 2023: try it once on 2.5). Its optional body kits, colours and wheels are left out, as partners' cars would differ |
 | Bike Overhaul - TweakXL, its Handling Only file | [27989](https://www.nexusmods.com/cyberpunk2077/mods/27989?tab=files) | 1.0 or newer | Reworked bike handling and lean (not the ArchV4 compatibility patch, which overwrites Bikes of the Dark Future's files) |
 | Night City Traffic Overhaul v2.51 | [25552](https://www.nexusmods.com/cyberpunk2077/mods/25552?tab=files) | 2.51 or newer of v2 | Traffic and crowds by district (v3 needs frameworks the set does not have) |
+| Fixed NPC Vehicle Reactions | [19530](https://www.nexusmods.com/cyberpunk2077/mods/19530?tab=files) | 1.0.0 or newer | Pedestrians dodge cars instead of jumping in front of them; every partner needs it |
+| Parking Spots Enhanced, its main file | [15708](https://www.nexusmods.com/cyberpunk2077/mods/15708?tab=files) | 1.2.5 or newer | V's car waits in a parking spot near each home after a stay (not the alt file, a build for 2.21); in a session it is the host's quest |
 
 **Gameplay**
 
@@ -347,6 +359,15 @@ with the patch.
 | Immersive First Person, its main file | [2675](https://www.nexusmods.com/cyberpunk2077/mods/2675?tab=files) | 2.2.0 or newer | A first-person camera that shows more of V's body, FreeLook (look around without turning V), and a height slider in Cyber Engine Tweaks' overlay |
 | Katana Pack 2, its file with every blade | [36164](https://www.nexusmods.com/cyberpunk2077/mods/36164?tab=files) | 1.1 or newer | Seventeen katanas and swords, some with charged attacks (a RAR archive) |
 | Curbside | [35922](https://www.nexusmods.com/cyberpunk2077/mods/35922?tab=files) | 1.0.1 or newer | A summoned car or bike comes to your level, stops beside you, and follows you if you walk off |
+| Apex Grapple | [36443](https://www.nexusmods.com/cyberpunk2077/mods/36443?tab=files) | 1.0.7 or newer | A grappling hook on the quick-melee key (not its file for 2.31); partners see you fly, but not the hook. Pulling people to V stays off |
+| Stealth Fixes | [35951](https://www.nexusmods.com/cyberpunk2077/mods/35951?tab=files) | 1.0.1 or newer | V stays crouched after a stealth melee attack, finisher kills fall with physics, and a car you drive remotely no longer turns a bystander it hits hostile |
+| Dual Wielding Fix | [36738](https://www.nexusmods.com/cyberpunk2077/mods/36738?tab=files) | 1.0.1 or newer | 12 fixes to patch 2.5's dual-wield perks |
+| Silent Silencers and Throwing Knives | [4070](https://www.nexusmods.com/cyberpunk2077/mods/4070?tab=files) | 1.6.3 or newer | A silenced shot or thrown knife that does not kill keeps you hidden; its settings are the same for everyone, its cover debuff off |
+| Stealth Finishers (ZKV_Takedowns) | [9360](https://www.nexusmods.com/cyberpunk2077/mods/9360?tab=files) | 2.1.0 or newer | Melee finishers as stealth takedowns, without a grapple first (a beta made for 2.31: try a partner's takedown once) |
+| No crowd panic from using devices, its redscript file | [7353](https://www.nexusmods.com/cyberpunk2077/mods/7353?tab=files) | 1.2.0 or newer | Computers, doors and access points no longer make crowds panic (not the CET file) |
+| Crowd Voice Unlocked | [36527](https://www.nexusmods.com/cyberpunk2077/mods/36527?tab=files) | 1.1.0 or newer | 1,964 new crowd lines with subtitles and lip sync, and voices matched to every civilian (it needs Immersive Audio Distance); each game voices the people near its own V |
+| Sit Anywhere | [7299](https://www.nexusmods.com/cyberpunk2077/mods/7299?tab=files) | 1.4 or newer | Sit almost anywhere; the HUD stays on while you sit. A partner without it sees you stand on the spot |
+| Immersive Rippers and Immersive Bartenders (Deceptious) | [7064](https://www.nexusmods.com/cyberpunk2077/mods/7064?tab=files), [7203](https://www.nexusmods.com/cyberpunk2077/mods/7203?tab=files) | 2.6.2, 2.0.3 or newer | V sits in the ripperdoc's chair and has animated drinks at bars; Fingers can be paid to serve you again. Every partner needs them (Bartenders dates from 2025: try it once on 2.5) |
 | The Empathy Club Unlocked, its file for 2.5 | [27380](https://www.nexusmods.com/cyberpunk2077/mods/27380?tab=files) | 1.2 or newer | Opens the club's closed sections (not Remastered or No Bouncers); needs Phantom Liberty |
 | Dicky Twister Club Unlocked | [27101](https://www.nexusmods.com/cyberpunk2077/mods/27101?tab=files) | 1.1 or newer | Opens the backstage and VIP floor; needs Phantom Liberty |
 | Heavy Hearts Club Unlocked, its file for 2.5 | [27108](https://www.nexusmods.com/cyberpunk2077/mods/27108?tab=files) | 1.3 or newer | Opens the VIP areas in Dogtown; needs Phantom Liberty |
@@ -358,6 +379,11 @@ with the patch.
 | Fluff Vendor Fixes | [27795](https://www.nexusmods.com/cyberpunk2077/mods/27795?tab=files) | 1.1.2 or newer | Street vendors keep their stock and get a name (not Street Vendors - Only Drinks) |
 | FPP Speedometer | [26156](https://www.nexusmods.com/cyberpunk2077/mods/26156?tab=files) | 1.3.0 or newer | The speedometer in first person; its toggle key is left out, as Let There Be Flight uses O |
 | Unified Mod Settings | [28308](https://www.nexusmods.com/cyberpunk2077/mods/28308?tab=files) | 2.8 or newer | One searchable menu for the settings of Native Settings UI and Mod Settings |
+| Modded Save Loading Screen Fix, its main file | [35867](https://www.nexusmods.com/cyberpunk2077/mods/35867?tab=files) | 1.0.0 or newer | The story's own loading screens for modded saves (not No Load Popups, which skips the modded-save checks in a menu NightCoop wraps) |
+| Always First Equip | [2557](https://www.nexusmods.com/cyberpunk2077/mods/2557?tab=files) | 2.2.0 or newer | V draws a weapon with its first-equip move and inspects it, on F11 and Insert (moved off F2 and F3, which NightCoop's F-key quickhack set uses) |
+| Reset Attributes always available | [9240](https://www.nexusmods.com/cyberpunk2077/mods/9240?tab=files) | 1.0.0.6 or newer | Reset your attributes as often as you like; in co-op it changes only your own character |
+| Mark To Sell | [4725](https://www.nexusmods.com/cyberpunk2077/mods/4725?tab=files) | 2.5.5 or newer | Mark items as junk, then sell or disassemble them all at once |
+| Purify The UI, its file Disable ONLY 2D Effect For UI And Disable Chrom Ab | [2648](https://www.nexusmods.com/cyberpunk2077/mods/2648?tab=files) | 2.00 or newer | Turns off the HUD's ghosting blur and curve (a file from 2023: try it once on 2.5) |
 
 **Requested and left out for now.** Each was checked against patch 2.5 and NightCoop's guides:
 
@@ -366,6 +392,8 @@ with the patch.
   - Consumable Animations plays its animations through quest facts that NightCoop shares from the host, so one player's snack would animate everyone.
   - Vehicle Navigation System needs three new frameworks and four DLLs, one of which detours the game's GPS functions.
   - Preem Menu replaces the main-menu and pause-menu widgets, where NightCoop's Co-op entry and shared pause live, with copies from patch 2.31.
+  - Stock Market and News System keeps each player's portfolio in files named after a quest fact that NightCoop shares from the host, so a guest's portfolio would be lost and the host's hidden. Its latest file (1.4) also predates patch 2.5.
+  - Ragdoll Physics Overhaul 3.0 is a beta of 7 November 2026 whose new RED4ext plugin hooks the game's ragdoll and PhysX functions, found by byte patterns, while NightCoop carries ragdolls, deaths and impulses between players. It needs a session test first; its earlier builds are for patch 2.1 and clash with 3.0. (When it joins, its Disable MaxTac option, shipped on by mistake, must be off.)
 - **Nothing to use in the set:**
   - Garage Manager only manages SDH0's cars, which the set does not have.
   - V49 Footwear Atelier is a store for about 45 shoe mods published separately.
@@ -437,7 +465,7 @@ stop redscript from compiling every script, NightCoop's included.
 **What the mods write while you play stays yours.** Drive an Aerial Vehicle keeps its
 settings, the AVs you own and the map it learns as you fly in `Data/`; Cyber Drift keeps
 its car lists and drift models in `custom/`; Vehicle Customizer keeps the appearances you
-chose; every Cyber Engine Tweaks mod may keep a `db.sqlite3`. Reruns and updates leave these as they are. A file is replaced only when a
+chose; Sit Anywhere keeps its settings; every Cyber Engine Tweaks mod may keep a `db.sqlite3`. Reruns and updates leave these as they are. A file is replaced only when a
 new release of the mod changes the file it ships, and your copy is backed up first.
 
 **How the set stays compatible with NightCoop:**
@@ -552,6 +580,36 @@ new release of the mod changes the file it ships, and your copy is backed up fir
   show only on your screen for NPCs a partner leads, but its chance is 0 as shipped.
 - **Curbside** drives only your own summoned car. A partner sees it arrive through
   NightCoop's car sync, including the jumps it makes when it moves a car out of sight.
+- **Makeup and eyes** add options to the character creator with ArchiveXL, like the hair, and
+  hook nothing: a partner without the same mod sees your V without that makeup, or with one
+  of the game's eye colours. Makeup Enhancer replaces one texture of the game, so it changes
+  only your own screen.
+- **The menus of this round.** Modded Save Loading Screen Fix wraps functions in NightCoop's
+  tables and calls the originals; its No Load Popups file returns early from the Continue
+  step of a menu NightCoop wraps, and is left out. Always First Equip, Mark To Sell and
+  Reset Attributes act on your own V and inventory. Purify The UI replaces one of the
+  game's UI composition files.
+- **Combat.** Apex Grapple runs in V's own state machine and moves only V; partners see the
+  flight through NightCoop's body sync, but not the hook and rope, which are local props.
+  Stealth Fixes wraps `ScriptedPuppet.CanRagdoll`, which NightCoop wraps too, and calls it;
+  its remote-car fix skips the game's attitude change only while your remote car hits a
+  neutral NPC, after NightCoop's own guard. Silent Silencers replaces
+  `PlayerPuppet.UpdateVisibility` and Stealth Finishers replaces
+  `ScriptedPuppetPS.DetermineInteractionState`, neither in NightCoop's tables; Stealth
+  Finishers kills through the takedown function NightCoop wraps to hand the NPC to the
+  player doing it. Dual Wielding Fix changes perk records; NightCoop keeps world slow
+  motion off in a session, Kerenzikov's included. No crowd panic from devices wraps
+  `Device.ResolveIllegalAction`, also not in the tables: no device panics a crowd, the
+  host's included.
+- **Crowds and scenes.** Crowd Voice Unlocked's wraps call the originals; its lines play on
+  your game only. Sit Anywhere overrides the dialogue hub that NightCoop's votes use, but
+  skips the game's function only while its own Sit or Stand choice is the one on screen.
+  Immersive Rippers and Immersive Bartenders play vendor scenes, which NightCoop keeps
+  personal to each player; partners see you seated through NightCoop's scene poses. Parking
+  Spots Enhanced is a quest on Deceptious Quest Core, the host's in a session; its motel fix
+  replaces one world sector whole, which no other mod of the set edits. Before removing these
+  mods, save at least 100 m from a ripperdoc and Lizzie's, and 20 m from other bars, as their
+  author advises.
 - **CPU Optimization (and its Plus edition) is left out.** It makes crowds spawn and
   despawn around V, while in co-op the host leads the crowd for every player, so NPCs
   would pop in and vanish near partners. The Plus edition also needs the Ultra Plus
@@ -668,12 +726,19 @@ the script's next run.
 | Night City Traffic Overhaul | On; Traffic Vehicles Security Level Vanilla; better panic reaction; no modded cars or random passengers in traffic | Its defaults, pinned | The host leads the traffic, but a car handed to a partner runs on that partner's settings |
 | Drive an Aerial Vehicle | Appearance key | 9 (default 5) | NightCoop's quickhack wheel uses 1 to 8 |
 | Cyber Engine Tweaks | Overlay key | `` ` `` (tilde), only when none is set | Spares its first-launch prompt; neither NightCoop nor a mod of the sets uses it. A key you chose stays |
+| Always First Equip | Its two keys | F11 and Insert (default F2 and F3) | NightCoop's F-key quickhack set uses F1 to F4 |
+| Apex Grapple | Pull people to V, in its five profiles | Off (the default) | It would act only on your copy of an NPC a partner leads |
+| Silent Silencers and Throwing Knives | Its cover debuff after a hit, with or without a kill | Off (default on without a kill) | It goes to the V of the game that leads the NPC hit, which may be a partner's |
+| Silent Silencers and Throwing Knives | Stealthy silenced shots and knives, their minimum distances, the detection chances and delay | Its defaults, pinned | The game that leads an NPC decides whether it heard you |
+| Sit Anywhere | Hide UI while sitting | Off (default on) | Hiding it sets V's scene tier to 3, which NightCoop reads as a scene holding V |
 | FPP Speedometer | Toggle key | Left out | Let There Be Flight uses O |
 
 The values of Mod Settings' mods are in `red4ext/plugins/mod_settings/user.ini`. NightCoop's keys
 (PageUp, PageDown and End held, T held when downed, F held, Enter and the arrows in votes, 1 to 8 on
-the quickhack wheel, P, G and Delete in photo mode) clash with no other key of the sets; the mods'
-own hotkeys in Cyber Engine Tweaks start unbound.
+the quickhack wheel, or F1 to F4, F6 to F8 and F10 when its F-key set is chosen, P, G and Delete in
+photo mode) clash with no other key of the sets; the mods' own hotkeys in Cyber Engine Tweaks start
+unbound. Silent Silencers' settings are in its folder's `settings.json`, Sit Anywhere's in
+`config/config.json`.
 
 ## Other mods are cleared
 
@@ -811,14 +876,17 @@ If you try it, a report of `check` output with the result is welcome.
 ## Packaging
 
 `packaging/arch/PKGBUILD` builds `nightcoop-linux-git`, which installs the
-`nightcoop-install` command and runs the test suite in `check()`. `.SRCINFO` is kept next
-to it for the AUR; regenerate it with `makepkg --printsrcinfo > .SRCINFO` after changing
-the PKGBUILD.
+`nightcoop-install` command. Its `check()` runs only the quick part of the test suite
+(`tests/run-tests.sh --quick`, the helpers' tests, a few seconds), so that building the
+package takes well under a minute; the whole suite takes most of an hour and runs in CI on
+every change. `.SRCINFO` is kept next to it for the AUR; regenerate it with
+`makepkg --printsrcinfo > .SRCINFO` after changing the PKGBUILD.
 
 ## Development
 
 `tests/run-tests.sh` runs the installer end to end against a synthetic Steam
-installation. It covers:
+installation, in most of an hour; `tests/run-tests.sh --quick` runs only the helpers' tests,
+without the installs, in a few seconds. The suite covers:
 
 - SD-card and Flatpak libraries;
 - `proton-cachyos` and the `--proton` choices;
@@ -902,6 +970,14 @@ installation. It covers:
 - the settings for co-op: written into the player's Mod Settings and Cyber Engine Tweaks files
   with their other values kept, put back on the next run, an overlay key the player chose kept,
   a rerun with nothing to do, and uninstall restoring the player's own files;
+- the mods of round 9 by their real file names and entries, over the files their rules pass
+  over (Updo's single styles, Makeup Enhancer's 64x64 file, Beautiful Makeup's newer file of
+  the same name, the EKT makeup, No Load Popups, Purify's vanilla-aberration file, Apex
+  Grapple's 2.31 file, the CET crowd patch, the parking spots' alt file, the 240SX's older
+  release); Updo's bare files placed in `archive/pc/mod`; Always First Equip's keys moved in
+  both its files; Apex Grapple's, Silent Silencers' and Sit Anywhere's settings written, put back
+  on the next run with the player's other choices kept; the notes; and a mod whose requirement
+  is missing left out with the reason;
 - the fixtures' add-on table matching the installer's, so that a change to one shows;
 - install, update, restore and uninstall back to a byte-identical game folder.
 

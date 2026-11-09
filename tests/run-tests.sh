@@ -3,7 +3,8 @@
 # End-to-end tests for nightcoop-install.sh against a synthetic Steam installation.
 # Needs only bash, python3 and coreutils; no Steam, Wine or network access.
 #
-#   tests/run-tests.sh            run everything
+#   tests/run-tests.sh            run everything (most of an hour)
+#   tests/run-tests.sh --quick    only the helpers' tests, in seconds, without the installs (the package's check())
 #   KEEP=1 tests/run-tests.sh     keep the temporary folder for inspection
 
 # Assertions are single-quoted strings evaluated by expect(), so variables used only
@@ -11,6 +12,8 @@
 # shellcheck disable=SC2016,SC2034
 
 set -uo pipefail
+QUICK=0
+case "${1:-}" in --quick) QUICK=1 ;; "") ;; *) echo "usage: $0 [--quick]" >&2; exit 2 ;; esac
 HERE="$(cd "$(dirname "$0")" && pwd)"
 SCRIPT="$HERE/../nightcoop-install.sh"
 T="$(mktemp -d "${TMPDIR:-/tmp}/nightcoop-tests.XXXXXX")"
@@ -151,6 +154,11 @@ section "Archive safety and versions"
 expect "path traversal refused"       '! hp unzip "$FIX/evil.zip" "$T/evil" 2>/dev/null && [ ! -e "$T/escape.txt" ]'
 expect "version compare pads"         'hp vge 1.31 1.31.0 && hp vge 14.51.36247.0 14.51 && ! hp vge 14.44.35211.0 14.51'
 
+if [ "$QUICK" = 1 ]; then   # --quick: the helpers alone; the installs into stand-in Steam folders take most of an hour
+    printf '\n%d passed, %d failed (--quick: the installs are left out)\n' "$PASS" "$FAILED"
+    [ "$FAILED" = 0 ]; exit
+fi
+
 # ------------------------------------------------- SteamOS, game on SD card ----
 section "SteamOS: game 2.5 on an SD card library, NightCoop once copied in by hand"
 newworld deck native manual; OSR="$T/os-steamos"
@@ -233,6 +241,27 @@ kill "$STEAM_PID" 2>/dev/null; wait "$STEAM_PID" 2>/dev/null
 expect "rerun with Steam still open only repeats the recommendations" '[ $RC = 0 ] && [[ "$OUT" == *"nothing to replace"* ]] && [[ "$OUT" == *"Recommended (the prefix override already lets the mod load)"* ]] && [[ "$OUT" != *"Backing up"* ]]' "$OUT"
 run install --yes
 expect "rerun with Steam closed writes only Steam's settings" '[ $RC = 0 ] && [ "$(launch_opts)" = "WINEDLLOVERRIDES=\\\"winmm=n,b\\\" %command% --launcher-skip" ] && [ "$(tool)" = proton_experimental ] && [[ "$OUT" != *"Backing up"* ]]' "$OUT"
+
+section "Steam open: closed and reopened to write its settings, but not in Game Mode"
+# the script reopens Steam detached (setsid), so where the first process reaps nothing (a CI container's) a
+# closed stand-in stays listed as a zombie: it counts as gone, here and in the script
+steam_up() { local p s; for p in $(pgrep -u "$(id -u)" -x steam); do s=""; read -r _ _ s _ 2>/dev/null < "/proc/$p/stat" || continue; [ "$s" != Z ] && return 0; done; return 1; }
+newworld reopen native; OSR="$T/os-arch"
+mkdir -p "$T/steambin"   # a steam command that closes the stand-in Steam on -shutdown and starts it otherwise
+printf '#!/bin/sh\nif [ "$1" = -shutdown ]; then pkill -u "$(id -u)" -x steam; exit 0; fi\nexec "%s/bin/steam"\n' "$T" > "$T/steambin/steam"; chmod +x "$T/steambin/steam"
+mkdir -p "$T/bin"; [ -x "$T/bin/steam" ] || { printf '#!/bin/sh\nwhile :; do sleep 1; done\n' > "$T/bin/steam"; chmod +x "$T/bin/steam"; }
+"$T/bin/steam" & disown
+for _ in 1 2 3 4 5 6 7 8 9 10; do steam_up && break; sleep 0.2; done
+RUNENV=(XDG_CURRENT_DESKTOP=gamescope); PATH="$T/steambin:$PATH" run install --yes; RUNENV=()
+expect "in Game Mode Steam stays open, and its settings wait, said so" '[ $RC = 0 ] && steam_up && [[ "$OUT" == *"Steam is running in Game Mode, so it will not be written now"* ]] && [[ "$(launch_opts)" != *"winmm=n,b"* ]]' "$OUT"
+PATH="$T/steambin:$PATH" run update --yes --no-close-steam
+expect "--no-close-steam leaves Steam open too" '[ $RC = 0 ] && steam_up && [[ "$OUT" == *"(--no-close-steam; the steps are shown at the end)"* ]] && [[ "$(launch_opts)" != *"winmm=n,b"* ]]' "$OUT"
+PATH="$T/steambin:$PATH" run update --yes
+for _ in 1 2 3 4 5 6 7 8 9 10; do steam_up && break; sleep 0.2; done
+expect "by default Steam is closed, its settings written, and Steam reopened" '[ $RC = 0 ] && [[ "$OUT" == *"Closing Steam to write its settings"* ]] && [[ "$OUT" == *"reopening Steam"* ]] && [ "$(launch_opts)" = "WINEDLLOVERRIDES=\\\"winmm=n,b\\\" %command% --launcher-skip" ] && [ "$(tool)" = proton_experimental ] && steam_up' "$OUT"
+PATH="$T/steambin:$PATH" run update --yes
+expect "and a rerun has nothing to do, so Steam is left alone" '[ $RC = 0 ] && [[ "$OUT" == *"everything is up to date; nothing to do"* ]] && [[ "$OUT" != *"Closing Steam"* ]]' "$OUT"
+pkill -u "$(id -u)" -x steam 2>/dev/null || true
 
 # ---------------------------------------------------------- Flatpak Steam ----
 section "Flatpak Steam (sandbox paths in Steam's files)"
@@ -687,6 +716,37 @@ run update --yes
 expect "the next run puts the co-op values back, but keeps an overlay key the player chose" '[ $RC = 0 ] && [ "$(ini "$MS" NightCityTrafficOverhaul.Settings.NCTOSettings trafficHijackDifficulty)" = VANILLA ] && [ "$(python3 -I -c "import json,sys; print(json.load(open(sys.argv[1]))[\"cet\"][\"overlay_key\"])" "$CB")" = 12666373951979520 ]' "$(cat "$MS" "$CB")"
 run uninstall --yes
 expect "uninstall puts the player's own files back exactly" '[ $RC = 0 ] && [ "$PRISTINE_CFG" = "$(snapshot "$G")" ]' "$(diff <(echo "$PRISTINE_CFG") <(snapshot "$G"))"
+
+section "Mods (--with-mods): round 9: hair, makeup and eyes, menus, combat, crowds, places and a car"
+R9_DL=("${R7_DL[@]}" "$FIX/round3/Deceptious Quest Core 7831 3.3.3 2026-10-27T04-49Z E91D9ddiK.zip"
+       "$FIX/round3/Immersive Voice Distance (2.5) 36809 1.2.0 2026-11-07T13-09Z NEnvE30eR.zip" "$FIX/style/Material and Texture Override-5266-1-2-1695907754.zip")
+js() { python3 -I -c 'import json,sys; d=json.load(open(sys.argv[1])); print(" ".join(json.dumps(d.get(k)) for k in sys.argv[2:]))' "$@"; }   # js <file> <key>...
+newworld round9 native; OSR="$T/os-arch"; D="$H/Downloads"; mkdir -p "$D" "$G/archive/pc/ep1"
+PRISTINE_R9="$(snapshot "$G")"; AM="$G/archive/pc/mod"; CETM="$G/bin/x64/plugins/cyber_engine_tweaks/mods"; R6S="$G/r6/scripts"
+MS="$G/red4ext/Plugins/mod_settings/user.ini" SSJ="$CETM/SilentSilencersAndKnives/settings.json" SAJ="$CETM/sitAnywhere/config/config.json"
+cp "${R9_DL[@]}" "$FIX"/round9/* "$D/"
+run install --yes --with-mods
+expect "the seven hairs, Updo's all-in-one file (its bare files into archive/pc/mod, not the single Chevelle), the Mecha eyes" '[ $RC = 0 ] && [ -f "$AM/Atomiic_Violet_Hair_CCXL.archive" ] && grep -q G5yE5CJPT "$AM/RVLL_CCXL_Chevelle_Updo.xl" && [ -f "$AM/RVLL_CCXL_Bel_Air_Updo.archive" ] && [ ! -e "$G/RVLL_CCXL_Bel_Air_Updo.archive" ] && [ -f "$AM/ZXR - CCXL Hair - Himiko Buns.xl" ] && [ -f "$AM/atomiic_yumeko_hair_ccxl.xl" ] && [ -f "$AM/MELUMINARY - CCXL - XYLA SHAG MULLET.xl" ] && [ -f "$AM/_0_Vesna_HoV_HAIR_MV_Geralt_CCXL.archive.xl" ] && [ -f "$AM/atomiic_softbluntbob_ccxl.xl" ] && [ -f "$G/r6/tweaks/protoss/protoss_MechaRoboticEyesCCXL.yaml" ] && [ -f "$G/r6/tweaks/protoss/protoss_MechaRoboticEyesPart2CCXL.yaml" ]' "$OUT"
+expect "the makeup by the files for the basegame head: Beautiful Makeup by its pinned upload (not the newer file of the same name), Makeup II (not EKT), the 256x256 enhancer" 'grep -q 1777732105 "$AM/Arkhe_Beautiful_Makeup_Base_CCXL.xl" && grep -q "Basegame Head" "$AM/Arkhe_Beautiful_Makeup_02_Base_CCXL.xl" && grep -q 256x256 "$AM/!_Arkhe_MAKEUP_Enhancer.archive"' "$OUT"
+expect "the menus: the loading-screen fix (not No Load Popups), Always First Equip (not its translation sources), the attribute reset, Mark To Sell, Purify The UI (not its vanilla-aberration file)" '[ -f "$R6S/Modded Save Loading Screen Fix/Modded Save Loading Screen Fix.reds" ] && [ ! -e "$R6S/Modded Save Loading Screen Fix/Modded Save Loading Screen Fix - No Load Popups.reds" ] && grep -q mPgaPVVHG "$R6S/alwaysFirstEquip.reds" && [ -f "$R6S/ResetAttributesAlwaysAvailable.reds" ] && [ -f "$G/r6/input/MarkToSell.xml" ] && [ -f "$AM/_Disable ONLY 2D Effect For UI And Disable Chrom Ab.archive" ] && [ ! -e "$AM/_Disable ONLY 2D Effect For UI And Keep Vanilla Chrom Ab.archive" ]' "$OUT"
+expect "Always First Equip moved off F2 and F3 (NightCoop's F-key quickhacks) to F11 and Insert, in Mod Settings' file and its input file" '[ "$(ini "$MS" AlwaysFirstEquip.FirstEquipConfig afeMainHotkey) $(ini "$MS" AlwaysFirstEquip.FirstEquipConfig afeAdditionalHotkey)" = "IK_F11 IK_Insert" ] && grep -q "<button id=\"IK_F11\" overridableUI=\"afeMainHotkey\"" "$G/r6/input/AlwaysFirstEquip.xml" && grep -q "<button id=\"IK_Insert\" overridableUI=\"afeAdditionalHotkey\"" "$G/r6/input/AlwaysFirstEquip.xml" && ! grep -q -e IK_F2 -e IK_F3 "$G/r6/input/AlwaysFirstEquip.xml"' "$(cat "$MS" "$G/r6/input/AlwaysFirstEquip.xml")"
+expect "combat: Apex Grapple (not its file for 2.31) with pulling people off in its five profiles, the stealth and dual-wield fixes, Stealth Finishers, the crowd patch by its redscript file" 'grep -q LACBAIvh4 "$R6S/ApexGrapple/Hook.reds" && [ "$(for p in Settings Profile2 Profile3 Profile4 Profile5; do ini "$MS" "ApexGrapple$p" pullPeople; done | sort -u)" = false ] && [ -f "$R6S/StealthFixes/StealthFixesCrouch.reds" ] && [ -f "$G/r6/tweaks/DualWieldingFix.yaml" ] && [ -f "$R6S/ZKVTakedowns2/ZKV_StealthFinishers.reds" ] && [ -f "$CETM/ZKVTakedowns2/init.lua" ] && [ -f "$R6S/No Crowd panic from devices/no_crowd_panic_from_devices.reds" ] && [ ! -e "$CETM/No Crowd panic from devices" ]' "$(cat "$MS")"
+expect "Silent Silencers: its settings file written with the same values for everyone, its cover debuff off" '[ -f "$CETM/SilentSilencersAndKnives/init.lua" ] && [ "$(js "$SSJ" afterStealthHitNoKillDebuff afterStealthHitKillDebuff shouldSilencedGunshotsBeStealthy silencedGunshotMinDistance baseDetectionChance secondsToDetect)" = "false false true 2.0 0 0" ]' "$(cat "$SSJ")"
+expect "crowds, places and a car: Crowd Voice Unlocked, the ripperdocs and bars, Sit Anywhere with its HUD kept (its other settings as shipped), the vehicle reactions, the parking spots (not the alt file), the 240SX 1.32" '[ -f "$AM/CrowdVoiceUnlocked.archive" ] && [ -f "$R6S/ImmersiveRippers/ImmersiveRippers.reds" ] && [ -f "$AM/ImmersiveBartenders.archive" ] && [ "$(js "$SAJ" hideUI sitAnimation hideExitPopup)" = "false 1 false" ] && [ -f "$G/r6/tweaks/NPCVehicleReactionsFixed/NPCVehicleReactionsFixed.yaml" ] && [ -f "$AM/#MotelParkingFix.archive" ] && [ -f "$AM/ParkingSpotsEnhanced.archive" ] && [ ! -e "$AM/ParkingSpotsEnhancedAlt.archive" ] && grep -q 1702907275 "$G/r6/tweaks/nissan_240sx.yaml"' "$(cat "$SAJ")"
+expect "the co-op notes: makeup, Himiko's bangs without Equipment-EX, the moved keys, the reset, places and scenes, parking, NPCs, Silent Silencers, Apex Grapple, Sit Anywhere, crowd voices, the console codes" '[[ "$OUT" == *"Eye makeup of mods in co-op: choose it in the character creator"* ]] && [[ "$OUT" == *"bangs are items for the face slot without Equipment-EX"* ]] && [[ "$OUT" == *"Always First Equip: its keys are F11"* ]] && [[ "$OUT" == *"Reset Attributes always available: a reset changes only your own character"* ]] && [[ "$OUT" == *"Places and scenes of mods in co-op"* ]] && [[ "$OUT" == *"Immersive Rippers and Immersive Bartenders in co-op: a visit is your own"* ]] && [[ "$OUT" == *"Parking Spots Enhanced starts once V has been in the H10 apartment"* ]] && [[ "$OUT" == *"Mods that change how NPCs act (Stealth Fixes, Silent Silencers, Stealth Finishers, No Crowd Panic From Devices and Fixed NPC Vehicle Reactions)"* ]] && [[ "$OUT" == *"Silent Silencers in co-op: its settings are written the same for everyone"* ]] && [[ "$OUT" == *"Apex Grapple in co-op: partners see your V fly"* ]] && [[ "$OUT" == *"Sit Anywhere in co-op: a partner sees you sit only with Sit Anywhere too"* ]] && [[ "$OUT" == *"Crowd Voice Unlocked in co-op: each game voices the people near its own V"* ]] && [[ "$OUT" == *"No store of the set sells Himiko Buns Hair: add them"* ]]' "$OUT"
+run update --yes
+expect "a rerun changes nothing" '[ $RC = 0 ] && [[ "$OUT" == *"everything is up to date; nothing to do"* ]]' "$OUT"
+sed -i 's/^pullPeople = false/pullPeople = true/' "$MS"   # the player changes them in game
+printf '{"sitAnimation":3,"hideExitPopup":true,"hideUI":true}' > "$SAJ"
+printf '{"debuffDuration": 9.0, "afterStealthHitNoKillDebuff": true, "baseDetectionChance": 50}' > "$SSJ"
+run update --yes
+expect "the next run puts the co-op values back and keeps the player's other choices (Sit Anywhere's own file is the player's)" '[ $RC = 0 ] && [ "$(ini "$MS" ApexGrappleProfile3 pullPeople)" = false ] && [ "$(js "$SAJ" hideUI sitAnimation hideExitPopup)" = "false 3 true" ] && [ "$(js "$SSJ" afterStealthHitNoKillDebuff baseDetectionChance debuffDuration)" = "false 0 9.0" ]' "$(cat "$MS" "$SAJ" "$SSJ")"
+run uninstall --yes
+expect "uninstall puts the game folder back exactly" '[ $RC = 0 ] && [ "$PRISTINE_R9" = "$(snapshot "$G")" ]' "$(diff <(echo "$PRISTINE_R9") <(snapshot "$G"))"
+newworld round9needs native; OSR="$T/os-arch"; D="$H/Downloads"; mkdir -p "$D"   # no Immersive Audio Distance, Deceptious Quest Core or Material and Texture Override
+cp "${R7_DL[@]}" "$FIX"/round9/* "$D/"
+run install --yes --with-mods
+expect "a mod whose requirement is missing waits, and says which: crowd voices, the parking spots and the 240SX" '[ $RC = 0 ] && [ ! -e "$G/archive/pc/mod/CrowdVoiceUnlocked.archive" ] && [ ! -e "$G/archive/pc/mod/ParkingSpotsEnhanced.archive" ] && [ ! -e "$G/r6/tweaks/nissan_240sx.yaml" ] && [[ "$OUT" == *"Crowd Voice Unlocked needs Immersive Audio Distance, which is not here"* ]] && [[ "$OUT" == *"Parking Spots Enhanced needs Deceptious Quest Core, which is not here"* ]] && [[ "$OUT" == *"Nissan 240SX needs Material and Texture Override, which is not here"* ]] && [ -f "$G/archive/pc/mod/ImmersiveBartenders.archive" ]' "$OUT"
 
 # ------------------------------------------------------ Nexus Mods API ----
 section "Nexus Mods API: with a Premium account's key, the script downloads the Nexus mods itself"
