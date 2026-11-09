@@ -2426,7 +2426,14 @@ need_tools() {
 }
 
 game_running()  { pgrep -u "$(id -u)" -x 'Cyberpunk2077.e' >/dev/null 2>&1 || pgrep -u "$(id -u)" -x 'REDprelauncher.' >/dev/null 2>&1; }
-steam_running() { pgrep -u "$(id -u)" -x steam >/dev/null 2>&1 || pgrep -u "$(id -u)" -x steamwebhelper >/dev/null 2>&1; }
+steam_running() {   # a steam or steamwebhelper process of this user that is not a zombie: where the first process
+    local p s       # reaps nothing (a container's), a Steam that was closed stays listed as a zombie
+    for p in $(pgrep -u "$(id -u)" -x steam 2>/dev/null) $(pgrep -u "$(id -u)" -x steamwebhelper 2>/dev/null); do
+        s=""; read -r _ _ s _ 2>/dev/null < "/proc/$p/stat" || continue
+        [ "$s" != Z ] && return 0
+    done
+    return 1
+}
 in_game_mode()  { [ "${XDG_CURRENT_DESKTOP:-}" = gamescope ] || [ "${XDG_SESSION_DESKTOP:-}" = gamescope ]; }
 fs_type()       { findmnt -n -o FSTYPE --target "$1" 2>/dev/null || stat -f -c %T "$1" 2>/dev/null || echo unknown; }
 
