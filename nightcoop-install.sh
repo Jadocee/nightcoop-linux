@@ -410,8 +410,24 @@ Night_City_Traffic_Overhaul r6/tweaks/NightCityTrafficOverhaul/YourCustomVehicle
 # Settings the script writes for co-op on every install and update (the player's other settings
 # stay): files a mod or its framework keeps, with values every partner should share, or keys moved
 # off NightCoop's and other mods' keys. A space in a path is written %20.
-#   component        kind (ini/json/xml)  path  section, object path or element name  key  value
+#   component        kind (ini/json/json-if-unset/xml)  path  section, object path or element name  key  value
+#   Loot Icons Extension: icons stay at full opacity while aiming, as its aiming check also runs for partners'
+#     bodies (a partner aiming hid your icons). Immersive Audio Distance: story lines carry about as far as in
+#     the game, for partners further from the speaker. Night City Traffic Overhaul: its co-op-safe defaults
+#     pinned for everyone (the vanilla vehicle security; no modded cars or random passengers in traffic).
+#   Cyber Engine Tweaks: its overlay key, when none is set yet (the first-launch popup): ` (tilde), which
+#     neither NightCoop nor any mod of the sets uses. Drive an Aerial Vehicle: its appearance key 5 moved to 9,
+#     as NightCoop's quickhack wheel uses 1-8.
 ADDON_CONFIG="
+Loot_Icons_Extension        ini  red4ext/plugins/mod_settings/user.ini LootIconsExtension.LootIconsExtensionSSX fMS_ADSOpacity 100.0
+Immersive_Audio_Distance    ini  red4ext/plugins/mod_settings/user.ini ImmersiveAudioDistance.IAD_Settings quest 200.0
+Night_City_Traffic_Overhaul ini  red4ext/plugins/mod_settings/user.ini NightCityTrafficOverhaul.Settings.NCTOSettings modEnabled true
+Night_City_Traffic_Overhaul ini  red4ext/plugins/mod_settings/user.ini NightCityTrafficOverhaul.Settings.NCTOSettings trafficHijackDifficulty VANILLA
+Night_City_Traffic_Overhaul ini  red4ext/plugins/mod_settings/user.ini NightCityTrafficOverhaul.Settings.NCTOSettings betterPanicReaction true
+Night_City_Traffic_Overhaul ini  red4ext/plugins/mod_settings/user.ini NightCityTrafficOverhaul.Settings.NCTOSettings autoDistributeModdedVehicles false
+Night_City_Traffic_Overhaul ini  red4ext/plugins/mod_settings/user.ini NightCityTrafficOverhaul.Settings.NCTOSettings autoSetRandomPassengers false
+Cyber_Engine_Tweaks         json-if-unset bin/x64/plugins/cyber_engine_tweaks/bindings.json /cet overlay_key 54043195528445952
+Drive_an_Aerial_Vehicle     json bin/x64/plugins/cyber_engine_tweaks/mods/DriveAerialVehicle/Data/user_setting_v3.json /common_keybind_table[name=toggle_appearance] key \"IK_9\"
 "
 # Files of a mod that are not installed, for its default configuration in co-op:
 #   component              file (relative to the game folder)
@@ -2084,7 +2100,9 @@ def cmd_cfg(kind, dst, src, *entries):
     "where<SEP>key<SEP>value". kind "ini": where is the [section]; a key line is changed in place, or added
     at the section's end, a section added at the end; other lines stay as they are. kind "json": where is
     a path of objects ("/" or "/a/b"), value a JSON literal. kind "xml": the element with name="where" has
-    the attribute value key replaced by value (an input binding: IK_O -> IK_K). When nothing changes, dst is
+    the attribute value key replaced by value (an input binding: IK_O -> IK_K). In a json path, "a[name=x]" is the
+    element of the list a whose "name" is x (left alone when there is none); kind "json-if-unset" sets a member only
+    when it is missing, null or 0, so that a player's own choice stays. When nothing changes, dst is
     an exact copy of src, so that a rerun finds the file the same. Prints "same" or "changed"."""
     ents = [e.split(SEP) for e in entries]
     old = b''
@@ -2096,14 +2114,14 @@ def cmd_cfg(kind, dst, src, *entries):
     if kind == 'ini':
         lines = text.splitlines(True)
         for where, key, val in ents:
-            head = next((i for i, l in enumerate(lines) if l.strip() == '[%s]' % where), None)
+            head = next((i for i, l in enumerate(lines) if l.strip().lower() == '[%s]' % where.lower()), None)   # as Mod Settings reads it
             if head is None:
                 if lines and not lines[-1].endswith('\n'):
                     lines[-1] += '\n'
                 lines += (['\n'] if lines and lines[-1].strip() else []) + ['[%s]\n' % where, '%s = %s\n' % (key, val)]
                 continue
             end = next((i for i in range(head + 1, len(lines)) if lines[i].strip().startswith('[')), len(lines))
-            at = next((i for i in range(head + 1, end) if re.match(r'\s*%s\s*=' % re.escape(key), lines[i])), None)
+            at = next((i for i in range(head + 1, end) if re.match(r'\s*%s\s*=' % re.escape(key), lines[i], re.I)), None)
             if at is not None:
                 if lines[at].split('=', 1)[1].strip() != val:
                     lines[at] = '%s = %s\n' % (key, val)
@@ -2114,7 +2132,7 @@ def cmd_cfg(kind, dst, src, *entries):
                     lines[end - 1] += '\n'
                 lines.insert(end, '%s = %s\n' % (key, val))
         new = ''.join(lines)
-    elif kind == 'json':
+    elif kind in ('json', 'json-if-unset'):
         try:
             data = json.loads(text) if text.strip() else {}
         except ValueError:
@@ -2123,9 +2141,19 @@ def cmd_cfg(kind, dst, src, *entries):
         for where, key, val in ents:
             node = data
             for part in [x for x in where.split('/') if x]:
+                m = re.match(r'^(.+)\[(\w+)=(.*)\]$', part)
+                if m:   # an element of a list, chosen by a member's value
+                    lst = node.get(m.group(1)) if isinstance(node, dict) else None
+                    node = next((e for e in lst if isinstance(e, dict) and str(e.get(m.group(2))) == m.group(3)), None) \
+                        if isinstance(lst, list) else None
+                    if node is None:
+                        break
+                    continue
                 if not isinstance(node.get(part), dict):
                     node[part] = {}
                 node = node[part]
+            if node is None or (kind == 'json-if-unset' and node.get(key) not in (None, 0)):
+                continue
             node[key] = json.loads(val)
         if json.dumps(data, sort_keys=True) != before or not text.strip():
             new = json.dumps(data, indent=2) + '\n'
@@ -3462,8 +3490,9 @@ step_addons() {   # the add-on sets (--with-flight, --with-mods), matched to the
     if [ "${#ADDON_GONE[@]}" -gt 0 ]; then ok "$(listing "${ADDON_GONE[@]}") will be removed: no longer part of the set"; fi
     if [ "${#ADDON_NOPL[@]}" -gt 0 ]; then info "Phantom Liberty is not installed: $(listing "${ADDON_NOPL[@]}"), which need it, are left out"; fi
     if [[ "$ADDON_HAVE" == *" Quick_Stash "* ]]; then
-        info "Quick Stash in co-op: a session plays in the host's world, so a guest's stash there is not their own;"
-        info "transfer items in your own game, or as the host."
+        info "Quick Stash in co-op: NightCoop keeps a guest's stash their own (it starts empty in the host's world, and"
+        info "what you put in comes home with you), but a car there belongs to the host's world: move items into a car"
+        info "only in your own game."
     fi
     if [[ "$ADDON_HAVE" == *" Virtual_Car_Dealer "* ]] || [[ "$ADDON_HAVE" == *" Drive_an_Aerial_Vehicle "* ]]; then
         info "Cars and AVs in co-op: partners see a car of a mod (one Virtual Car Dealer sells, an AV of Drive an"

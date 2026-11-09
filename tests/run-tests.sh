@@ -442,7 +442,7 @@ cp "$NX/PUBLICNET-10909-1-2-1-1702220953.zip" "$NX/BLACKWALL-10909-1-2-1-1702221
 run update --yes
 expect "the rest install once downloaded: A.G.I.S.'s main file, out of its folder, without its read-me" '[ $RC = 0 ] && [ -f "$G/r6/scripts/AGIS/agis.reds" ] && [ ! -e "$G/r6/scripts/AGIS_BLACKWALL" ] && [ ! -e "$G/readme.txt" ] && [ ! -e "$G/AGIS" ] && [ -f "$G/r6/scripts/NCMarketplace/stores.reds" ] && [ -f "$CETM/QuickStash/init.lua" ] && [ -f "$G/r6/scripts/VirtualCarDealer/core/CarDealer-System.reds" ] && [ -f "$CETM/nativeSettings/init.lua" ] && [ -f "$DAV/init.lua" ] && [ -f "$P/DriveAerialVehicle/DriveAerialVehicle.dll" ]' "$OUT"
 expect "the mods downloaded first stay, from the installer's own copies" '[ -f "$G/r6/scripts/virtual-atelier-full/Config.reds" ] && [ -f "$CETM/CyberDrift Light/init.lua" ] && [[ "$OUT" != *"cyberpunk2077/mods/2987?tab=files"* ]]' "$OUT"
-expect "co-op notes: Quick Stash, and cars and AVs of mods" '[[ "$OUT" == *"a guest'"'"'s stash there is not their own"* ]] && [[ "$OUT" == *"otherwise NightCoop shows a game car with as many seats"* ]]' "$OUT"
+expect "co-op notes: Quick Stash, and cars and AVs of mods" '[[ "$OUT" == *"NightCoop keeps a guest'"'"'s stash their own"* ]] && [[ "$OUT" == *"otherwise NightCoop shows a game car with as many seats"* ]]' "$OUT"
 B1="$(newest_backup)"
 run update --yes
 expect "with everything downloaded and in place, a rerun changes nothing" '[ $RC = 0 ] && [[ "$OUT" == *"everything is up to date; nothing to do"* ]] && [ "$(newest_backup)" = "$B1" ]' "$OUT"
@@ -663,6 +663,30 @@ newworld round7nopl native; OSR="$T/os-arch"; D="$H/Downloads"; mkdir -p "$D"   
 cp "${R7_DL[@]}" "$FIX"/round7/* "$D/"
 run install --yes --with-mods
 expect "without Phantom Liberty the clubs, the Afterlife, the traffic overhaul and the MaxTac Suit wait, said so" '[ $RC = 0 ] && [ ! -e "$G/archive/pc/mod/The_Empathy_Club_Unlocked.xl" ] && [ ! -e "$G/r6/scripts/NightCityTrafficOverhaul" ] && [ ! -e "$G/archive/pc/mod/Dusty_MaxTacSuit.archive" ] && [[ "$OUT" == *"Phantom Liberty is not installed:"*"The Empathy Club Unlocked"*"Night City Traffic Overhaul"*"MaxTac Suit"* ]] && [ -f "$G/archive/pc/mod/prestigeglasses.archive" ]' "$OUT"
+
+section "Settings the script writes for co-op, on every install (the player's other settings stay)"
+newworld cfg native; OSR="$T/os-arch"; D="$H/Downloads"; mkdir -p "$D" "$G/archive/pc/ep1"
+MS="$G/red4ext/Plugins/mod_settings/user.ini" CB="$G/bin/x64/plugins/cyber_engine_tweaks/bindings.json"
+DAVS="$G/bin/x64/plugins/cyber_engine_tweaks/mods/DriveAerialVehicle/Data/user_setting_v3.json"
+mkdir -p "$(dirname "$MS")" "$(dirname "$CB")"
+printf '[Other.Mod]\nmine = 7\n\n[NightCityTrafficOverhaul.Settings.NCTOSettings]\ntrafficHijackDifficulty = HARD\n' > "$MS"   # the player's settings
+printf '{"cet": {"overlay_key": 0}, "SomeMod": {"go": 12666373951979520}}\n' > "$CB"
+PRISTINE_CFG="$(snapshot "$G")"
+cp "$FIX/nexus/Native Settings UI 1.97 3518 1.97 2026-10-22T15-26Z cB3xB00Va.zip" "$FIX/nexus/Drive an Aerial Vehicle 13842 3.5.0 2026-10-26T16-09Z mPgaPVV1e.zip" \
+   "$FIX/round3/Immersive Voice Distance (2.5) 36809 1.2.0 2026-11-07T13-09Z NEnvE30eR.zip" "$FIX/round7/Loot Icons Extension Light 16386 1.60 2026-10-27T06-36Z D2ZS2nnCn.zip" \
+   "$FIX/round7/NightCityTrafficOverhaul v2.51 (2.31 and 2.5) 25552 2.51 2026-10-27T00-16Z IieOigg7C.zip" "$D/"
+ini() { awk -v s="[$2]" -v k="$3" '$0 == s { on = 1; next } /^\[/ { on = 0 } on && $1 == k { print $3 }' "$1"; }   # ini <file> <section> <key>
+run install --yes --with-mods
+expect "Mod Settings' file gets the co-op values: loot icons kept while aiming, story lines carrying further, traffic's safe defaults pinned (HARD put back to VANILLA)" '[ $RC = 0 ] && [ "$(ini "$MS" LootIconsExtension.LootIconsExtensionSSX fMS_ADSOpacity)" = 100.0 ] && [ "$(ini "$MS" ImmersiveAudioDistance.IAD_Settings quest)" = 200.0 ] && [ "$(ini "$MS" NightCityTrafficOverhaul.Settings.NCTOSettings trafficHijackDifficulty)" = VANILLA ] && [ "$(ini "$MS" NightCityTrafficOverhaul.Settings.NCTOSettings autoDistributeModdedVehicles)" = false ] && [ "$(grep -c -i "^trafficHijackDifficulty" "$MS")" = 1 ] && [ "$(ini "$MS" Other.Mod mine)" = 7 ] && [[ "$OUT" == *"settings for co-op:"* ]]' "$(cat "$MS"; echo; echo "$OUT" | grep -i setting)"
+expect "Cyber Engine Tweaks gets an overlay key that clashes with nothing, the player's other bindings kept; Drive an Aerial Vehicle's 5 moves to 9" '[ "$(python3 -I -c "import json,sys; d=json.load(open(sys.argv[1])); print(d[\"cet\"][\"overlay_key\"], d[\"SomeMod\"][\"go\"])" "$CB")" = "54043195528445952 12666373951979520" ] && [ "$(python3 -I -c "import json,sys; print([e[\"key\"] for e in json.load(open(sys.argv[1]))[\"common_keybind_table\"] if e[\"name\"] == \"toggle_appearance\"][0])" "$DAVS")" = IK_9 ]' "$(cat "$CB" "$DAVS")"
+run update --yes
+expect "a rerun has nothing to do" '[ $RC = 0 ] && [[ "$OUT" == *"everything is up to date; nothing to do"* ]]' "$OUT"
+sed -i 's/^trafficHijackDifficulty = VANILLA/trafficHijackDifficulty = EASY/' "$MS"   # the player changes them in game
+python3 -I -c 'import json,sys; d=json.load(open(sys.argv[1])); d["cet"]["overlay_key"] = 12666373951979520; json.dump(d, open(sys.argv[1], "w"))' "$CB"
+run update --yes
+expect "the next run puts the co-op values back, but keeps an overlay key the player chose" '[ $RC = 0 ] && [ "$(ini "$MS" NightCityTrafficOverhaul.Settings.NCTOSettings trafficHijackDifficulty)" = VANILLA ] && [ "$(python3 -I -c "import json,sys; print(json.load(open(sys.argv[1]))[\"cet\"][\"overlay_key\"])" "$CB")" = 12666373951979520 ]' "$(cat "$MS" "$CB")"
+run uninstall --yes
+expect "uninstall puts the player's own files back exactly" '[ $RC = 0 ] && [ "$PRISTINE_CFG" = "$(snapshot "$G")" ]' "$(diff <(echo "$PRISTINE_CFG") <(snapshot "$G"))"
 
 # ------------------------------------------------------ Nexus Mods API ----
 section "Nexus Mods API: with a Premium account's key, the script downloads the Nexus mods itself"

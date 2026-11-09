@@ -572,9 +572,10 @@ new release of the mod changes the file it ships, and your copy is backed up fir
   game. NightCoop asks mods to ship only their own files. If you install it by hand,
   `check` reports NightCoop's plugin as changed, and the next run puts the official one back
   (the other is kept in the backup).
-- **Quick Stash in co-op:** everyone in a session plays in the host's world, so the stash a
-  guest opens there is not the guest's own. Move items in your own game, or as the host;
-  the script reminds you of this.
+- **Quick Stash in co-op:** NightCoop keeps a guest's stash their own: in the host's world it
+  starts empty, and what you put in comes home with you when you leave the session. A car
+  there belongs to the host's world, though, and Quick Stash fills any car you look at, so
+  move items into a car only in your own game; the script reminds you of this.
 - **Cyber Engine Tweaks mods** work with NightCoop. One that replaces a game function
   without calling the original can break parts of co-op; NightCoop names such conflicts
   in its log (`red4ext/logs/nightcoop-*.log`). On its first start, Cyber Engine Tweaks
@@ -652,6 +653,27 @@ Nexus Mods' [API Acceptable Use Policy](https://help.nexusmods.com/article/114-a
 tolerates personal API keys in tools for personal use or testing, and asks tools for a
 wider audience to register with it, which also lets their users sign in through Nexus Mods
 instead of pasting a key. This script is not registered.
+
+## Settings for co-op
+
+On every install and update the script sets the options below, so that partners play with the
+same values and no mod key clashes with NightCoop's. Your other settings stay as they are, and
+`restore` and `uninstall` put the files back as they were. An option changed in game lasts until
+the script's next run.
+
+| Mod | Option | Value | Why |
+| --- | --- | --- | --- |
+| Loot Icons Extension | Opacity while aiming | 100 (default 0) | Its aiming check also runs for partners' bodies, so a partner aiming hid your loot icons |
+| Immersive Audio Distance | Quest Dialogue | 200%, close to the game's own (default 100%) | Story lines reach partners standing further from the speaker |
+| Night City Traffic Overhaul | On; Traffic Vehicles Security Level Vanilla; better panic reaction; no modded cars or random passengers in traffic | Its defaults, pinned | The host leads the traffic, but a car handed to a partner runs on that partner's settings |
+| Drive an Aerial Vehicle | Appearance key | 9 (default 5) | NightCoop's quickhack wheel uses 1 to 8 |
+| Cyber Engine Tweaks | Overlay key | `` ` `` (tilde), only when none is set | Spares its first-launch prompt; neither NightCoop nor a mod of the sets uses it. A key you chose stays |
+| FPP Speedometer | Toggle key | Left out | Let There Be Flight uses O |
+
+The values of Mod Settings' mods are in `red4ext/plugins/mod_settings/user.ini`. NightCoop's keys
+(PageUp, PageDown and End held, T held when downed, F held, Enter and the arrows in votes, 1 to 8 on
+the quickhack wheel, P, G and Delete in photo mode) clash with no other key of the sets; the mods'
+own hotkeys in Cyber Engine Tweaks start unbound.
 
 ## Other mods are cleared
 
@@ -877,6 +899,9 @@ installation. It covers:
 - mods the script did not install cleared on install into the backup, put back by uninstall,
   and left alone with `--keep-other-mods`, while the script's own mods keep what they write;
 - a GitHub download that fails, and the copy downloaded in a browser taken from Downloads;
+- the settings for co-op: written into the player's Mod Settings and Cyber Engine Tweaks files
+  with their other values kept, put back on the next run, an overlay key the player chose kept,
+  a rerun with nothing to do, and uninstall restoring the player's own files;
 - the fixtures' add-on table matching the installer's, so that a change to one shows;
 - install, update, restore and uninstall back to a byte-identical game folder.
 

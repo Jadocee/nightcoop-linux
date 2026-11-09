@@ -507,7 +507,8 @@ def archives(fix):
     def dav(chunk):   # Drive an Aerial Vehicle, with the files it writes to while the game runs
         d = f'{cd}/DriveAerialVehicle'
         return {'archive/pc/mod/DriveAerialVehicle.archive': b'RDAR', f'{d}/init.lua': b'-- dav\n',
-                f'{d}/Data/user_setting_v3.json': b'{"language": "default"}\n',
+                f'{d}/Data/user_setting_v3.json': b'{"language": "default", "common_keybind_table": [{"key": "IK_5", "name": '
+                                                  b'"toggle_appearance", "pad": "", "is_hold": false}]}\n',
                 f'{d}/Data/map_bin/chunk_0_0.bin': chunk, f'{d}/Data/map_bin/chunk_0_1.bin': b'map 0 1',
                 'r6/audioware/DriveAerialVehicle/manifest.yml': b'version: 1.0.0\n',
                 'r6/scripts/DriveAerialVehicle/DriveAerialVehicle.reds': b'// dav\n',
