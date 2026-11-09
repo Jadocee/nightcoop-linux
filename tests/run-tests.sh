@@ -3,7 +3,8 @@
 # End-to-end tests for nightcoop-install.sh against a synthetic Steam installation.
 # Needs only bash, python3 and coreutils; no Steam, Wine or network access.
 #
-#   tests/run-tests.sh            run everything
+#   tests/run-tests.sh            run everything (most of an hour)
+#   tests/run-tests.sh --quick    only the helpers' tests, in seconds, without the installs (the package's check())
 #   KEEP=1 tests/run-tests.sh     keep the temporary folder for inspection
 
 # Assertions are single-quoted strings evaluated by expect(), so variables used only
@@ -11,6 +12,8 @@
 # shellcheck disable=SC2016,SC2034
 
 set -uo pipefail
+QUICK=0
+case "${1:-}" in --quick) QUICK=1 ;; "") ;; *) echo "usage: $0 [--quick]" >&2; exit 2 ;; esac
 HERE="$(cd "$(dirname "$0")" && pwd)"
 SCRIPT="$HERE/../nightcoop-install.sh"
 T="$(mktemp -d "${TMPDIR:-/tmp}/nightcoop-tests.XXXXXX")"
@@ -150,6 +153,11 @@ expect "other settings kept"           'grep -q "\"X\"" "$CV/config/config.vdf"'
 section "Archive safety and versions"
 expect "path traversal refused"       '! hp unzip "$FIX/evil.zip" "$T/evil" 2>/dev/null && [ ! -e "$T/escape.txt" ]'
 expect "version compare pads"         'hp vge 1.31 1.31.0 && hp vge 14.51.36247.0 14.51 && ! hp vge 14.44.35211.0 14.51'
+
+if [ "$QUICK" = 1 ]; then   # --quick: the helpers alone; the installs into stand-in Steam folders take most of an hour
+    printf '\n%d passed, %d failed (--quick: the installs are left out)\n' "$PASS" "$FAILED"
+    [ "$FAILED" = 0 ]; exit
+fi
 
 # ------------------------------------------------- SteamOS, game on SD card ----
 section "SteamOS: game 2.5 on an SD card library, NightCoop once copied in by hand"

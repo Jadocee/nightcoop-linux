@@ -876,14 +876,17 @@ If you try it, a report of `check` output with the result is welcome.
 ## Packaging
 
 `packaging/arch/PKGBUILD` builds `nightcoop-linux-git`, which installs the
-`nightcoop-install` command and runs the test suite in `check()`. `.SRCINFO` is kept next
-to it for the AUR; regenerate it with `makepkg --printsrcinfo > .SRCINFO` after changing
-the PKGBUILD.
+`nightcoop-install` command. Its `check()` runs only the quick part of the test suite
+(`tests/run-tests.sh --quick`, the helpers' tests, a few seconds), so that building the
+package takes well under a minute; the whole suite takes most of an hour and runs in CI on
+every change. `.SRCINFO` is kept next to it for the AUR; regenerate it with
+`makepkg --printsrcinfo > .SRCINFO` after changing the PKGBUILD.
 
 ## Development
 
 `tests/run-tests.sh` runs the installer end to end against a synthetic Steam
-installation. It covers:
+installation, in most of an hour; `tests/run-tests.sh --quick` runs only the helpers' tests,
+without the installs, in a few seconds. The suite covers:
 
 - SD-card and Flatpak libraries;
 - `proton-cachyos` and the `--proton` choices;
