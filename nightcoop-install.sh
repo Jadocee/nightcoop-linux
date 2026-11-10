@@ -290,6 +290,12 @@ Silent_Silencers              2.5 mods        mod  -     -                      
 Stealth_Finishers             2.5 mods        mod  -     -                                                           2.1.0  nexus:9360
 Aerial_Takedowns_Fix_Mantis_Blades 2.5 mods        mod  -     -                                                      1.0.1  nexus:34044:+mantis:non_lethal
 Aerial_Takedowns_Fix_Gorilla_Arms 2.5 mods        mod  -     -                                                       1.0.1  nexus:34044:+gorilla
+Dash_Fix                      2.5 mods        mod  -     -                                                           1.0.1  nexus:16272
+Dont_Hide_Stamina_Bar_on_Holster 2.5 mods        mod  -     -                                                        1.0    nexus:9448
+Easier_Controller_Sprint      2.5 mods        mod  -     -                                                           1.1.1  nexus:26610
+Enemies_Dodging_Fix           2.5 mods        mod  -     -                                                           0.11   nexus:17923
+Eye_In_The_Sky_Highlight_Fix  2.5 mods        mod  -     -                                                           1      nexus:30246
+Melee_Finisher_Camera_Fix     2.5 mods        mod  -     -                                                           1      nexus:32173
 No_Crowd_Panic_From_Devices   2.5 mods        mod  -     -                                                           1.2.0  nexus:7353:+redscript
 Crowd_Voice_Unlocked          2.5 mods        mod  -     -                                                           1.1.0  nexus:36527
 Sit_Anywhere                  2.5 mods        mod  -     -                                                           1.4    nexus:7299
@@ -441,7 +447,9 @@ Aerial_Takedowns_Fix_Mantis_Blades:redscript Aerial_Takedowns_Fix_Gorilla_Arms:r
 Cutscene_Weapon_Swapper:redscript,Codeware,TweakXL Deceptious_Bug_Fixes:redscript,Codeware,ArchiveXL,TweakXL,Deceptious_Quest_Core
 Better_Armor_Tooltip:redscript,ArchiveXL Cyberware_Screen_Tooltip_Fix:redscript Dynamic_Wanted_Stars:redscript,ArchiveXL
 Apartment_Cats_Corpo_Plaza:ArchiveXL,TweakXL Apartment_Cats_Japantown:ArchiveXL,TweakXL Apartment_Cats_Northside_Motel:ArchiveXL,TweakXL
-Apartment_Cats_The_Glen:ArchiveXL,TweakXL Apartment_Cats_Dogtown:ArchiveXL,TweakXL,Phantom_Liberty"
+Apartment_Cats_The_Glen:ArchiveXL,TweakXL Apartment_Cats_Dogtown:ArchiveXL,TweakXL,Phantom_Liberty
+Dash_Fix:redscript,ArchiveXL Dont_Hide_Stamina_Bar_on_Holster:redscript Easier_Controller_Sprint:redscript Enemies_Dodging_Fix:redscript
+Eye_In_The_Sky_Highlight_Fix:redscript Melee_Finisher_Camera_Fix:redscript"
 # Outfit mods: in co-op, a partner without the same mod sees a plain game piece in their place.
 OUTFITS="Zenitex_Ballistic_Mask Zenitex_Tactical_Harness Zenitex_Combat_Jacket Zenitex_Armor_Pads Zenitex_Panam_Pants
 Zenitex_Combat_Gloves Comfy_Boots Goliath_Coat Cityfolk_Hoodie Knife_Bandolier Bunny_Slippers Saul_Pants CrystalJock_Bomber
@@ -466,7 +474,7 @@ WORLD="The_Empathy_Club_Unlocked Dicky_Twister_Club_Unlocked Heavy_Hearts_Club_U
 Immersive_Rippers Immersive_Bartenders Parking_Spots_Enhanced Deceptious_Bug_Fixes Apartment_Cats_Corpo_Plaza
 Apartment_Cats_Japantown Apartment_Cats_Northside_Motel Apartment_Cats_The_Glen Apartment_Cats_Dogtown"
 # Mods that change how NPCs act: the game that leads an NPC applies them, so every partner needs the same.
-NPC_MODS="Silent_Silencers Stealth_Fixes Stealth_Finishers No_Crowd_Panic_From_Devices Fixed_NPC_Vehicle_Reactions"
+NPC_MODS="Silent_Silencers Stealth_Fixes Stealth_Finishers No_Crowd_Panic_From_Devices Fixed_NPC_Vehicle_Reactions Enemies_Dodging_Fix"
 # Files a mod writes to while the game runs (its settings, its database, what it has learned):
 # the player's copy stays, and is replaced only when a new release changes the file it ships.
 # "*" is every component; a "*" in a pattern also matches across folders.
@@ -3302,6 +3310,7 @@ nexus_file() {   # nexus_file <component>: which file to download, of a mod with
         Preem_Scopes_Smart_Weapons) echo "Preem Scopes - Smart Weapons, among the optional files" ;;
         Preem_Scopes_Binoculars) echo "Preem Scopes - Binoculars, among the optional files, not Binoculars with Frame" ;;
         Apartment_Cats_Corpo_Plaza) echo "the main file Apartment Cats - Corpo Plaza 3.0.0, not the Colour Variants file of 2022" ;;
+        Enemies_Dodging_Fix) echo "the main file, Dodging Fix 0.11" ;;
         Apartment_Cats_Custom_Cats) echo "the main file Apartment Cats Customs - Base files, with a look for each apartment, not the 4k replacer or the apartment variants files" ;;
     esac
 }

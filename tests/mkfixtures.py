@@ -386,6 +386,17 @@ ROUND10 = {   # round 10: fixes, tooltips, the wanted HUD, scopes and apartment 
     'Apartment Cats Customs - Base files - 4k replacer-6837-1-3-0-1740786473.zip': ['archive/pc/mod/#ApartmentCatsCustoms_Base.archive'],
     'Apartment Cats Customs - Motel Apartment variants-6837-1-3-0-1740786652.zip': ['#ApartmentCatsCustoms_Motel_BlackAndWhite.archive', '#ApartmentCatsCustoms_Motel_GreyTiger.archive', '#ApartmentCatsCustoms_Motel_Black.archive', '#ApartmentCatsCustoms_Motel_WhiteOrange.archive', '#ApartmentCatsCustoms_Motel_OrangeWhite.archive', '#ApartmentCatsCustoms_Motel_White.archive', '#ApartmentCatsCustoms_Motel_OrangeTiger.archive'],
 }
+ROUND11 = {   # round 11: gameplay fixes and quest fixes; the chosen files and the decoys their rules pass over (the real
+    # archives' game folders, from Nexus Mods' file previews and the downloads)
+    'Dash Fix 16272 1.0.1 2026-10-25T18-27Z Q6xF6llzo.zip': ['archive/pc/mod/DashFix.archive', 'archive/pc/mod/DashFix.archive.xl', 'r6/scripts/DashFix/DashFix.reds'],
+    'Dash Fix-16272-1-0-0-1723844109.zip': ['archive/pc/mod/DashFix.archive', 'archive/pc/mod/DashFix.archive.xl', 'r6/scripts/DashFix/DashFix.reds'],
+    "Don't Hide Stamina Bar on Holster-9448-1-0-1696167242.zip": ['r6/scripts/HolsterStaminaBarBugFix.reds'],
+    'Easier Controller Sprint 26610 1.1.1 2026-10-25T14-32Z 5em9eooDJ.zip': ['r6/scripts/EasierControllerSprint.reds', 'r6/tweaks/easier_controller_sprint.yaml'],
+    'Easier Controller Sprint-26610-1-1-0-1767608356.zip': ['r6/scripts/EasierControllerSprint.reds', 'r6/tweaks/easier_controller_sprint.yaml'],
+    'Dodging Fix-17923-0-11-1732072487.rar': ['r6/scripts/DodgesFix.reds'],
+    'Eye In The Sky Highlight Fix-30246-1-1780560206.zip': ['r6/scripts/Eye In The Sky Highlight Fix.reds'],
+    'Melee Finisher Camera Fix 32173 1 2026-08-02T06-22Z AgoGgimLJ.zip': ['r6/scripts/Melee Finisher Camera Fix/MeleeFinisherCameraFix.reds'],
+}
 ROUND9_FILES = {   # real contents, where the tests read a file: a key binding to move, settings to keep
     ('Always First Equip 2557 2.2.0 2026-10-24T19-15Z mPgaPVVHG.zip', 'r6/input/AlwaysFirstEquip.xml'): b'<?xml version="1.0"?>\r\n<bindings>\r\n    <!-- inputContexts -->\r\n    <context name="AlwaysFirstEquip" >\r\n        <action name="AlwaysFirstEquip" map="AlwaysFirstEquip_Button" />\r\n        <action name="SafeWeapon" map="SafeWeapon_Button" />\r\n    </context>\r\n\r\n    <context name="Items" append="true">\r\n        <include name="AlwaysFirstEquip" />\r\n    </context>\r\n\t\r\n\t<hold action="AlwaysFirstEquip" timeout="0.4" />\r\n\r\n    <!-- inputUserMapping -->\r\n\t<mapping name="AlwaysFirstEquip_Button" type="Button" >\r\n        <button id="IK_F2" overridableUI="afeMainHotkey" />\r\n    </mapping>\r\n\t<mapping name="SafeWeapon_Button" type="Button" >\r\n        <button id="IK_F3" overridableUI="afeAdditionalHotkey" />\r\n    </mapping>\r\n</bindings>\r\n',
     ('Sit Anywhere 1.4-7299-1-4-1762025971.zip', 'bin/x64/plugins/cyber_engine_tweaks/mods/sitAnywhere/config/config.json'):
@@ -672,6 +683,9 @@ def archives(fix):
     for name, paths in ROUND10.items():
         zname = re.sub(r'\.(rar|7z)$', '.zip', name)
         zipdir(f'{fix}/round10/{zname}', {p: placeholder(p, name) for p in paths})
+    for name, paths in ROUND11.items():
+        zname = re.sub(r'\.(rar|7z)$', '.zip', name)
+        zipdir(f'{fix}/round11/{zname}', {p: placeholder(p, name) for p in paths})
     eqex = 'Equipment-EX 6945 1.2.11 2026-11-06T10-00Z Lt7Qw2zXa.zip'   # a later release, only on Nexus Mods
     zipdir(f'{fix}/nexus-later/{eqex}', {p: placeholder(p, eqex) for p in ROUND3['Equipment-EX 6945 1.2.10 2026-10-25T21-07Z k8Iw8mmPd.zip']})
     nexus_api(fix, sorted({r.split()[7].split(':')[1] for r in table if r.split()[7].startswith('nexus:')}, key=int))
@@ -702,7 +716,7 @@ def nexus_api(fix, ids):
     for period in ('?period=1d', '?period=1w', '?period=1m', ''):   # nothing changed lately (Python 3.14 opens a
         write(f'{game}/updated.json{period}', '[]')                  # file:// URL without its query)
     archives = []
-    for d in ('nexus', 'style', 'round3', 'round4', 'round5', 'round7', 'round9', 'round10', 'nexus-bad', 'nexus-later'):
+    for d in ('nexus', 'style', 'round3', 'round4', 'round5', 'round7', 'round9', 'round10', 'round11', 'nexus-bad', 'nexus-later'):
         archives += [(n, f'{fix}/{d}/{n}') for n in sorted(os.listdir(f'{fix}/{d}'))]
     md5s, fid, lists = {}, 100000, {}
     for mod in ids:
