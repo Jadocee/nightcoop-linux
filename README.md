@@ -370,9 +370,20 @@ with the patch.
 | Immersive Rippers and Immersive Bartenders (Deceptious) | [7064](https://www.nexusmods.com/cyberpunk2077/mods/7064?tab=files), [7203](https://www.nexusmods.com/cyberpunk2077/mods/7203?tab=files) | 2.6.2, 2.0.3 or newer | V sits in the ripperdoc's chair and has animated drinks at bars; Fingers can be paid to serve you again. Every partner needs them (Bartenders dates from 2025: try it once on 2.5) |
 | Deceptious Bug Fixes | [18318](https://www.nexusmods.com/cyberpunk2077/mods/18318?tab=files) | 1.4.3 or newer | About forty world, TV and quest fixes in one mod, for 2.5's world sectors; every partner needs it, and in a session its quest fixes act in the host's world |
 | Apartment Cats: Corpo Plaza, Japantown, Northside Motel, The Glen and Dogtown, with Custom Cats' Base files | [6329](https://www.nexusmods.com/cyberpunk2077/mods/6329?tab=files), [6493](https://www.nexusmods.com/cyberpunk2077/mods/6493?tab=files), [6379](https://www.nexusmods.com/cyberpunk2077/mods/6379?tab=files), [6276](https://www.nexusmods.com/cyberpunk2077/mods/6276?tab=files), [10325](https://www.nexusmods.com/cyberpunk2077/mods/10325?tab=files), [6837](https://www.nexusmods.com/cyberpunk2077/mods/6837?tab=files) | 3.0.0, 3.0.1, 3.0.0, 3.0.1, 2.0.0, 1.3.0 or newer | A cat to pet in each of V's other homes (Dogtown's needs Phantom Liberty), each with a look of its own from Custom Cats (not its 4k replacer or the apartment variants files). Their files date from before patch 2.5: try each apartment's bed, shower, wardrobe and mirror once |
+| Immersion Patch: Cyberpunk Story Quest Fixes and Minor Activities Quest Fixes (anygoodname) | [29152](https://www.nexusmods.com/cyberpunk2077/mods/29152?tab=files), [27162](https://www.nexusmods.com/cyberpunk2077/mods/27162?tab=files) | 1.21.1, 1.15.1 or newer | Fixes to story, side, gig, cyberpsycho and NCPD quests (scenes, choices, quest cars and people), built for 2.5; every partner needs them, and in a session they act in the host's world. Pepe at El Coyote Cojo plays Story Quest Fixes' scene, not Immersive Bartenders' |
+| Immersion Patch: Holdin' On (Kerry's mansion scene) and Quest Vehicle Motion Fixes | [25792](https://www.nexusmods.com/cyberpunk2077/mods/25792?tab=files), [24772](https://www.nexusmods.com/cyberpunk2077/mods/24772?tab=files) | 1.0.0, 1.10.1 or newer | Kerry's whisky glass, and quest vehicles that jump or float; parts of both date from before patch 2.5, tested on 2.5 by their author |
+| Air Traffic Dupe Fix (Deceptious) | [31304](https://www.nexusmods.com/cyberpunk2077/mods/31304?tab=files) | 1.0.0 or newer | No duplicated or clipping AVs in the sky (its sectors date from before patch 2.5: try it once) |
+| Fix Advert Animations | [17726](https://www.nexusmods.com/cyberpunk2077/mods/17726?tab=files) | 1.1 or newer | Four billboard adverts move again; only your own screen |
+| Delete (A Few Weeks Tops) - Vik Voiceline | [16932](https://www.nexusmods.com/cyberpunk2077/mods/16932?tab=files) | 1.0 or newer | Cuts "a few weeks tops" from Vik's line after the heist, on your own game. Its author marks the file untested, and it brings that scene's English subtitles from 2024 |
 | Aerial Takedowns Fix: Mantis Blades and Gorilla Arms, each its Lethal file | [34044](https://www.nexusmods.com/cyberpunk2077/mods/34044?tab=files) | 1.0.1 or newer | Aerial takedowns with Mantis Blades or Gorilla Arms kill, with blood (not the Non Lethal or Bare Hands Bloodless files); every partner needs it, as the game of the V who drops decides |
 | Accidental fast travel bug fix | [36600](https://www.nexusmods.com/cyberpunk2077/mods/36600?tab=files) | 1.0.0.0 or newer | Panning the map over a fast-travel point no longer starts a fast travel |
 | Cutscene Weapon Swapper | [20743](https://www.nexusmods.com/cyberpunk2077/mods/20743?tab=files) | 1.4.2 or newer | Your own gun instead of a placeholder in some cutscenes; each player's game shows their own |
+| Dash Fix | [16272](https://www.nexusmods.com/cyberpunk2077/mods/16272?tab=files) | 1.0.1 or newer | A forward dash in combat no longer pulls V across the map onto a target |
+| Don't Hide Stamina Bar on Holster | [9448](https://www.nexusmods.com/cyberpunk2077/mods/9448?tab=files) | 1.0 or newer | The stamina bar comes back after you holster with the holster key |
+| Easier Controller Sprint | [26610](https://www.nexusmods.com/cyberpunk2077/mods/26610?tab=files) | 1.1.1 or newer | Sprinting starts more easily on a controller (not 1.1.0 or older: they stop every script compiling on 2.5) |
+| Enemies Dodging Fix | [17923](https://www.nexusmods.com/cyberpunk2077/mods/17923?tab=files) | 0.11 or newer | Enemies dodge as the game means them to; every partner needs it, as the game that leads an NPC applies it |
+| Eye In The Sky Highlight Fix | [30246](https://www.nexusmods.com/cyberpunk2077/mods/30246?tab=files) | 1 or newer | Cameras that are off and breached access points are no longer highlighted |
+| Melee Finisher Camera Fix | [32173](https://www.nexusmods.com/cyberpunk2077/mods/32173?tab=files) | 1 or newer | The camera no longer stays locked on a dead finisher target |
 | The Empathy Club Unlocked, its file for 2.5 | [27380](https://www.nexusmods.com/cyberpunk2077/mods/27380?tab=files) | 1.2 or newer | Opens the club's closed sections (not Remastered or No Bouncers); needs Phantom Liberty |
 | Dicky Twister Club Unlocked | [27101](https://www.nexusmods.com/cyberpunk2077/mods/27101?tab=files) | 1.1 or newer | Opens the backstage and VIP floor; needs Phantom Liberty |
 | Heavy Hearts Club Unlocked, its file for 2.5 | [27108](https://www.nexusmods.com/cyberpunk2077/mods/27108?tab=files) | 1.3 or newer | Opens the VIP areas in Dogtown; needs Phantom Liberty |
@@ -633,6 +644,19 @@ new release of the mod changes the file it ships, and your copy is backed up fir
   hook. Dynamic Wanted Stars replaces how the wanted bar is drawn, not the police system
   that NightCoop shares from the host. Preem Scopes replaces only scope widgets and meshes,
   none of which another mod of the set changes.
+- **The gameplay fixes of round 11** hook nothing in NightCoop's tables. Dash Fix replaces the
+  dodge state's entry and drops the game's pull onto the target. Easier Controller Sprint and
+  Melee Finisher Camera Fix change V's own state machine, which partners' bodies do not run,
+  so partners see the result through NightCoop's body sync. Enemies Dodging Fix replaces how
+  an NPC picks its dodge, and keeps the game's call to `AICondition.Check`, where NightCoop's
+  redirect sits.
+- **The quest fixes of round 11** replace or add quest phases and scenes and patch scenes as
+  they load, and their Cyber Engine Tweaks parts move the quest cars and people they fix. In
+  a session the host's game does that for everyone, so every partner needs the same files
+  for the scenes and vote choices to match. Quest Vehicle Motion Fixes checks each sector's
+  node count before it deletes a node, so a sector that 2.5 changed is skipped, not broken;
+  one Phantom Liberty sector it replaces whole, and the Kerry scene and the air traffic
+  sectors are copies from before 2.5.
 - **Apartment cats.** Each cat mod replaces its apartment's home scene, which spawns the cat,
   and the apartment's quest sector, which holds the bowls and boxes; no scripts. NightCoop
   keeps V's home scenes personal, so each game spawns and leads its own cat, and petting is
@@ -999,6 +1023,9 @@ without the installs, in a few seconds. The suite covers:
   compatibility, Binoculars with Frame and No Scope Crosshairs files, Corpo Plaza's Colour
   Variants, Custom Cats' 4k replacer and variants); their notes; the Non Lethal file alone
   named as not installed; the Dogtown cat left out without Phantom Liberty;
+- the mods of round 11 by their real file names and entries, over the releases before 2.5 of
+  Dash Fix and Easier Controller Sprint, which are named as too old when they are the only
+  ones; their notes, Pepe's scene with Immersive Bartenders among them;
 - mods the script did not install cleared on install into the backup, put back by uninstall,
   and left alone with `--keep-other-mods`, while the script's own mods keep what they write;
 - a GitHub download that fails, and the copy downloaded in a browser taken from Downloads;

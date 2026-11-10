@@ -308,6 +308,13 @@ Immersive_Rippers             2.5 mods        mod  -     -                      
 Immersive_Bartenders          2.5 mods        mod  -     -                                                           2.0.3  nexus:7203
 Parking_Spots_Enhanced        2.5 mods        mod  -     -                                                           1.2.5  nexus:15708:-:alt
 Deceptious_Bug_Fixes          2.5 mods        mod  -     -                                                           1.4.3  nexus:18318
+Story_Quest_Fixes             2.5 mods        mod  -     -                                                           1.21.1 nexus:29152
+Minor_Activities_Quest_Fixes  2.5 mods        mod  -     -                                                           1.15.1 nexus:27162
+Kerry_Mansion_Scene_Fixes     2.5 mods        mod  -     -                                                           1.0.0  nexus:25792
+Quest_Vehicle_Motion_Fixes    2.5 mods        mod  -     -                                                           1.10.1 nexus:24772
+Air_Traffic_Dupe_Fix          2.5 mods        mod  -     -                                                           1.0.0  nexus:31304
+Fix_Advert_Animations         2.5 mods        mod  -     -                                                           1.1    nexus:17726
+Vik_Voiceline_Cut             2.5 mods        mod  -     -                                                           1.0    nexus:16932
 Apartment_Cats_Corpo_Plaza    2.5 mods        mod  -     -                                                           3.0.0  nexus:6329:-:colour
 Apartment_Cats_Japantown      2.5 mods        mod  -     -                                                           3.0.1  nexus:6493
 Apartment_Cats_Northside_Motel 2.5 mods        mod  -     -                                                          3.0.0  nexus:6379
@@ -449,7 +456,9 @@ Better_Armor_Tooltip:redscript,ArchiveXL Cyberware_Screen_Tooltip_Fix:redscript 
 Apartment_Cats_Corpo_Plaza:ArchiveXL,TweakXL Apartment_Cats_Japantown:ArchiveXL,TweakXL Apartment_Cats_Northside_Motel:ArchiveXL,TweakXL
 Apartment_Cats_The_Glen:ArchiveXL,TweakXL Apartment_Cats_Dogtown:ArchiveXL,TweakXL,Phantom_Liberty
 Dash_Fix:redscript,ArchiveXL Dont_Hide_Stamina_Bar_on_Holster:redscript Easier_Controller_Sprint:redscript Enemies_Dodging_Fix:redscript
-Eye_In_The_Sky_Highlight_Fix:redscript Melee_Finisher_Camera_Fix:redscript"
+Eye_In_The_Sky_Highlight_Fix:redscript Melee_Finisher_Camera_Fix:redscript
+Story_Quest_Fixes:ArchiveXL,Codeware,Cyber_Engine_Tweaks Minor_Activities_Quest_Fixes:ArchiveXL,Codeware,Cyber_Engine_Tweaks
+Quest_Vehicle_Motion_Fixes:ArchiveXL"
 # Outfit mods: in co-op, a partner without the same mod sees a plain game piece in their place.
 OUTFITS="Zenitex_Ballistic_Mask Zenitex_Tactical_Harness Zenitex_Combat_Jacket Zenitex_Armor_Pads Zenitex_Panam_Pants
 Zenitex_Combat_Gloves Comfy_Boots Goliath_Coat Cityfolk_Hoodie Knife_Bandolier Bunny_Slippers Saul_Pants CrystalJock_Bomber
@@ -472,7 +481,8 @@ MAKEUP="Beautiful_Makeup Beautiful_Makeup_II"
 # Places the mods open or change, and their quests: every partner needs the same files.
 WORLD="The_Empathy_Club_Unlocked Dicky_Twister_Club_Unlocked Heavy_Hearts_Club_Unlocked Afterlife_Unlocked_and_Remastered Heres_Brendan
 Immersive_Rippers Immersive_Bartenders Parking_Spots_Enhanced Deceptious_Bug_Fixes Apartment_Cats_Corpo_Plaza
-Apartment_Cats_Japantown Apartment_Cats_Northside_Motel Apartment_Cats_The_Glen Apartment_Cats_Dogtown"
+Apartment_Cats_Japantown Apartment_Cats_Northside_Motel Apartment_Cats_The_Glen Apartment_Cats_Dogtown Story_Quest_Fixes
+Minor_Activities_Quest_Fixes Kerry_Mansion_Scene_Fixes Quest_Vehicle_Motion_Fixes Air_Traffic_Dupe_Fix"
 # Mods that change how NPCs act: the game that leads an NPC applies them, so every partner needs the same.
 NPC_MODS="Silent_Silencers Stealth_Fixes Stealth_Finishers No_Crowd_Panic_From_Devices Fixed_NPC_Vehicle_Reactions Enemies_Dodging_Fix"
 # Files a mod writes to while the game runs (its settings, its database, what it has learned):
@@ -3698,9 +3708,11 @@ step_addons() {   # the add-on sets (--with-flight, --with-mods), matched to the
         info "glasses or a mask."
     fi
     if [ "$world" = 1 ]; then
-        info "Places and scenes of mods in co-op (the clubs and the Afterlife opened, Brendan's quest, the ripperdocs' and"
-        info "bars' scenes, the parking spots, Deceptious Bug Fixes, the apartment cats): every partner needs the same files;"
-        info "a partner without them sees locked doors and walls where you walk. Quests and their progress are the host's."
+        info "Places, scenes and quests of mods in co-op (the clubs and the Afterlife opened, Brendan's quest, the ripperdocs'"
+        info "and bars' scenes, the parking spots, Deceptious Bug Fixes, the apartment cats, the Immersion Patch quest fixes, the"
+        info "air traffic fix): every partner needs the same files;"
+        info "a partner without them sees locked doors and walls where you walk, or other scenes and vote choices. Quests and"
+        info "their progress are the host's."
     fi
     if [ "${#scenes[@]}" -gt 0 ]; then
         info "$(listing_and "${scenes[@]}") in co-op: a visit is your own (NightCoop keeps a vendor's scene personal), and partners"
@@ -3739,6 +3751,16 @@ step_addons() {   # the add-on sets (--with-flight, --with-mods), matched to the
     if [[ "$ADDON_HAVE" == *" Deceptious_Bug_Fixes "* ]]; then
         info "Deceptious Bug Fixes in co-op: its quest fixes act in the host's world in a session; a fix for an older save comes"
         info "when you play your own world."
+    fi
+    if [[ "$ADDON_HAVE" == *" Story_Quest_Fixes "* ]] || [[ "$ADDON_HAVE" == *" Minor_Activities_Quest_Fixes "* ]] \
+       || [[ "$ADDON_HAVE" == *" Quest_Vehicle_Motion_Fixes "* ]]; then
+        info "Immersion Patch quest fixes in co-op: in a session they act in the host's world, whose game places the quest cars"
+        info "and people they fix; keep their fixes on (the default) for everyone. With Polish voices, four of Brendan's lines"
+        info "run longer on that player's screen."
+    fi
+    if [[ "$ADDON_HAVE" == *" Story_Quest_Fixes "* ]] && [[ "$ADDON_HAVE" == *" Immersive_Bartenders "* ]]; then
+        info "Pepe at El Coyote Cojo plays Story Quest Fixes' scene, which loads before Immersive Bartenders': he serves no"
+        info "Immersive Bartenders drinks; the other bartenders do."
     fi
     if [[ "$ADDON_HAVE" == *" Apartment_Cats_"* ]]; then
         info "Apartment cats in co-op: the apartments and what V bought are the host's. NightCoop keeps V's home scenes"
