@@ -76,9 +76,10 @@ EOF
 tools "$T/tools-fp" game-performance powerprofilesctl; fpstub "$T/tools-fp" 26.08
 tools "$T/tools-fp-nomh"; fpstub "$T/tools-fp-nomh" 25.08
 
-H="" OSR="$T/os-steamos" OUT="" TOOLS="$T/tools-none" RUNENV=()
-run() {   # run <args...> : output in $OUT, status in $RC (RUNENV: more variables for it, NAME=value each)
-    OUT="$(env -i PATH="$PATH" HOME="$H" LANG=C.UTF-8 DISPLAY=:0 NIGHTCOOP_ALLOW_ROOT=1 \
+H="" OSR="$T/os-steamos" OUT="" TOOLS="$T/tools-none" RUNENV=() RUNAS=()
+run() {   # run <args...> : output in $OUT, status in $RC (RUNENV: more variables for it, NAME=value each;
+          # RUNAS: a command to run it under)
+    OUT="$(${RUNAS[@]+"${RUNAS[@]}"} env -i PATH="$PATH" HOME="$H" LANG=C.UTF-8 DISPLAY=:0 NIGHTCOOP_ALLOW_ROOT=1 \
            NIGHTCOOP_OS_RELEASE="$OSR" NIGHTCOOP_TOOL_PATH="$TOOLS" ${RUNENV[@]+"${RUNENV[@]}"} bash "$NI" "$@" 2>&1)"; RC=$?
 }
 hp() { bash "$SCRIPT" __py "$@"; }
@@ -522,6 +523,21 @@ if command -v bsdtar >/dev/null 2>&1; then   # Arch, CachyOS and SteamOS have it
     bsdtar --format 7zip -cf "$D/No Intro Videos-533-0-5-1721546294.7z" -C "$T/niv7z" archive
     run install --yes --with-mods
     expect "a 7z download is unpacked with bsdtar, without the links in it (nor what they point to)" '[ $RC = 0 ] && [ -f "$G/archive/pc/mod/NoIntroVideos.archive" ] && [ ! -e "$G/archive/pc/mod/elsewhere" ] && [ ! -L "$G/archive/pc/mod/elsewhere" ]' "$OUT"
+    # The Nissan Silvia S14's 7z marks its Dedka Auto Shop folders read-only (Windows' attribute), which bsdtar
+    # keeps. Run as a normal user is (root here gives up its override of file permissions), the file the script
+    # leaves out, and a link put beside it, must still go, and the run must leave no temporary folder behind.
+    DK="$T/s14/bin/x64/plugins/cyber_engine_tweaks/mods/Dedka Auto Shop"
+    python3 -I -m zipfile -e "$FIX/round3/S14 Nomad Main files and Livery 1 25997 1.1 2026-10-31T10-30Z UQrhQSION.zip" "$T/s14"
+    ln -s /etc/hostname "$DK/cars/elsewhere"; chmod 555 "$DK/cars" "$DK"
+    bsdtar --format 7zip -cf "$D/S14 Nomad Main files and Livery 1 25997 1.1 2026-10-31T10-30Z UQrhQSION.7z" -C "$T/s14" archive bin r6
+    chmod 755 "$DK" "$DK/cars"
+    cp "$FIX/nexus/Virtual Car Dealer 4454 2.3.0 2026-10-25T11-18Z lcXrcZZMt.zip" "$FIX/round3/manufacturers 7855 1.1 2026-10-31T22-56Z rxs7xRes9.zip" "$D/"
+    mkdir -p "$T/tmp-s14"
+    if [ "$(id -u)" = 0 ] && command -v setpriv >/dev/null 2>&1; then
+        RUNAS=(setpriv "--inh-caps=-dac_override,-dac_read_search" "--bounding-set=-dac_override,-dac_read_search" --)
+    fi
+    RUNENV=(TMPDIR="$T/tmp-s14"); run update --yes --with-mods; RUNENV=() RUNAS=()
+    expect "a 7z whose folders are read-only (the Silvia's): what the script leaves out, and a link, stay out; no temporary folder is left behind" '[ $RC = 0 ] && [ -f "$G/r6/tweaks/ctrlsec/ctrlsec_UnboundS14_Nomad.yaml" ] && [ -f "$G/archive/pc/mod/ctrlsec_s14unbound_nomad.archive" ] && [ ! -e "$G/bin/x64/plugins/cyber_engine_tweaks/mods/Dedka Auto Shop" ] && [ -z "$(ls -A "$T/tmp-s14")" ] && [[ "$OUT" != *"Permission denied"* ]]' "$OUT"
 else
     printf '7z\274\257\047\034' > "$D/No Intro Videos-533-0-5-1721546294.7z"
     run install --yes --with-mods
