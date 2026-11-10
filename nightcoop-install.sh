@@ -290,6 +290,12 @@ Silent_Silencers              2.5 mods        mod  -     -                      
 Stealth_Finishers             2.5 mods        mod  -     -                                                           2.1.0  nexus:9360
 Aerial_Takedowns_Fix_Mantis_Blades 2.5 mods        mod  -     -                                                      1.0.1  nexus:34044:+mantis:non_lethal
 Aerial_Takedowns_Fix_Gorilla_Arms 2.5 mods        mod  -     -                                                       1.0.1  nexus:34044:+gorilla
+Dash_Fix                      2.5 mods        mod  -     -                                                           1.0.1  nexus:16272
+Dont_Hide_Stamina_Bar_on_Holster 2.5 mods        mod  -     -                                                        1.0    nexus:9448
+Easier_Controller_Sprint      2.5 mods        mod  -     -                                                           1.1.1  nexus:26610
+Enemies_Dodging_Fix           2.5 mods        mod  -     -                                                           0.11   nexus:17923
+Eye_In_The_Sky_Highlight_Fix  2.5 mods        mod  -     -                                                           1      nexus:30246
+Melee_Finisher_Camera_Fix     2.5 mods        mod  -     -                                                           1      nexus:32173
 No_Crowd_Panic_From_Devices   2.5 mods        mod  -     -                                                           1.2.0  nexus:7353:+redscript
 Crowd_Voice_Unlocked          2.5 mods        mod  -     -                                                           1.1.0  nexus:36527
 Sit_Anywhere                  2.5 mods        mod  -     -                                                           1.4    nexus:7299
@@ -302,6 +308,13 @@ Immersive_Rippers             2.5 mods        mod  -     -                      
 Immersive_Bartenders          2.5 mods        mod  -     -                                                           2.0.3  nexus:7203
 Parking_Spots_Enhanced        2.5 mods        mod  -     -                                                           1.2.5  nexus:15708:-:alt
 Deceptious_Bug_Fixes          2.5 mods        mod  -     -                                                           1.4.3  nexus:18318
+Story_Quest_Fixes             2.5 mods        mod  -     -                                                           1.21.1 nexus:29152
+Minor_Activities_Quest_Fixes  2.5 mods        mod  -     -                                                           1.15.1 nexus:27162
+Kerry_Mansion_Scene_Fixes     2.5 mods        mod  -     -                                                           1.0.0  nexus:25792
+Quest_Vehicle_Motion_Fixes    2.5 mods        mod  -     -                                                           1.10.1 nexus:24772
+Air_Traffic_Dupe_Fix          2.5 mods        mod  -     -                                                           1.0.0  nexus:31304
+Fix_Advert_Animations         2.5 mods        mod  -     -                                                           1.1    nexus:17726
+Vik_Voiceline_Cut             2.5 mods        mod  -     -                                                           1.0    nexus:16932
 Apartment_Cats_Corpo_Plaza    2.5 mods        mod  -     -                                                           3.0.0  nexus:6329:-:colour
 Apartment_Cats_Japantown      2.5 mods        mod  -     -                                                           3.0.1  nexus:6493
 Apartment_Cats_Northside_Motel 2.5 mods        mod  -     -                                                          3.0.0  nexus:6379
@@ -378,7 +391,7 @@ Toyota_Supra_HKS:ArchiveXL,TweakXL,Cyber_Engine_Tweaks,redscript,Vehicle_Manufac
 Porsche_911_GT3_RS:ArchiveXL,TweakXL,Cyber_Engine_Tweaks,Material_and_Texture_Override,Virtual_Car_Dealer
 Vehicle_Customizer:Cyber_Engine_Tweaks Vehicle_Customizer_update:Vehicle_Customizer Deceptious_Quest_Core:ArchiveXL
 VendorsXL:redscript,Codeware,ArchiveXL,TweakXL,Deceptious_Quest_Core Equipment_EX:redscript,Codeware,ArchiveXL,TweakXL
-Impact_FX:redscript,Codeware,TweakXL Immersive_Audio_Distance:redscript,Codeware
+Impact_FX:redscript,Codeware,TweakXL Immersive_Audio_Distance:redscript,Codeware,Mod_Settings Vehicle_Manufacturer_Fix:redscript
 Apollo_Intensa_Emozione:redscript,Codeware,ArchiveXL,TweakXL,Cyber_Engine_Tweaks,Virtual_Car_Dealer
 Countach_LPI_800-4:redscript,Codeware,ArchiveXL,TweakXL,Cyber_Engine_Tweaks,Virtual_Car_Dealer
 Countach_Liberty_Walk:redscript,Codeware,ArchiveXL,TweakXL,Cyber_Engine_Tweaks,Virtual_Car_Dealer
@@ -441,7 +454,11 @@ Aerial_Takedowns_Fix_Mantis_Blades:redscript Aerial_Takedowns_Fix_Gorilla_Arms:r
 Cutscene_Weapon_Swapper:redscript,Codeware,TweakXL Deceptious_Bug_Fixes:redscript,Codeware,ArchiveXL,TweakXL,Deceptious_Quest_Core
 Better_Armor_Tooltip:redscript,ArchiveXL Cyberware_Screen_Tooltip_Fix:redscript Dynamic_Wanted_Stars:redscript,ArchiveXL
 Apartment_Cats_Corpo_Plaza:ArchiveXL,TweakXL Apartment_Cats_Japantown:ArchiveXL,TweakXL Apartment_Cats_Northside_Motel:ArchiveXL,TweakXL
-Apartment_Cats_The_Glen:ArchiveXL,TweakXL Apartment_Cats_Dogtown:ArchiveXL,TweakXL,Phantom_Liberty"
+Apartment_Cats_The_Glen:ArchiveXL,TweakXL Apartment_Cats_Dogtown:ArchiveXL,TweakXL,Phantom_Liberty
+Dash_Fix:redscript,ArchiveXL Dont_Hide_Stamina_Bar_on_Holster:redscript Easier_Controller_Sprint:redscript Enemies_Dodging_Fix:redscript
+Eye_In_The_Sky_Highlight_Fix:redscript Melee_Finisher_Camera_Fix:redscript
+Story_Quest_Fixes:ArchiveXL,Codeware,Cyber_Engine_Tweaks Minor_Activities_Quest_Fixes:ArchiveXL,Codeware,Cyber_Engine_Tweaks
+Quest_Vehicle_Motion_Fixes:ArchiveXL"
 # Outfit mods: in co-op, a partner without the same mod sees a plain game piece in their place.
 OUTFITS="Zenitex_Ballistic_Mask Zenitex_Tactical_Harness Zenitex_Combat_Jacket Zenitex_Armor_Pads Zenitex_Panam_Pants
 Zenitex_Combat_Gloves Comfy_Boots Goliath_Coat Cityfolk_Hoodie Knife_Bandolier Bunny_Slippers Saul_Pants CrystalJock_Bomber
@@ -464,12 +481,14 @@ MAKEUP="Beautiful_Makeup Beautiful_Makeup_II"
 # Places the mods open or change, and their quests: every partner needs the same files.
 WORLD="The_Empathy_Club_Unlocked Dicky_Twister_Club_Unlocked Heavy_Hearts_Club_Unlocked Afterlife_Unlocked_and_Remastered Heres_Brendan
 Immersive_Rippers Immersive_Bartenders Parking_Spots_Enhanced Deceptious_Bug_Fixes Apartment_Cats_Corpo_Plaza
-Apartment_Cats_Japantown Apartment_Cats_Northside_Motel Apartment_Cats_The_Glen Apartment_Cats_Dogtown"
+Apartment_Cats_Japantown Apartment_Cats_Northside_Motel Apartment_Cats_The_Glen Apartment_Cats_Dogtown Story_Quest_Fixes
+Minor_Activities_Quest_Fixes Kerry_Mansion_Scene_Fixes Quest_Vehicle_Motion_Fixes Air_Traffic_Dupe_Fix"
 # Mods that change how NPCs act: the game that leads an NPC applies them, so every partner needs the same.
-NPC_MODS="Silent_Silencers Stealth_Fixes Stealth_Finishers No_Crowd_Panic_From_Devices Fixed_NPC_Vehicle_Reactions"
+NPC_MODS="Silent_Silencers Stealth_Fixes Stealth_Finishers No_Crowd_Panic_From_Devices Fixed_NPC_Vehicle_Reactions Enemies_Dodging_Fix"
 # Files a mod writes to while the game runs (its settings, its database, what it has learned):
 # the player's copy stays, and is replaced only when a new release changes the file it ships.
-# "*" is every component; a "*" in a pattern also matches across folders.
+# "*" is every component; a "*" in a pattern also matches across folders. A pattern ending in "/*"
+# also keeps the files the mod creates right in that folder, which no archive ships.
 #   component              file (relative to the game folder)
 ADDON_STATE="
 *                       bin/x64/plugins/cyber_engine_tweaks/mods/*/db.sqlite3
@@ -479,13 +498,14 @@ Vehicle_Customizer      bin/x64/plugins/cyber_engine_tweaks/mods/VehicleCustomiz
 Night_City_Traffic_Overhaul r6/scripts/NightCityTrafficOverhaul/NCTOmoddedVehicles.reds
 Night_City_Traffic_Overhaul r6/tweaks/NightCityTrafficOverhaul/YourCustomVehicles.yaml
 Sit_Anywhere            bin/x64/plugins/cyber_engine_tweaks/mods/sitAnywhere/config/config.json
+Mark_To_Sell            r6/input/MarkToSell.xml
 "
 # Settings the script writes for co-op on every install and update (the player's other settings
 # stay): files a mod or its framework keeps, with values every partner should share, or keys moved
 # off NightCoop's and other mods' keys. A space in a path is written %20.
 #   component        kind (ini/json/json-if-unset/xml)  path  section, object path or element name  key  value
-#   Loot Icons Extension: icons stay at full opacity while aiming, as its aiming check also runs for partners'
-#     bodies (a partner aiming hid your icons). Immersive Audio Distance: story lines carry about as far as in
+#   Loot Icons Extension: icons stay at full opacity while aiming or scanning (its default for scanning), as its
+#     aiming and scanning checks also run for partners' bodies (a partner aiming hid your icons). Immersive Audio Distance: story lines carry about as far as in
 #     the game, for partners further from the speaker. Night City Traffic Overhaul: its co-op-safe defaults
 #     pinned for everyone (the vanilla vehicle security; no modded cars or random passengers in traffic).
 #   Cyber Engine Tweaks: its overlay key, when none is set yet (the first-launch popup): ` (tilde), which
@@ -499,6 +519,7 @@ Sit_Anywhere            bin/x64/plugins/cyber_engine_tweaks/mods/sitAnywhere/con
 #     scene holding V (a talk, for the story NPCs around).
 ADDON_CONFIG="
 Loot_Icons_Extension        ini  red4ext/plugins/mod_settings/user.ini LootIconsExtension.LootIconsExtensionSSX fMS_ADSOpacity 100.0
+Loot_Icons_Extension        ini  red4ext/plugins/mod_settings/user.ini LootIconsExtension.LootIconsExtensionSSX fMS_ScannerOpacity 100.0
 Immersive_Audio_Distance    ini  red4ext/plugins/mod_settings/user.ini ImmersiveAudioDistance.IAD_Settings quest 200.0
 Night_City_Traffic_Overhaul ini  red4ext/plugins/mod_settings/user.ini NightCityTrafficOverhaul.Settings.NCTOSettings modEnabled true
 Night_City_Traffic_Overhaul ini  red4ext/plugins/mod_settings/user.ini NightCityTrafficOverhaul.Settings.NCTOSettings trafficHijackDifficulty VANILLA
@@ -528,10 +549,12 @@ Silent_Silencers            json bin/x64/plugins/cyber_engine_tweaks/mods/Silent
 Silent_Silencers            json bin/x64/plugins/cyber_engine_tweaks/mods/SilentSilencersAndKnives/settings.json / secondsToDetect 0
 Sit_Anywhere                json bin/x64/plugins/cyber_engine_tweaks/mods/sitAnywhere/config/config.json / hideUI false
 "
-# Files of a mod that are not installed, for its default configuration in co-op:
+# Files of a mod that are not installed, for its default configuration in co-op (or data for a mod the set does
+# not have: the Silvia's entry for Dedka Car Dealership, which would leave a Cyber Engine Tweaks folder without a mod):
 #   component              file (relative to the game folder)
 ADDON_SKIP="
 FPP_Speedometer         r6/input/fpp_speedometer.xml
+Nissan_Silvia_S14       bin/x64/plugins/cyber_engine_tweaks/mods/Dedka Auto Shop/cars/ra5392.json
 "
 DATA_DIR="${XDG_DATA_HOME:-$HOME/.local/share}/nightcoop-linux"
 CONFIG_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/nightcoop-linux"   # the Nexus Mods API key (nexus-api-key)
@@ -3302,6 +3325,7 @@ nexus_file() {   # nexus_file <component>: which file to download, of a mod with
         Preem_Scopes_Smart_Weapons) echo "Preem Scopes - Smart Weapons, among the optional files" ;;
         Preem_Scopes_Binoculars) echo "Preem Scopes - Binoculars, among the optional files, not Binoculars with Frame" ;;
         Apartment_Cats_Corpo_Plaza) echo "the main file Apartment Cats - Corpo Plaza 3.0.0, not the Colour Variants file of 2022" ;;
+        Enemies_Dodging_Fix) echo "the main file, Dodging Fix 0.11" ;;
         Apartment_Cats_Custom_Cats) echo "the main file Apartment Cats Customs - Base files, with a look for each apartment, not the 4k replacer or the apartment variants files" ;;
     esac
 }
@@ -3634,6 +3658,14 @@ step_addons() {   # the add-on sets (--with-flight, --with-mods), matched to the
         info "Cars and AVs in co-op: partners see a car of a mod (one Virtual Car Dealer sells, an AV of Drive an"
         info "Aerial Vehicle) only when they have that mod too; otherwise NightCoop shows a game car with as many seats."
     fi
+    local tweakcars=()   # cars NightCoop's garage cannot find: it reads a mod's car names from its .yaml files only
+    for o in Bikes_of_the_Dark_Future Toyota_Supra_HKS Toyota_Supra_Mk3; do
+        if [[ "$ADDON_HAVE" == *" $o "* ]]; then tweakcars+=("$(name_of "$o")"); fi
+    done
+    if [ "${#tweakcars[@]}" -gt 0 ]; then
+        info "$(listing_and "${tweakcars[@]}") in co-op: a guest's vehicle of these mods is not in their garage in the host's"
+        info "world, as NightCoop finds a mod's cars by their names in its TweakXL .yaml files, and these mods use .tweak files."
+    fi
     if [[ "$ADDON_HAVE" == *" Katana_Pack_2 "* ]]; then
         info "Katana Pack 2 in co-op: a partner without it sees a game blade of the same kind in your hands, and the"
         info "blades' charge effects show only on your screen; their hits count for everyone."
@@ -3669,6 +3701,11 @@ step_addons() {   # the add-on sets (--with-flight, --with-mods), matched to the
         info "VendorsXL changes how every vendor restocks (larger stock limits). The RVC00N Dumpster 3's shop is"
         info "behind Dakota's garage; the computer next to it sells the whole catalogue."
     fi
+    if [[ "$ADDON_HAVE" == *" VAZ_Oka_Yozakura "* ]]; then
+        info "VAZ Oka Yozakura's hood and hatch keys start unbound (Cyber Engine Tweaks > Bindings > FIGI6_Oka). Its page"
+        info "suggests Home and End: NightCoop uses End (held, the host starts the story), so pick another key than End,"
+        info "PageUp, PageDown or Delete."
+    fi
     if [[ "$ADDON_HAVE" == *" Vehicle_Customizer "* ]]; then
         info "Vehicle Customizer works only with the game's language set to English."
     fi
@@ -3689,9 +3726,11 @@ step_addons() {   # the add-on sets (--with-flight, --with-mods), matched to the
         info "glasses or a mask."
     fi
     if [ "$world" = 1 ]; then
-        info "Places and scenes of mods in co-op (the clubs and the Afterlife opened, Brendan's quest, the ripperdocs' and"
-        info "bars' scenes, the parking spots, Deceptious Bug Fixes, the apartment cats): every partner needs the same files;"
-        info "a partner without them sees locked doors and walls where you walk. Quests and their progress are the host's."
+        info "Places, scenes and quests of mods in co-op (the clubs and the Afterlife opened, Brendan's quest, the ripperdocs'"
+        info "and bars' scenes, the parking spots, Deceptious Bug Fixes, the apartment cats, the Immersion Patch quest fixes, the"
+        info "air traffic fix): every partner needs the same files;"
+        info "a partner without them sees locked doors and walls where you walk, or other scenes and vote choices. Quests and"
+        info "their progress are the host's."
     fi
     if [ "${#scenes[@]}" -gt 0 ]; then
         info "$(listing_and "${scenes[@]}") in co-op: a visit is your own (NightCoop keeps a vendor's scene personal), and partners"
@@ -3730,6 +3769,16 @@ step_addons() {   # the add-on sets (--with-flight, --with-mods), matched to the
     if [[ "$ADDON_HAVE" == *" Deceptious_Bug_Fixes "* ]]; then
         info "Deceptious Bug Fixes in co-op: its quest fixes act in the host's world in a session; a fix for an older save comes"
         info "when you play your own world."
+    fi
+    if [[ "$ADDON_HAVE" == *" Story_Quest_Fixes "* ]] || [[ "$ADDON_HAVE" == *" Minor_Activities_Quest_Fixes "* ]] \
+       || [[ "$ADDON_HAVE" == *" Quest_Vehicle_Motion_Fixes "* ]]; then
+        info "Immersion Patch quest fixes in co-op: in a session they act in the host's world, whose game places the quest cars"
+        info "and people they fix; keep their fixes on (the default) for everyone. With Polish voices, four of Brendan's lines"
+        info "run longer on that player's screen."
+    fi
+    if [[ "$ADDON_HAVE" == *" Story_Quest_Fixes "* ]] && [[ "$ADDON_HAVE" == *" Immersive_Bartenders "* ]]; then
+        info "Pepe at El Coyote Cojo plays Story Quest Fixes' scene, which loads before Immersive Bartenders': he serves no"
+        info "Immersive Bartenders drinks; the other bartenders do."
     fi
     if [[ "$ADDON_HAVE" == *" Apartment_Cats_"* ]]; then
         info "Apartment cats in co-op: the apartments and what V bought are the host's. NightCoop keeps V's home scenes"
@@ -4016,6 +4065,10 @@ clean_args() {   # CLEAN: the planner's clean: and keep: entries (see tree_stale
         CLEAN+=("clean:$e")
     done
     for e in "${ADDON_ROOTS[@]}"; do CLEAN+=("keep:${e#*$'\t'}"); done   # this install's mods keep what they write while playing
+    while read -r c e; do   # and what ADDON_STATE names, also in a folder that two components share (recorded file by
+        # file): "x/*" keeps the files a mod creates right in x
+        if [ -n "$c" ] && [ "$c" != "*" ] && [[ "$ADDON_HAVE" == *" $c "* ]] && [[ "${e%/\*}" != *"*"* ]]; then CLEAN+=("keep:$e"); fi
+    done <<<"$ADDON_STATE"
     CLEAN+=("keep:red4ext/logs/" "keep:red4ext/config.ini" "keep:$NC_PLUGIN_DIR/servers.txt" "keep:$NC_PLUGIN_DIR/hub.txt" "keep:$NC_PLUGIN_DIR/logs/")
     if [[ "$ADDON_HAVE" == *" Cyber_Engine_Tweaks "* ]]; then   # its settings, key bindings and logs
         CLEAN+=("keep:bin/x64/plugins/cyber_engine_tweaks/*" "keep:bin/x64/plugins/cyber_engine_tweaks/logs/")
