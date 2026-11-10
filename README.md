@@ -777,7 +777,7 @@ the script's next run.
 
 | Mod | Option | Value | Why |
 | --- | --- | --- | --- |
-| Loot Icons Extension | Opacity while aiming | 100 (default 0) | Its aiming check also runs for partners' bodies, so a partner aiming hid your loot icons |
+| Loot Icons Extension | Opacity while aiming and while scanning | 100 (default 0 while aiming, 100 while scanning) | Its aiming and scanning checks also run for partners' bodies, so a partner aiming hid your loot icons |
 | Immersive Audio Distance | Quest Dialogue | 200%, close to the game's own (default 100%) | Story lines reach partners standing further from the speaker |
 | Night City Traffic Overhaul | On; Traffic Vehicles Security Level Vanilla; better panic reaction; no modded cars or random passengers in traffic | Its defaults, pinned | The host leads the traffic, but a car handed to a partner runs on that partner's settings |
 | Drive an Aerial Vehicle | Appearance key | 9 (default 5) | NightCoop's quickhack wheel uses 1 to 8 |
@@ -919,13 +919,58 @@ launch options. Adding the mod set then installed its frameworks, gave Cyber Eng
 Tweaks' loader its override and listed the Nexus downloads, and a rerun changed nothing.
 The test suite passes on all three systems.
 
+Both sets were later installed for game 2.5 with all 183 of their Nexus Mods files,
+downloaded through the API with a Premium account's key. NightCoop, RED4ext and the
+frameworks from GitHub were the test suite's stand-ins in that run. The install finished
+without an error, a rerun found nothing to do, and `check` listed every component. The
+installed folder was then checked as a whole, its files read as data:
+
+- **Scripts.** The mods' 367 redscript files, read together with the real scripts of the
+  frameworks and of NightCoop 0.2.0-beta (its SDK and its Let There Be Flight port), have
+  none of the clashes that stop redscript compiling: no function replaced twice, no field
+  or method added twice, no name declared twice in a module. All 334 game functions they
+  wrap or replace exist in 2.5 with the same parameters and return type. No mod replaces a
+  function in NightCoop's tables. The wrappers of those functions call the original, but
+  for two narrow cases that come after NightCoop's own check: Filter Saves for a save it
+  already lists, and Stealth Fixes while your remote-controlled car hits a neutral NPC.
+  Where two mods wrap the same function, each calls the original or acts only on cases
+  the other leaves alone.
+- **Cyber Engine Tweaks mods.** Of their 296 hooks, three override a function NightCoop
+  wraps: two always call the original, and Sit Anywhere's skips it only while its own Sit
+  or Stand choice is the only one on screen.
+- **Data.** Archives, ArchiveXL patches, TweakXL records and world sectors: no two mods
+  change the same sector, record or property in a way that conflicts. Where two mods ship
+  the same game file (26 files), the copy meant to win loads first: Custom Cats' looks,
+  the Rocket Bunny kit's parts of the GR Yaris, and the mods built on Deceptious Quest Core
+  over its own copies of their quests.
+- **Settings and keys.** Every setting the script writes for co-op was in place after the
+  install and its rerun. Where a key belongs to two mods, or to a mod and NightCoop, each
+  uses it in a different place: NightCoop's 1 to 8 only while the quickhack wheel is open
+  and its G only in photo mode, Drive an Aerial Vehicle's only around its own vehicle, Let
+  There Be Flight's only in flight, Mark To Sell's only in menus. Always First Equip's F2
+  and F3, two of NightCoop's quickhack keys, are moved to F11 and Insert.
+
 **Not covered:**
 
-- the real game on real hardware, with a GPU and the main menu;
-- the Nexus Mods files, which scripts cannot download without Premium. Their names,
-  contents, versions and requirements were read through the Nexus Mods API, and the
-  tests use archives named and laid out like them; the mods' support for patch 2.5 comes
-  from their pages and changelogs.
+- the real game on real hardware, with a GPU and the main menu, and a session with two
+  players;
+- one install with both the real GitHub releases and every Nexus Mods file: each half was
+  installed for real, with stand-ins for the other;
+- a compile: the scripts were read as text, and redscript was not run on them.
+
+**Worth a look in a two-player session**, where the checks above could not decide:
+
+- Immersive First Person when a partner joins or leaves. It binds to the newest player
+  body, a partner's included, and returns to your V on its next update, so your camera
+  may hitch or its height reset for a moment.
+- Always First Equip's F11 and Insert, and FPP Speedometer, with a partner near you. Both
+  set themselves up on every player body, partners' included, and should change nothing
+  on a partner's.
+- The stash, and Quick Stash, as host and as guest. Equipment-EX gives stashes their own
+  start-up, which leaves out the game's set-up for devices, with or without NightCoop.
+- The Afterlife's vending machine, the Heavy Hearts VIP door and the radio in the RVC00N
+  Dumpster. Their three mods each add the device to the city's device list under the same
+  empty reference, and only the game shows whether all three work.
 
 If you try it, a report of `check` output with the result is welcome.
 
