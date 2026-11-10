@@ -391,7 +391,7 @@ Toyota_Supra_HKS:ArchiveXL,TweakXL,Cyber_Engine_Tweaks,redscript,Vehicle_Manufac
 Porsche_911_GT3_RS:ArchiveXL,TweakXL,Cyber_Engine_Tweaks,Material_and_Texture_Override,Virtual_Car_Dealer
 Vehicle_Customizer:Cyber_Engine_Tweaks Vehicle_Customizer_update:Vehicle_Customizer Deceptious_Quest_Core:ArchiveXL
 VendorsXL:redscript,Codeware,ArchiveXL,TweakXL,Deceptious_Quest_Core Equipment_EX:redscript,Codeware,ArchiveXL,TweakXL
-Impact_FX:redscript,Codeware,TweakXL Immersive_Audio_Distance:redscript,Codeware
+Impact_FX:redscript,Codeware,TweakXL Immersive_Audio_Distance:redscript,Codeware,Mod_Settings Vehicle_Manufacturer_Fix:redscript
 Apollo_Intensa_Emozione:redscript,Codeware,ArchiveXL,TweakXL,Cyber_Engine_Tweaks,Virtual_Car_Dealer
 Countach_LPI_800-4:redscript,Codeware,ArchiveXL,TweakXL,Cyber_Engine_Tweaks,Virtual_Car_Dealer
 Countach_Liberty_Walk:redscript,Codeware,ArchiveXL,TweakXL,Cyber_Engine_Tweaks,Virtual_Car_Dealer
@@ -487,7 +487,8 @@ Minor_Activities_Quest_Fixes Kerry_Mansion_Scene_Fixes Quest_Vehicle_Motion_Fixe
 NPC_MODS="Silent_Silencers Stealth_Fixes Stealth_Finishers No_Crowd_Panic_From_Devices Fixed_NPC_Vehicle_Reactions Enemies_Dodging_Fix"
 # Files a mod writes to while the game runs (its settings, its database, what it has learned):
 # the player's copy stays, and is replaced only when a new release changes the file it ships.
-# "*" is every component; a "*" in a pattern also matches across folders.
+# "*" is every component; a "*" in a pattern also matches across folders. A pattern ending in "/*"
+# also keeps the files the mod creates right in that folder, which no archive ships.
 #   component              file (relative to the game folder)
 ADDON_STATE="
 *                       bin/x64/plugins/cyber_engine_tweaks/mods/*/db.sqlite3
@@ -497,13 +498,14 @@ Vehicle_Customizer      bin/x64/plugins/cyber_engine_tweaks/mods/VehicleCustomiz
 Night_City_Traffic_Overhaul r6/scripts/NightCityTrafficOverhaul/NCTOmoddedVehicles.reds
 Night_City_Traffic_Overhaul r6/tweaks/NightCityTrafficOverhaul/YourCustomVehicles.yaml
 Sit_Anywhere            bin/x64/plugins/cyber_engine_tweaks/mods/sitAnywhere/config/config.json
+Mark_To_Sell            r6/input/MarkToSell.xml
 "
 # Settings the script writes for co-op on every install and update (the player's other settings
 # stay): files a mod or its framework keeps, with values every partner should share, or keys moved
 # off NightCoop's and other mods' keys. A space in a path is written %20.
 #   component        kind (ini/json/json-if-unset/xml)  path  section, object path or element name  key  value
-#   Loot Icons Extension: icons stay at full opacity while aiming, as its aiming check also runs for partners'
-#     bodies (a partner aiming hid your icons). Immersive Audio Distance: story lines carry about as far as in
+#   Loot Icons Extension: icons stay at full opacity while aiming or scanning (its default for scanning), as its
+#     aiming and scanning checks also run for partners' bodies (a partner aiming hid your icons). Immersive Audio Distance: story lines carry about as far as in
 #     the game, for partners further from the speaker. Night City Traffic Overhaul: its co-op-safe defaults
 #     pinned for everyone (the vanilla vehicle security; no modded cars or random passengers in traffic).
 #   Cyber Engine Tweaks: its overlay key, when none is set yet (the first-launch popup): ` (tilde), which
@@ -517,6 +519,7 @@ Sit_Anywhere            bin/x64/plugins/cyber_engine_tweaks/mods/sitAnywhere/con
 #     scene holding V (a talk, for the story NPCs around).
 ADDON_CONFIG="
 Loot_Icons_Extension        ini  red4ext/plugins/mod_settings/user.ini LootIconsExtension.LootIconsExtensionSSX fMS_ADSOpacity 100.0
+Loot_Icons_Extension        ini  red4ext/plugins/mod_settings/user.ini LootIconsExtension.LootIconsExtensionSSX fMS_ScannerOpacity 100.0
 Immersive_Audio_Distance    ini  red4ext/plugins/mod_settings/user.ini ImmersiveAudioDistance.IAD_Settings quest 200.0
 Night_City_Traffic_Overhaul ini  red4ext/plugins/mod_settings/user.ini NightCityTrafficOverhaul.Settings.NCTOSettings modEnabled true
 Night_City_Traffic_Overhaul ini  red4ext/plugins/mod_settings/user.ini NightCityTrafficOverhaul.Settings.NCTOSettings trafficHijackDifficulty VANILLA
@@ -546,10 +549,12 @@ Silent_Silencers            json bin/x64/plugins/cyber_engine_tweaks/mods/Silent
 Silent_Silencers            json bin/x64/plugins/cyber_engine_tweaks/mods/SilentSilencersAndKnives/settings.json / secondsToDetect 0
 Sit_Anywhere                json bin/x64/plugins/cyber_engine_tweaks/mods/sitAnywhere/config/config.json / hideUI false
 "
-# Files of a mod that are not installed, for its default configuration in co-op:
+# Files of a mod that are not installed, for its default configuration in co-op (or data for a mod the set does
+# not have: the Silvia's entry for Dedka Car Dealership, which would leave a Cyber Engine Tweaks folder without a mod):
 #   component              file (relative to the game folder)
 ADDON_SKIP="
 FPP_Speedometer         r6/input/fpp_speedometer.xml
+Nissan_Silvia_S14       bin/x64/plugins/cyber_engine_tweaks/mods/Dedka Auto Shop/cars/ra5392.json
 "
 DATA_DIR="${XDG_DATA_HOME:-$HOME/.local/share}/nightcoop-linux"
 CONFIG_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/nightcoop-linux"   # the Nexus Mods API key (nexus-api-key)
@@ -3688,6 +3693,11 @@ step_addons() {   # the add-on sets (--with-flight, --with-mods), matched to the
         info "VendorsXL changes how every vendor restocks (larger stock limits). The RVC00N Dumpster 3's shop is"
         info "behind Dakota's garage; the computer next to it sells the whole catalogue."
     fi
+    if [[ "$ADDON_HAVE" == *" VAZ_Oka_Yozakura "* ]]; then
+        info "VAZ Oka Yozakura's hood and hatch keys start unbound (Cyber Engine Tweaks > Bindings > FIGI6_Oka). Its page"
+        info "suggests Home and End: NightCoop uses End (held, the host starts the story), so pick another key than End,"
+        info "PageUp, PageDown or Delete."
+    fi
     if [[ "$ADDON_HAVE" == *" Vehicle_Customizer "* ]]; then
         info "Vehicle Customizer works only with the game's language set to English."
     fi
@@ -4047,6 +4057,10 @@ clean_args() {   # CLEAN: the planner's clean: and keep: entries (see tree_stale
         CLEAN+=("clean:$e")
     done
     for e in "${ADDON_ROOTS[@]}"; do CLEAN+=("keep:${e#*$'\t'}"); done   # this install's mods keep what they write while playing
+    while read -r c e; do   # and what ADDON_STATE names, also in a folder that two components share (recorded file by
+        # file): "x/*" keeps the files a mod creates right in x
+        if [ -n "$c" ] && [ "$c" != "*" ] && [[ "$ADDON_HAVE" == *" $c "* ]] && [[ "${e%/\*}" != *"*"* ]]; then CLEAN+=("keep:$e"); fi
+    done <<<"$ADDON_STATE"
     CLEAN+=("keep:red4ext/logs/" "keep:red4ext/config.ini" "keep:$NC_PLUGIN_DIR/servers.txt" "keep:$NC_PLUGIN_DIR/hub.txt" "keep:$NC_PLUGIN_DIR/logs/")
     if [[ "$ADDON_HAVE" == *" Cyber_Engine_Tweaks "* ]]; then   # its settings, key bindings and logs
         CLEAN+=("keep:bin/x64/plugins/cyber_engine_tweaks/*" "keep:bin/x64/plugins/cyber_engine_tweaks/logs/")
