@@ -3658,6 +3658,14 @@ step_addons() {   # the add-on sets (--with-flight, --with-mods), matched to the
         info "Cars and AVs in co-op: partners see a car of a mod (one Virtual Car Dealer sells, an AV of Drive an"
         info "Aerial Vehicle) only when they have that mod too; otherwise NightCoop shows a game car with as many seats."
     fi
+    local tweakcars=()   # cars NightCoop's garage cannot find: it reads a mod's car names from its .yaml files only
+    for o in Bikes_of_the_Dark_Future Toyota_Supra_HKS Toyota_Supra_Mk3; do
+        if [[ "$ADDON_HAVE" == *" $o "* ]]; then tweakcars+=("$(name_of "$o")"); fi
+    done
+    if [ "${#tweakcars[@]}" -gt 0 ]; then
+        info "$(listing_and "${tweakcars[@]}") in co-op: a guest's vehicle of these mods is not in their garage in the host's"
+        info "world, as NightCoop finds a mod's cars by their names in its TweakXL .yaml files, and these mods use .tweak files."
+    fi
     if [[ "$ADDON_HAVE" == *" Katana_Pack_2 "* ]]; then
         info "Katana Pack 2 in co-op: a partner without it sees a game blade of the same kind in your hands, and the"
         info "blades' charge effects show only on your screen; their hits count for everyone."
