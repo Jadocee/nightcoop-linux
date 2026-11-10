@@ -546,7 +546,9 @@ expect "Vehicle Customizer's saved customisations stay, in a file it ships and o
 run update --yes --without-mods
 expect "--without-mods removes the clothing and vehicles, Let There Be Flight too; Material and Texture Override, Zenitex Core Dependency and Input Loader stay as frameworks" '[ $RC = 0 ] && [ ! -e "$P/let_there_be_flight" ] && [ -f "$P/input_loader/input_loader.dll" ] && [ ! -e "$G/r6/scripts/iconicshop" ] && [ ! -e "$G/r6/tweaks/scorpiontank/zenitex_mask.yaml" ] && [ -f "$G/r6/tweaks/scorpiontank/#_scorpion_zenitex_core_dependency.yaml" ] && [ ! -e "$G/r6/tweaks/VirtualCarDealer" ] && [ ! -e "$G/archive/pc/mod/porsche_gt3rs.archive" ] && [ ! -e "$VC" ] && [ -f "$G/archive/pc/mod/MaterialTextureOverride.archive" ]' "$OUT"
 run uninstall --yes
-expect "uninstall puts the game folder back exactly" '[ $RC = 0 ] && [ "$PRISTINE_STYLE" = "$(snapshot "$G")" ]' "$(diff <(echo "$PRISTINE_STYLE") <(snapshot "$G"))"
+expect "uninstall leaves the file Vehicle Customizer saved while playing, which no install put there, and names the folder it stays in" '[ $RC = 0 ] && grep -q Mizutani "$VC/replacements.json" && [[ "$OUT" == *"left in place because they now hold other files"*"bin/x64/plugins"* ]]' "$OUT"
+rm -f -- "$VC/replacements.json"; rmdir -- "$VC" "$G/bin/x64/plugins/cyber_engine_tweaks/mods" "$G/bin/x64/plugins/cyber_engine_tweaks" "$G/bin/x64/plugins" 2>/dev/null
+expect "uninstall puts the rest of the game folder back exactly" '[ "$PRISTINE_STYLE" = "$(snapshot "$G")" ]' "$(diff <(echo "$PRISTINE_STYLE") <(snapshot "$G"))"
 newworld stylepack native; OSR="$T/os-arch"; D="$H/Downloads"; mkdir -p "$D"
 cp "$FIX/nexus/Virtual Car Dealer 4454 2.3.0 2026-10-25T11-18Z lcXrcZZMt.zip" "$FIX/style/Virtual Car Dealer - Car Pack 2-4625-1-9-0-1675361670.zip" "$D/"
 run install --yes --with-mods

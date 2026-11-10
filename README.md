@@ -841,9 +841,11 @@ where they are; NightCoop's guides explain what a partner without one of them se
 - **Undo the last update:** run `restore`.
 - **Remove NightCoop completely:** run `uninstall`. This restores the game folder
   exactly, the other mods an install cleared included, and puts back the prefix runtime
-  and registry. Steam's launch options and Proton choice are left as they
-  are; change them under Properties if you wish (the line from before the first install is
-  in its backup folder, `launch-options.txt`). Saves are never touched.
+  and registry. Files that the game and the mods created since (logs, or a file a mod
+  keeps its data in) stay, and the script names the folders it left for them. Steam's
+  launch options and Proton choice are left as they are; change them under Properties if
+  you wish (the line from before the first install is in its backup folder,
+  `launch-options.txt`). Saves are never touched.
 - Backups made by the earlier Bazzite script (`~/nightcoop-backup-*`) can still be
   restored.
 
