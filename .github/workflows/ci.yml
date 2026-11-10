@@ -1,8 +1,15 @@
 name: CI
 
+# On pull requests into main or dev, not on every push: a new push to the pull request runs it again
+# and cancels the run it replaces. It can also be started by hand from the Actions tab.
 on:
-  push:
   pull_request:
+    branches: [main, dev]
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 
 jobs:
   shellcheck:

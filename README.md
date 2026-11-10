@@ -368,6 +368,11 @@ with the patch.
 | Crowd Voice Unlocked | [36527](https://www.nexusmods.com/cyberpunk2077/mods/36527?tab=files) | 1.1.0 or newer | 1,964 new crowd lines with subtitles and lip sync, and voices matched to every civilian (it needs Immersive Audio Distance); each game voices the people near its own V |
 | Sit Anywhere | [7299](https://www.nexusmods.com/cyberpunk2077/mods/7299?tab=files) | 1.4 or newer | Sit almost anywhere; the HUD stays on while you sit. A partner without it sees you stand on the spot |
 | Immersive Rippers and Immersive Bartenders (Deceptious) | [7064](https://www.nexusmods.com/cyberpunk2077/mods/7064?tab=files), [7203](https://www.nexusmods.com/cyberpunk2077/mods/7203?tab=files) | 2.6.2, 2.0.3 or newer | V sits in the ripperdoc's chair and has animated drinks at bars; Fingers can be paid to serve you again. Every partner needs them (Bartenders dates from 2025: try it once on 2.5) |
+| Deceptious Bug Fixes | [18318](https://www.nexusmods.com/cyberpunk2077/mods/18318?tab=files) | 1.4.3 or newer | About forty world, TV and quest fixes in one mod, for 2.5's world sectors; every partner needs it, and in a session its quest fixes act in the host's world |
+| Apartment Cats: Corpo Plaza, Japantown, Northside Motel, The Glen and Dogtown, with Custom Cats' Base files | [6329](https://www.nexusmods.com/cyberpunk2077/mods/6329?tab=files), [6493](https://www.nexusmods.com/cyberpunk2077/mods/6493?tab=files), [6379](https://www.nexusmods.com/cyberpunk2077/mods/6379?tab=files), [6276](https://www.nexusmods.com/cyberpunk2077/mods/6276?tab=files), [10325](https://www.nexusmods.com/cyberpunk2077/mods/10325?tab=files), [6837](https://www.nexusmods.com/cyberpunk2077/mods/6837?tab=files) | 3.0.0, 3.0.1, 3.0.0, 3.0.1, 2.0.0, 1.3.0 or newer | A cat to pet in each of V's other homes (Dogtown's needs Phantom Liberty), each with a look of its own from Custom Cats (not its 4k replacer or the apartment variants files). Their files date from before patch 2.5: try each apartment's bed, shower, wardrobe and mirror once |
+| Aerial Takedowns Fix: Mantis Blades and Gorilla Arms, each its Lethal file | [34044](https://www.nexusmods.com/cyberpunk2077/mods/34044?tab=files) | 1.0.1 or newer | Aerial takedowns with Mantis Blades or Gorilla Arms kill, with blood (not the Non Lethal or Bare Hands Bloodless files); every partner needs it, as the game of the V who drops decides |
+| Accidental fast travel bug fix | [36600](https://www.nexusmods.com/cyberpunk2077/mods/36600?tab=files) | 1.0.0.0 or newer | Panning the map over a fast-travel point no longer starts a fast travel |
+| Cutscene Weapon Swapper | [20743](https://www.nexusmods.com/cyberpunk2077/mods/20743?tab=files) | 1.4.2 or newer | Your own gun instead of a placeholder in some cutscenes; each player's game shows their own |
 | The Empathy Club Unlocked, its file for 2.5 | [27380](https://www.nexusmods.com/cyberpunk2077/mods/27380?tab=files) | 1.2 or newer | Opens the club's closed sections (not Remastered or No Bouncers); needs Phantom Liberty |
 | Dicky Twister Club Unlocked | [27101](https://www.nexusmods.com/cyberpunk2077/mods/27101?tab=files) | 1.1 or newer | Opens the backstage and VIP floor; needs Phantom Liberty |
 | Heavy Hearts Club Unlocked, its file for 2.5 | [27108](https://www.nexusmods.com/cyberpunk2077/mods/27108?tab=files) | 1.3 or newer | Opens the VIP areas in Dogtown; needs Phantom Liberty |
@@ -384,6 +389,10 @@ with the patch.
 | Reset Attributes always available | [9240](https://www.nexusmods.com/cyberpunk2077/mods/9240?tab=files) | 1.0.0.6 or newer | Reset your attributes as often as you like; in co-op it changes only your own character |
 | Mark To Sell | [4725](https://www.nexusmods.com/cyberpunk2077/mods/4725?tab=files) | 2.5.5 or newer | Mark items as junk, then sell or disassemble them all at once |
 | Purify The UI, its file Disable ONLY 2D Effect For UI And Disable Chrom Ab | [2648](https://www.nexusmods.com/cyberpunk2077/mods/2648?tab=files) | 2.00 or newer | Turns off the HUD's ghosting blur and curve (a file from 2023: try it once on 2.5) |
+| Better Armor Tooltip | [9706](https://www.nexusmods.com/cyberpunk2077/mods/9706?tab=files) | 1.0.1 or newer | The ripperdoc screen's armour tooltip shows your actual damage reduction, not a level's maximum |
+| Cyberware Screen Tooltip Fix | [23615](https://www.nexusmods.com/cyberpunk2077/mods/23615?tab=files) | 1.0 or newer | The cyberware slot tooltips count the items you own and can fit |
+| Dynamic Wanted Stars | [15449](https://www.nexusmods.com/cyberpunk2077/mods/15449?tab=files) | 1.0 or newer | Wanted stars coloured by district (Dogtown, the Badlands); each HUD shows its own player's level |
+| Preem Scopes, with its Smart Weapons and Binoculars files | [10021](https://www.nexusmods.com/cyberpunk2077/mods/10021?tab=files) | 0.17.2, 1.0.0, 1.0.1 or newer | Scopes without tint, glitches, scanlines or the 3D effect (not the FOMOD, compatibility, Binoculars with Frame or No Scope Crosshairs files); only your own screen changes |
 
 **Requested and left out for now.** Each was checked against patch 2.5 and NightCoop's guides:
 
@@ -393,6 +402,7 @@ with the patch.
   - Vehicle Navigation System needs three new frameworks and four DLLs, one of which detours the game's GPS functions.
   - Preem Menu replaces the main-menu and pause-menu widgets, where NightCoop's Co-op entry and shared pause live, with copies from patch 2.31.
   - Stock Market and News System keeps each player's portfolio in files named after a quest fact that NightCoop shares from the host, so a guest's portfolio would be lost and the host's hidden. Its latest file (1.4) also predates patch 2.5.
+  - Pet Your Cat replaces The Pickup's quest phase and scene, where the game runs Nibbles, with copies from patch 2.31, and its Fuss and Pet choices sit in that main-story scene, which NightCoop puts to a vote in a session. It needs a 2.5 build and a session test first.
   - Ragdoll Physics Overhaul 3.0 is a beta of 7 November 2026 whose new RED4ext plugin hooks the game's ragdoll and PhysX functions, found by byte patterns, while NightCoop carries ragdolls, deaths and impulses between players. It needs a session test first; its earlier builds are for patch 2.1 and clash with 3.0. (When it joins, its Disable MaxTac option, shipped on by mistake, must be off.)
 - **Nothing to use in the set:**
   - Garage Manager only manages SDH0's cars, which the set does not have.
@@ -610,6 +620,26 @@ new release of the mod changes the file it ships, and your copy is backed up fir
   replaces one world sector whole, which no other mod of the set edits. Before removing these
   mods, save at least 100 m from a ripperdoc and Lizzie's, and 20 m from other bars, as their
   author advises.
+- **The fixes of round 10.** Accidental fast travel bug fix wraps the world map's input
+  handlers, not the fast-travel functions NightCoop wraps. It skips the game's hold handler
+  only when a hold did not start on a fast-travel point, so every fast travel you mean still
+  goes through NightCoop. Aerial Takedowns Fix changes the takedown that NightCoop passes on
+  (a kill instead of a knock-out); its blood and head wounds show on one screen only.
+  Cutscene Weapon Swapper patches the loaded scenes in memory for your own V: no scene or
+  quest file changes, so the host's scenes stay the same for everyone. Deceptious Bug
+  Fixes shares no file with the set's other mods but Deceptious Quest Core, by design.
+- **Tooltips, the wanted HUD and scopes.** Better Armor Tooltip and Cyberware Screen
+  Tooltip Fix each replace one function of the ripperdoc screen, which NightCoop does not
+  hook. Dynamic Wanted Stars replaces how the wanted bar is drawn, not the police system
+  that NightCoop shares from the host. Preem Scopes replaces only scope widgets and meshes,
+  none of which another mod of the set changes.
+- **Apartment cats.** Each cat mod replaces its apartment's home scene, which spawns the cat,
+  and the apartment's quest sector, which holds the bowls and boxes; no scripts. NightCoop
+  keeps V's home scenes personal, so each game spawns and leads its own cat, and petting is
+  your own. Partners see your V through NightCoop's scene poses, but a partner without the
+  same cat mods sees no cat. Custom Cats replaces only each cat's look, which shows where it
+  is installed. The files date from before patch 2.5 and replace 2.31 copies of those scenes
+  and sectors, so try each apartment once.
 - **CPU Optimization (and its Plus edition) is left out.** It makes crowds spawn and
   despawn around V, while in co-op the host leads the crowd for every player, so NPCs
   would pop in and vanish near partners. The Plus edition also needs the Ultra Plus
@@ -964,6 +994,11 @@ without the installs, in a few seconds. The suite covers:
   over v3.04; Loot Icons Extension's Light file; no ArchV4, spoiler or no-highlights patch),
   FPP Speedometer without its toggle file, their co-op notes, and those needing Phantom
   Liberty left out without it;
+- the mods of round 10 by their real file names and entries, over the files their rules pass
+  over (the aerial takedowns' Non Lethal and Bare Hands Bloodless files, Preem Scopes' FOMOD,
+  compatibility, Binoculars with Frame and No Scope Crosshairs files, Corpo Plaza's Colour
+  Variants, Custom Cats' 4k replacer and variants); their notes; the Non Lethal file alone
+  named as not installed; the Dogtown cat left out without Phantom Liberty;
 - mods the script did not install cleared on install into the backup, put back by uninstall,
   and left alone with `--keep-other-mods`, while the script's own mods keep what they write;
 - a GitHub download that fails, and the copy downloaded in a browser taken from Downloads;
@@ -986,7 +1021,9 @@ mods' GitHub releases and Nexus Mods' downloads), the stand-in Nexus Mods API (i
 as files) and a stand-in Proton, so the suite needs neither Steam, Wine nor network access.
 
 CI runs the suite in Arch Linux, CachyOS and SteamOS (holo) containers and on Ubuntu. It
-also builds the PKGBUILD with `makepkg`, checks it with `namcap`, and runs shellcheck.
+also builds the PKGBUILD with `makepkg`, checks it with `namcap`, and runs shellcheck. It runs
+on pull requests into `main` or `dev`, not on every push; a new push to the pull request
+cancels the run it replaces. It can also be started by hand from the Actions tab.
 
 [`sandbox/`](sandbox) recreates the verification environments as Docker Compose services:
 

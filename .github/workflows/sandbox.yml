@@ -2,15 +2,19 @@ name: Sandbox
 
 # The containers from sandbox/compose.yaml: the test suite on Arch, CachyOS and SteamOS,
 # the PKGBUILD, and the real-Proton checks. The weekly run notices when a new Proton,
-# RED4ext, NightCoop, SteamOS or Microsoft runtime release breaks an assumption.
+# RED4ext, NightCoop, SteamOS or Microsoft runtime release breaks an assumption. Otherwise it runs on
+# pull requests into main or dev that change what it tests (not on every push), and by hand.
 on:
   workflow_dispatch:
   schedule:
     - cron: '17 4 * * 1'
-  push:
-    paths: ['sandbox/**', 'nightcoop-install.sh', 'tests/**', 'packaging/**', '.github/workflows/sandbox.yml']
   pull_request:
+    branches: [main, dev]
     paths: ['sandbox/**', 'nightcoop-install.sh', 'tests/**', 'packaging/**', '.github/workflows/sandbox.yml']
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 
 jobs:
   userland:
