@@ -3494,11 +3494,13 @@ nexus_rows() {   # check: the Nexus Mods API key
 unpack_any() {   # unpack_any <archive> <dir>: zip with the helper, 7z and rar with bsdtar (libarchive); prints why not
     local why
     case "${1,,}" in
-        *.zip) why="$(py unzip "$1" "$2" 2>&1 >/dev/null)" && return 0 ;;
+        *.zip) why="$(py unzip "$1" "$2" 2>&1 >/dev/null)" || { echo "${why##*$'\n'}"; return 1; } ;;
         *) if ! command -v bsdtar >/dev/null 2>&1; then echo "a .${1##*.} archive needs bsdtar (from libarchive) to unpack"; return 1; fi
-           why="$(bsdtar -xf "$1" -C "$2" 2>&1 >/dev/null)" && return 0 ;;
+           why="$(bsdtar -xf "$1" -C "$2" 2>&1 >/dev/null)" || { echo "${why##*$'\n'}"; return 1; } ;;
     esac
-    echo "${why##*$'\n'}"; return 1
+    # an archive can mark folders read-only (Windows' attribute, which bsdtar keeps): nothing in them could be
+    # taken out (the files left out, the links), nor the temporary folder removed. chmod -R follows no link.
+    chmod -R u+rwX -- "$2" 2>/dev/null || true
 }
 newer_same_line() {   # newer_same_line <installed DLL> <our DLL> <rule>: the installed copy is newer and for this patch
     local a b
@@ -3623,7 +3625,7 @@ step_addons() {   # the add-on sets (--with-flight, --with-mods), matched to the
             case "$(basename "$t" | tr '[:upper:]' '[:lower:]')" in archive|bin|engine|mods|r6|red4ext) cp -a "$t" "$files/" ;; esac
         done
         while read -r e r; do   # files left out for the mod's default configuration in co-op
-            if [ "$e" = "$comp" ]; then py rmci "$files" "$r" >/dev/null 2>&1 || true; fi
+            if [ "$e" = "$comp" ]; then py rmci "$files" "$r" >/dev/null 2>&1 || warn "could not leave $r out of $(name_of "$comp")"; fi
         done <<<"$ADDON_SKIP"
         state_files "$comp" "$files"
         while IFS= read -r r; do ADDON_ROOTS+=("$comp"$'\t'"$r"); done < <(py roots "$files")
@@ -4381,7 +4383,9 @@ EOF
 }
 
 # ------------------------------------------------------------------- main ----
-cleanup() { if [ -n "${TMP:-}" ]; then rm -rf "$TMP"; fi; }
+cleanup() {   # a read-only folder copied in (from an archive or the game folder) must not keep it from going
+    if [ -n "${TMP:-}" ]; then chmod -R u+rwX -- "$TMP" 2>/dev/null || true; rm -rf -- "$TMP"; fi
+}
 main() {
     [ "$(id -u)" != 0 ] || [ "${NIGHTCOOP_ALLOW_ROOT:-0}" = 1 ] || fail "run this as your normal user, not root (no sudo needed)"
     [ -n "${HOME:-}" ] && [ -d "$HOME" ] || fail "HOME is not set"

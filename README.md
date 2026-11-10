@@ -477,11 +477,13 @@ folder of its own. An archive without game folders that holds only `.archive` an
 (and notes), at its root or in one folder, is installed into `archive/pc/mod`, as mod
 managers do; one with such files in several folders (versions to choose from) is passed
 over. Zip archives need nothing extra; 7z and RAR archives are unpacked with
-`bsdtar` from libarchive, which SteamOS, CachyOS and Arch include. A download the script
-cannot use (damaged, without game folders, or a 7z or RAR archive with no `bsdtar`) is
-reported and passed over for an older copy, if there is one. A mod whose requirement is
-missing is left out with a warning; for example, a store without Virtual Atelier would
-stop redscript from compiling every script, NightCoop's included.
+`bsdtar` from libarchive, which SteamOS, CachyOS and Arch include. Folders an archive marks
+read-only (Windows' attribute, as in the Nissan Silvia S14's) are made writable as they are
+unpacked, so files can still be left out of them and nothing stays behind in `/tmp`. A
+download the script cannot use (damaged, without game folders, or a 7z or RAR archive with
+no `bsdtar`) is reported and passed over for an older copy, if there is one. A mod whose
+requirement is missing is left out with a warning; for example, a store without Virtual
+Atelier would stop redscript from compiling every script, NightCoop's included.
 
 **What the mods write while you play stays yours.** Drive an Aerial Vehicle keeps its
 settings, the AVs you own and the map it learns as you fly in `Data/`; Cyber Drift keeps
@@ -1078,6 +1080,8 @@ without the installs, in a few seconds. The suite covers:
 - mods the script did not install cleared on install into the backup, put back by uninstall,
   and left alone with `--keep-other-mods`, while the script's own mods keep what they write;
 - a GitHub download that fails, and the copy downloaded in a browser taken from Downloads;
+- a 7z whose folders are read-only, unpacked as a normal user would: the file the script leaves
+  out of it, and a link in it, stay out, and no temporary folder is left behind;
 - the settings for co-op: written into the player's Mod Settings and Cyber Engine Tweaks files
   with their other values kept, put back on the next run, an overlay key the player chose kept,
   a rerun with nothing to do, and uninstall restoring the player's own files;
