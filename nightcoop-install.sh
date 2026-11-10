@@ -100,6 +100,10 @@
 #
 # Needs bash, python3, curl, coreutils, findutils and procps-ng. SteamOS and CachyOS
 # ship all of them; on a minimal Arch install: sudo pacman -S --needed python curl
+#
+# The mods are unpacked in ~/.cache/nightcoop-linux/tmp (about 3 GB with both sets, removed when
+# the script ends), not in /tmp, which SteamOS, CachyOS and Arch keep in memory. To use another
+# folder, set NIGHTCOOP_TMPDIR=<folder>.
 
 # SPDX-License-Identifier: MIT
 set -euo pipefail
@@ -559,6 +563,10 @@ Nissan_Silvia_S14       bin/x64/plugins/cyber_engine_tweaks/mods/Dedka Auto Shop
 DATA_DIR="${XDG_DATA_HOME:-$HOME/.local/share}/nightcoop-linux"
 CONFIG_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/nightcoop-linux"   # the Nexus Mods API key (nexus-api-key)
 CACHE_DIR="${XDG_CACHE_HOME:-$HOME/.cache}/nightcoop-linux"
+# The working folder: the mods unpacked and staged, about 3 GB with both sets while the script runs. On
+# disk beside the downloads: /tmp is a RAM disk on SteamOS, CachyOS and Arch, often smaller than that.
+WORK_ROOT="${NIGHTCOOP_TMPDIR:-$CACHE_DIR/tmp}"
+WORK_NEW=()   # the folders made for it (outermost first): removed again at the end when empty
 BACKUP_ROOT="$DATA_DIR/backups"
 
 MODE="install"
@@ -1519,6 +1527,15 @@ def cmd_unzip(zpath, dest):
             os.utime(target, (t, t))
 
 
+def cmd_zipsize(zpath):
+    """The bytes a zip archive unpacks to (0 when it cannot be read: the unpacking says why)."""
+    try:
+        with zipfile.ZipFile(zpath) as z:
+            out(sum(i.file_size for i in z.infolist()))
+    except (zipfile.BadZipFile, OSError):
+        out(0)
+
+
 def cmd_ncroot(top):
     """Folder that holds red4ext/plugins/<name>/NightCoop.dll, plus that path."""
     best = None
@@ -1609,10 +1626,18 @@ def tree_map(src_top, dst_top):
 
 
 def cmd_merge(src_top, dst_top):
+    """src_top's files into dst_top: hard links where the two share a file system (the working folder), so
+    the stage holds no second copy of the mods, copies otherwise. A file there before is replaced, never
+    written through, as it may itself be a link to another mod's unpacked file."""
     for src, rel in tree_map(src_top, dst_top):
         dst = os.path.join(dst_top, rel)
         os.makedirs(os.path.dirname(dst), exist_ok=True)
-        shutil.copy2(src, dst)
+        if os.path.islink(dst) or os.path.isfile(dst):
+            os.remove(dst)
+        try:
+            os.link(src, dst, follow_symlinks=False)
+        except OSError:
+            shutil.copy2(src, dst)
 
 
 def read_manifest(path):
@@ -2294,13 +2319,16 @@ def cmd_cfg(kind, dst, src, *entries):
     else:
         die('cfg: unknown kind %r' % kind)
     os.makedirs(os.path.dirname(dst) or '.', exist_ok=True)
+    # dst is replaced, not written through: a staged file can be a hard link to the unpacked mod's
     if new == text and old:
         if os.path.abspath(src) != os.path.abspath(dst):
-            shutil.copyfile(src, dst)
+            shutil.copyfile(src, dst + '.nightcoop-tmp')
+            os.replace(dst + '.nightcoop-tmp', dst)
         out('same')
         return
-    with open(dst, 'wb') as fh:
+    with open(dst + '.nightcoop-tmp', 'wb') as fh:
         fh.write(new.encode('utf-8', errors='surrogateescape'))
+    os.replace(dst + '.nightcoop-tmp', dst)
     out('changed')
 
 
@@ -2340,7 +2368,7 @@ CMDS = {
     'ct-get': cmd_ct_get, 'ct-list': cmd_ct_list, 'ct-pick': cmd_ct_pick, 'ct-set': cmd_ct_set,
     'lo-status': cmd_lo_status, 'lo-set': cmd_lo_set, 'lo-merge': cmd_lo_merge, 'lo-uses': cmd_lo_uses,
     'pick': cmd_pick, 'reg-get': cmd_reg_get, 'reg-set': cmd_reg_set, 'reg-del': cmd_reg_del, 'wsrv': cmd_wsrv,
-    'unzip': cmd_unzip, 'ncroot': cmd_ncroot, 'findci': cmd_findci, 'rmci': cmd_rmci, 'merge': cmd_merge,
+    'unzip': cmd_unzip, 'zipsize': cmd_zipsize, 'ncroot': cmd_ncroot, 'findci': cmd_findci, 'rmci': cmd_rmci, 'merge': cmd_merge,
     'tree-plan': cmd_tree_plan, 'tree-apply': cmd_tree_apply, 'tree-restore': cmd_tree_restore,
 }
 if len(sys.argv) < 2 or sys.argv[1] not in CMDS:
@@ -3229,7 +3257,7 @@ restage() {   # restage <root>...: these files and folders as the game folder ha
     for r in "$@"; do
         d="$(findci "$GAME_DIR" "${r%/}" 2>/dev/null || true)"; [ -n "$d" ] || continue
         rel="${d#"$GAME_DIR"/}"; mkdir -p "$TMP/stage/$(dirname "$rel")"
-        cp -a "$d" "$TMP/stage/$(dirname "$rel")/"
+        cp -a --remove-destination "$d" "$TMP/stage/$(dirname "$rel")/"   # a staged file may be a hard link: replaced, not written through
     done
 }
 keep_recorded() {   # keep_recorded <component>: leave it as the last install put it
@@ -3502,6 +3530,18 @@ unpack_any() {   # unpack_any <archive> <dir>: zip with the helper, 7z and rar w
     # taken out (the files left out, the links), nor the temporary folder removed. chmod -R follows no link.
     chmod -R u+rwX -- "$2" 2>/dev/null || true
 }
+drop_tree() { chmod -R u+rwX -- "$1" 2>/dev/null || true; rm -rf -- "$1"; }   # drop_tree <dir>: read-only folders too
+room_for() {   # room_for <archive>: the working folder has room to unpack it, or the run stops here, before
+    local need avail   # anything in the game folder has changed
+    case "${1,,}" in
+        *.zip) need="$(py zipsize "$1" 2>/dev/null)" || need=0 ;;
+        *) need="$(bsdtar -tvf "$1" 2>/dev/null | awk '{ s += $5 } END { printf "%d", s }')" || need=0 ;;
+    esac
+    need=$(( ${need:-0} + 64 * 1024 * 1024 ))
+    avail="$(df -B1 --output=avail -- "$TMP" 2>/dev/null | tail -n1 | tr -d ' ')"
+    case "$avail" in ''|*[!0-9]*) return 0 ;; esac
+    [ "$need" -le "$avail" ] || fail "not enough space to unpack $(basename "$1"): it needs $(human "$need") in $WORK_ROOT, which has $(human "$avail") free (all the mods together need about 3 GB there while the script runs). Free some space on that drive, or run again with NIGHTCOOP_TMPDIR set to a folder on a drive with more room"
+}
 newer_same_line() {   # newer_same_line <installed DLL> <our DLL> <rule>: the installed copy is newer and for this patch
     local a b
     a="$(pever "$1")"; b="$(pever "$2")"
@@ -3607,10 +3647,11 @@ step_addons() {   # the add-on sets (--with-flight, --with-mods), matched to the
             IFS=$'\x1f' read -r path ver which <<<"$e"
             ADDON_USED+="$(basename "$path") "
             n=$((n + 1)); dir="$TMP/addons/$comp.$n"; mkdir -p "$dir"
-            if ! why="$(unpack_any "$path" "$dir")"; then warn "could not unpack $(basename "$path"): ${why:-unknown error}"; continue; fi
+            room_for "$path"
+            if ! why="$(unpack_any "$path" "$dir")"; then warn "could not unpack $(basename "$path"): ${why:-unknown error}"; drop_tree "$dir"; continue; fi
             find "$dir" -type l -delete   # nothing that points out of the game folder
             if root="$(py modroot "$dir" 2>/dev/null)"; then break; fi
-            warn "$(basename "$path") has no game folders (r6, archive, bin, red4ext) or .archive files in it"
+            warn "$(basename "$path") has no game folders (r6, archive, bin, red4ext) or .archive files in it"; drop_tree "$dir"
         done
         if [ -z "$root" ]; then
             if [ -n "$(recorded_roots "$comp")" ]; then
@@ -3622,8 +3663,9 @@ step_addons() {   # the add-on sets (--with-flight, --with-mods), matched to the
         cache_it "$path"   # a usable archive only
         files="$TMP/addons/$comp.files"; mkdir -p "$files"
         for t in "$root"/*; do   # the game folders only: no read-me files, installer scripts or fomod data
-            case "$(basename "$t" | tr '[:upper:]' '[:lower:]')" in archive|bin|engine|mods|r6|red4ext) cp -a "$t" "$files/" ;; esac
+            case "$(basename "$t" | tr '[:upper:]' '[:lower:]')" in archive|bin|engine|mods|r6|red4ext) mv -- "$t" "$files/" ;; esac
         done
+        drop_tree "$dir"   # the rest of the archive (read-me files and the like): one copy of the mod is kept, not two
         while read -r e r; do   # files left out for the mod's default configuration in co-op
             if [ "$e" = "$comp" ]; then py rmci "$files" "$r" >/dev/null 2>&1 || warn "could not leave $r out of $(name_of "$comp")"; fi
         done <<<"$ADDON_SKIP"
@@ -4383,15 +4425,26 @@ EOF
 }
 
 # ------------------------------------------------------------------- main ----
-cleanup() {   # a read-only folder copied in (from an archive or the game folder) must not keep it from going
-    if [ -n "${TMP:-}" ]; then chmod -R u+rwX -- "$TMP" 2>/dev/null || true; rm -rf -- "$TMP"; fi
+cleanup() {   # a read-only folder copied in (from an archive or the game folder) must not keep it from going;
+    local i     # the folders made for it go too when empty, so that a run that changes nothing leaves nothing
+    if [ -n "${TMP:-}" ]; then drop_tree "$TMP"; fi
+    for ((i = ${#WORK_NEW[@]} - 1; i >= 0; i--)); do rmdir -- "${WORK_NEW[i]}" 2>/dev/null || break; done
+}
+stale_work() {   # working folders of runs that could not clean up (killed, a power cut), once a day old
+    local d
+    while IFS= read -r -d '' d; do drop_tree "$d" || true; done \
+        < <(find "$WORK_ROOT" -mindepth 1 -maxdepth 1 -type d -name 'nightcoop.*' -mmin +1440 -print0 2>/dev/null)
 }
 main() {
     [ "$(id -u)" != 0 ] || [ "${NIGHTCOOP_ALLOW_ROOT:-0}" = 1 ] || fail "run this as your normal user, not root (no sudo needed)"
     [ -n "${HOME:-}" ] && [ -d "$HOME" ] || fail "HOME is not set"
     detect_os
     need_tools
-    TMP="$(mktemp -d "${TMPDIR:-/tmp}/nightcoop.XXXXXX")"; trap cleanup EXIT
+    local wd; WORK_ROOT="$(realpath -m -- "$WORK_ROOT")"; wd="$WORK_ROOT"   # NIGHTCOOP_TMPDIR may be relative
+    while [ ! -e "$wd" ] && [ "$wd" != / ]; do WORK_NEW=("$wd" ${WORK_NEW[@]+"${WORK_NEW[@]}"}); wd="$(dirname -- "$wd")"; done
+    mkdir -p -- "$WORK_ROOT" 2>/dev/null || fail "cannot create the working folder $WORK_ROOT (NIGHTCOOP_TMPDIR picks another)"
+    stale_work
+    TMP="$(mktemp -d "$WORK_ROOT/nightcoop.XXXXXX")" || fail "cannot create a working folder in $WORK_ROOT"; trap cleanup EXIT
     case "$MODE" in install|check) if [ "$SAVE_NEXUS_KEY" = 1 ]; then nexus_key_save; fi; nexus_key_load ;; esac
     unset NEXUS_API_KEY   # not passed on to what this script starts (Steam, and the game with it)
 

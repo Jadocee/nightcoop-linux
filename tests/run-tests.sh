@@ -154,6 +154,13 @@ expect "other settings kept"           'grep -q "\"X\"" "$CV/config/config.vdf"'
 section "Archive safety and versions"
 expect "path traversal refused"       '! hp unzip "$FIX/evil.zip" "$T/evil" 2>/dev/null && [ ! -e "$T/escape.txt" ]'
 expect "version compare pads"         'hp vge 1.31 1.31.0 && hp vge 14.51.36247.0 14.51 && ! hp vge 14.44.35211.0 14.51'
+mkdir -p "$T/mg/a/r6/x" "$T/mg/b/r6/x"; printf 'a\n' > "$T/mg/a/r6/x/f.txt"; printf 'b\n' > "$T/mg/b/r6/x/f.txt"
+hp merge "$T/mg/a" "$T/mg/stage"; hp merge "$T/mg/b" "$T/mg/stage"
+expect "staging links each mod's files instead of copying them; a later mod's file replaces an earlier one's, which stays as it was" '[ "$(stat -c %i "$T/mg/stage/r6/x/f.txt")" = "$(stat -c %i "$T/mg/b/r6/x/f.txt")" ] && [ "$(cat "$T/mg/stage/r6/x/f.txt")" = b ] && [ "$(cat "$T/mg/a/r6/x/f.txt")" = a ]'
+printf '[S]\nk = 1\n' > "$T/mg/mod.ini"; ln "$T/mg/mod.ini" "$T/mg/staged.ini"
+hp cfg ini "$T/mg/staged.ini" "$T/mg/staged.ini" "S"$'\x1f'"k"$'\x1f'"2" >/dev/null
+expect "a co-op setting written into a staged file replaces the file, and the mod's own copy it was linked to stays as it was" 'grep -qx "k = 2" "$T/mg/staged.ini" && grep -qx "k = 1" "$T/mg/mod.ini"'
+expect "the size a zip unpacks to is read from its index; an unreadable one counts 0" '[ "$(hp zipsize "$FIX/nexus/No Intro Videos-533-0-5-1721546294.zip")" = 4 ] && [ "$(hp zipsize /dev/null)" = 0 ]'
 
 if [ "$QUICK" = 1 ]; then   # --quick: the helpers alone; the installs into stand-in Steam folders take most of an hour
     printf '\n%d passed, %d failed (--quick: the installs are left out)\n' "$PASS" "$FAILED"
@@ -455,7 +462,12 @@ cp "$NX/Virtual Atelier 2987 1.6.4 2026-10-25T17-42Z HncQn22j7.zip" "$D/Virtual 
 mkdir -p "$T/xdg-unset" "$T/xdg-fr"
 printf '#!/bin/sh\necho "$HOME"\n' > "$T/xdg-unset/xdg-user-dir"; printf '#!/bin/sh\necho "$HOME/T\303\251l\303\251chargements"\n' > "$T/xdg-fr/xdg-user-dir"
 chmod +x "$T/xdg-unset/xdg-user-dir" "$T/xdg-fr/xdg-user-dir"
-PATH="$T/xdg-unset:$PATH" run install --yes --with-mods
+# a stand-in df that notes the folder it is asked about, so a test sees where the mods are unpacked
+mkdir -p "$T/systmp" "$T/df-spy"
+printf '#!/bin/sh\nfor a; do last="$a"; done\nprintf "%%s\\n" "$last" >> "%s"\necho Avail; echo 999999999999\n' "$T/df-asked" > "$T/df-spy/df"
+chmod +x "$T/df-spy/df"
+RUNENV=(TMPDIR="$T/systmp"); PATH="$T/df-spy:$T/xdg-unset:$PATH" run install --yes --with-mods; RUNENV=()
+expect "the mods are unpacked in ~/.cache/nightcoop-linux/tmp, not in /tmp (TMPDIR), and that folder is removed at the end" 'grep -qF "$H/.cache/nightcoop-linux/tmp/nightcoop." "$T/df-asked" && ! grep -qF "$T/systmp" "$T/df-asked" && [ ! -e "$H/.cache/nightcoop-linux/tmp" ] && [ -z "$(ls -A "$T/systmp")" ]' "$(cat "$T/df-asked")"
 expect "the frameworks come from GitHub, Mod Settings and Audioware among them" '[ $RC = 0 ] && [ "$(fver "$G/bin/x64/plugins/cyber_engine_tweaks.asi")" = 1.38.1 ] && [ -f "$G/bin/x64/version.dll" ] && [ "$(fver "$P/Codeware/Codeware.dll")" = 1.21.2 ] && [ -f "$P/TweakXL/TweakXL.dll" ] && [ -f "$P/ArchiveXL/ArchiveXL.dll" ] && grep -q "redscript lib 0.5.32" "$G/engine/tools/scc_lib.dll" && [ "$(fver "$P/mod_settings/mod_settings.dll")" = 0.2.28 ] && [ -f "$P/audioware/audioware.dll" ]' "$OUT"
 expect "Cyber Engine Tweaks loads from the first run: its override is set" '[ "$(hp reg-get "$PFX/user.reg" "$REG_KEY" version)" = native,builtin ] && [[ "$(launch_opts)" == *"winmm,version=n,b"* ]]' "$(launch_opts)"
 expect "Virtual Atelier as Nexus names files since 2026 (a browser's second copy), not its 2024 Basic file" '[ -f "$G/r6/scripts/virtual-atelier-full/Config.reds" ] && [ ! -e "$G/r6/scripts/VirtualAtelier" ]' "$OUT"
@@ -516,6 +528,16 @@ expect "Cyber Drift's other file is used when the Light one is not there, with a
 cp "$NX/Virtual Atelier 2987 1.6.4 2026-10-25T17-42Z HncQn22j7.zip" "$D/Virtual_Atelier_2987_1.6.4_2026-10-25T17-42Z_HncQn22j7.zip"   # saved with underscores
 PATH="$T/xdg-fr:$PATH" run update --yes
 expect "a download saved with underscores for spaces is recognised, and the store follows" '[ $RC = 0 ] && [ -f "$G/r6/scripts/virtual-atelier-full/Config.reds" ] && [ -f "$G/r6/scripts/AGIS/agis.reds" ]' "$OUT"
+# Too little room in the working folder (a stand-in df says 1000 bytes are free): the run stops before it
+# unpacks a mod, saying where and how much, and the game folder is as it was; NIGHTCOOP_TMPDIR picks another
+newworld lowspace native; OSR="$T/os-arch"; D="$H/Downloads"; mkdir -p "$D" "$T/df-low"
+cp "$FIX/nexus/No Intro Videos-533-0-5-1721546294.zip" "$D/"
+printf '#!/bin/sh\necho Avail; echo 1000\n' > "$T/df-low/df"; chmod +x "$T/df-low/df"; BEFORE_LOW="$(snapshot "$G")"
+PATH="$T/df-low:$PATH" run install --yes --with-mods
+expect "a working folder without room for a mod stops the run before it unpacks, saying where and what to do; the game folder is as it was" '[ $RC != 0 ] && [[ "$OUT" == *"not enough space to unpack"* ]] && [[ "$OUT" == *"in $H/.cache/nightcoop-linux/tmp, which has 1000B free"* ]] && [[ "$OUT" == *"NIGHTCOOP_TMPDIR"* ]] && [ "$BEFORE_LOW" = "$(snapshot "$G")" ] && [ ! -e "$H/.cache/nightcoop-linux/tmp" ]' "$OUT"
+mkdir -p "$T/work-elsewhere"; rm -f "$T/df-asked"
+RUNENV=(NIGHTCOOP_TMPDIR="$T/work-elsewhere"); PATH="$T/df-spy:$PATH" run install --yes --with-mods; RUNENV=()
+expect "NIGHTCOOP_TMPDIR picks the working folder; a folder of the player's stays, emptied" '[ $RC = 0 ] && [ -f "$G/archive/pc/mod/NoIntroVideos.archive" ] && grep -qF "$T/work-elsewhere/nightcoop." "$T/df-asked" && [ -d "$T/work-elsewhere" ] && [ -z "$(ls -A "$T/work-elsewhere")" ] && [ ! -e "$H/.cache/nightcoop-linux/tmp" ]' "$OUT"
 newworld mods7z native; OSR="$T/os-arch"; D="$H/Downloads"; mkdir -p "$D" "$T/niv7z"
 python3 -I -m zipfile -e "$FIX/nexus/No Intro Videos-533-0-5-1721546294.zip" "$T/niv7z"
 if command -v bsdtar >/dev/null 2>&1; then   # Arch, CachyOS and SteamOS have it (pacman needs libarchive)
@@ -532,12 +554,11 @@ if command -v bsdtar >/dev/null 2>&1; then   # Arch, CachyOS and SteamOS have it
     bsdtar --format 7zip -cf "$D/S14 Nomad Main files and Livery 1 25997 1.1 2026-10-31T10-30Z UQrhQSION.7z" -C "$T/s14" archive bin r6
     chmod 755 "$DK" "$DK/cars"
     cp "$FIX/nexus/Virtual Car Dealer 4454 2.3.0 2026-10-25T11-18Z lcXrcZZMt.zip" "$FIX/round3/manufacturers 7855 1.1 2026-10-31T22-56Z rxs7xRes9.zip" "$D/"
-    mkdir -p "$T/tmp-s14"
     if [ "$(id -u)" = 0 ] && command -v setpriv >/dev/null 2>&1; then
         RUNAS=(setpriv "--inh-caps=-dac_override,-dac_read_search" "--bounding-set=-dac_override,-dac_read_search" --)
     fi
-    RUNENV=(TMPDIR="$T/tmp-s14"); run update --yes --with-mods; RUNENV=() RUNAS=()
-    expect "a 7z whose folders are read-only (the Silvia's): what the script leaves out, and a link, stay out; no temporary folder is left behind" '[ $RC = 0 ] && [ -f "$G/r6/tweaks/ctrlsec/ctrlsec_UnboundS14_Nomad.yaml" ] && [ -f "$G/archive/pc/mod/ctrlsec_s14unbound_nomad.archive" ] && [ ! -e "$G/bin/x64/plugins/cyber_engine_tweaks/mods/Dedka Auto Shop" ] && [ -z "$(ls -A "$T/tmp-s14")" ] && [[ "$OUT" != *"Permission denied"* ]]' "$OUT"
+    run update --yes --with-mods; RUNAS=()
+    expect "a 7z whose folders are read-only (the Silvia's): what the script leaves out, and a link, stay out; no temporary folder is left behind" '[ $RC = 0 ] && [ -f "$G/r6/tweaks/ctrlsec/ctrlsec_UnboundS14_Nomad.yaml" ] && [ -f "$G/archive/pc/mod/ctrlsec_s14unbound_nomad.archive" ] && [ ! -e "$G/bin/x64/plugins/cyber_engine_tweaks/mods/Dedka Auto Shop" ] && [ ! -e "$H/.cache/nightcoop-linux/tmp" ] && [[ "$OUT" != *"Permission denied"* ]]' "$OUT"
 else
     printf '7z\274\257\047\034' > "$D/No Intro Videos-533-0-5-1721546294.7z"
     run install --yes --with-mods

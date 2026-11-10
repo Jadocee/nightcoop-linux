@@ -479,11 +479,16 @@ managers do; one with such files in several folders (versions to choose from) is
 over. Zip archives need nothing extra; 7z and RAR archives are unpacked with
 `bsdtar` from libarchive, which SteamOS, CachyOS and Arch include. Folders an archive marks
 read-only (Windows' attribute, as in the Nissan Silvia S14's) are made writable as they are
-unpacked, so files can still be left out of them and nothing stays behind in `/tmp`. A
-download the script cannot use (damaged, without game folders, or a 7z or RAR archive with
-no `bsdtar`) is reported and passed over for an older copy, if there is one. A mod whose
-requirement is missing is left out with a warning; for example, a store without Virtual
-Atelier would stop redscript from compiling every script, NightCoop's included.
+unpacked, so files can still be left out of them and nothing stays behind. The mods are
+unpacked in `~/.cache/nightcoop-linux/tmp`, on disk beside the downloads, not in `/tmp`,
+which these systems keep in memory: with both sets that takes about 3 GB while the script
+runs, one copy of each mod, and the folder is removed at the end (`NIGHTCOOP_TMPDIR` picks
+another). The script checks the room before it unpacks each mod, and stops before anything
+in the game folder changes if there is too little. A download the script cannot use
+(damaged, without game folders, or a 7z or RAR archive with no `bsdtar`) is reported and
+passed over for an older copy, if there is one. A mod whose requirement is missing is left
+out with a warning; for example, a store without Virtual Atelier would stop redscript from
+compiling every script, NightCoop's included.
 
 **What the mods write while you play stays yours.** Drive an Aerial Vehicle keeps its
 settings, the AVs you own and the map it learns as you fly in `Data/`; Cyber Drift keeps
@@ -878,6 +883,13 @@ Start with `check`.
   again. It takes the file only when its SHA-256 matches the one the script pins, and keeps
   a copy in `~/.cache/nightcoop-linux/mods` for later runs. With `--no-github-downloads`
   the script does not try GitHub at all and takes these files from that folder only.
+- **"No space left on device" or "not enough space to unpack".** The script unpacks the
+  mods in `~/.cache/nightcoop-linux/tmp`, which needs about 3 GB with both sets while it
+  runs and is removed at the end. Free some space on that drive, or point the script at a
+  folder on a bigger one: `NIGHTCOOP_TMPDIR=/path/to/folder ./nightcoop-install.sh` (or
+  `nightcoop-install`). Releases before this fix unpacked into `/tmp`, which SteamOS,
+  CachyOS and Arch keep in memory (half of it, at most), so it filled up whatever the drives
+  had free.
 - **"Nexus Mods does not accept the API key (401)".** The key was revoked or mistyped:
   make a new one on the [API keys page](https://next.nexusmods.com/settings/api-keys) and
   run the script with `--save-nexus-key`.
@@ -1082,6 +1094,9 @@ without the installs, in a few seconds. The suite covers:
 - a GitHub download that fails, and the copy downloaded in a browser taken from Downloads;
 - a 7z whose folders are read-only, unpacked as a normal user would: the file the script leaves
   out of it, and a link in it, stay out, and no temporary folder is left behind;
+- the working folder in `~/.cache/nightcoop-linux/tmp`, not `/tmp`, removed at the end, or in
+  `NIGHTCOOP_TMPDIR`; a run stopped, with the game folder unchanged, when it has too little room;
+  staging that links the mods' files instead of copying them;
 - the settings for co-op: written into the player's Mod Settings and Cyber Engine Tweaks files
   with their other values kept, put back on the next run, an overlay key the player chose kept,
   a rerun with nothing to do, and uninstall restoring the player's own files;
