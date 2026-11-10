@@ -482,7 +482,7 @@ read-only (Windows' attribute, as in the Nissan Silvia S14's) are made writable 
 unpacked, so files can still be left out of them and nothing stays behind. The mods are
 unpacked in `~/.cache/nightcoop-linux/tmp`, on disk beside the downloads, not in `/tmp`,
 which these systems keep in memory: with both sets that takes about 3 GB while the script
-runs, one copy of each mod, and the folder is emptied at the end (`NIGHTCOOP_TMPDIR` picks
+runs, one copy of each mod, and the folder is removed at the end (`NIGHTCOOP_TMPDIR` picks
 another). The script checks the room before it unpacks each mod, and stops before anything
 in the game folder changes if there is too little. A download the script cannot use
 (damaged, without game folders, or a 7z or RAR archive with no `bsdtar`) is reported and
@@ -885,7 +885,7 @@ Start with `check`.
   the script does not try GitHub at all and takes these files from that folder only.
 - **"No space left on device" or "not enough space to unpack".** The script unpacks the
   mods in `~/.cache/nightcoop-linux/tmp`, which needs about 3 GB with both sets while it
-  runs and is emptied at the end. Free some space on that drive, or point the script at a
+  runs and is removed at the end. Free some space on that drive, or point the script at a
   folder on a bigger one: `NIGHTCOOP_TMPDIR=/path/to/folder ./nightcoop-install.sh` (or
   `nightcoop-install`). Releases before this fix unpacked into `/tmp`, which SteamOS,
   CachyOS and Arch keep in memory (half of it, at most), so it filled up whatever the drives
@@ -1094,7 +1094,7 @@ without the installs, in a few seconds. The suite covers:
 - a GitHub download that fails, and the copy downloaded in a browser taken from Downloads;
 - a 7z whose folders are read-only, unpacked as a normal user would: the file the script leaves
   out of it, and a link in it, stay out, and no temporary folder is left behind;
-- the working folder in `~/.cache/nightcoop-linux/tmp`, not `/tmp`, emptied at the end, or in
+- the working folder in `~/.cache/nightcoop-linux/tmp`, not `/tmp`, removed at the end, or in
   `NIGHTCOOP_TMPDIR`; a run stopped, with the game folder unchanged, when it has too little room;
   staging that links the mods' files instead of copying them;
 - the settings for co-op: written into the player's Mod Settings and Cyber Engine Tweaks files

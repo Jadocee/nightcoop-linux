@@ -101,7 +101,7 @@
 # Needs bash, python3, curl, coreutils, findutils and procps-ng. SteamOS and CachyOS
 # ship all of them; on a minimal Arch install: sudo pacman -S --needed python curl
 #
-# The mods are unpacked in ~/.cache/nightcoop-linux/tmp (about 3 GB with both sets, emptied when
+# The mods are unpacked in ~/.cache/nightcoop-linux/tmp (about 3 GB with both sets, removed when
 # the script ends), not in /tmp, which SteamOS, CachyOS and Arch keep in memory. To use another
 # folder, set NIGHTCOOP_TMPDIR=<folder>.
 
@@ -566,6 +566,7 @@ CACHE_DIR="${XDG_CACHE_HOME:-$HOME/.cache}/nightcoop-linux"
 # The working folder: the mods unpacked and staged, about 3 GB with both sets while the script runs. On
 # disk beside the downloads: /tmp is a RAM disk on SteamOS, CachyOS and Arch, often smaller than that.
 WORK_ROOT="${NIGHTCOOP_TMPDIR:-$CACHE_DIR/tmp}"
+WORK_NEW=()   # the folders made for it (outermost first): removed again at the end when empty
 BACKUP_ROOT="$DATA_DIR/backups"
 
 MODE="install"
@@ -4424,8 +4425,10 @@ EOF
 }
 
 # ------------------------------------------------------------------- main ----
-cleanup() {   # a read-only folder copied in (from an archive or the game folder) must not keep it from going
+cleanup() {   # a read-only folder copied in (from an archive or the game folder) must not keep it from going;
+    local i     # the folders made for it go too when empty, so that a run that changes nothing leaves nothing
     if [ -n "${TMP:-}" ]; then drop_tree "$TMP"; fi
+    for ((i = ${#WORK_NEW[@]} - 1; i >= 0; i--)); do rmdir -- "${WORK_NEW[i]}" 2>/dev/null || break; done
 }
 stale_work() {   # working folders of runs that could not clean up (killed, a power cut), once a day old
     local d
@@ -4437,8 +4440,9 @@ main() {
     [ -n "${HOME:-}" ] && [ -d "$HOME" ] || fail "HOME is not set"
     detect_os
     need_tools
+    local wd; WORK_ROOT="$(realpath -m -- "$WORK_ROOT")"; wd="$WORK_ROOT"   # NIGHTCOOP_TMPDIR may be relative
+    while [ ! -e "$wd" ] && [ "$wd" != / ]; do WORK_NEW=("$wd" ${WORK_NEW[@]+"${WORK_NEW[@]}"}); wd="$(dirname -- "$wd")"; done
     mkdir -p -- "$WORK_ROOT" 2>/dev/null || fail "cannot create the working folder $WORK_ROOT (NIGHTCOOP_TMPDIR picks another)"
-    WORK_ROOT="$(cd -- "$WORK_ROOT" && pwd)"   # NIGHTCOOP_TMPDIR may be relative
     stale_work
     TMP="$(mktemp -d "$WORK_ROOT/nightcoop.XXXXXX")" || fail "cannot create a working folder in $WORK_ROOT"; trap cleanup EXIT
     case "$MODE" in install|check) if [ "$SAVE_NEXUS_KEY" = 1 ]; then nexus_key_save; fi; nexus_key_load ;; esac
