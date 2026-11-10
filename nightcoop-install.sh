@@ -288,6 +288,8 @@ Stealth_Fixes                 2.5 mods        mod  -     -                      
 Dual_Wielding_Fix             2.5 mods        mod  -     -                                                           1.0.1  nexus:36738
 Silent_Silencers              2.5 mods        mod  -     -                                                           1.6.3  nexus:4070
 Stealth_Finishers             2.5 mods        mod  -     -                                                           2.1.0  nexus:9360
+Aerial_Takedowns_Fix_Mantis_Blades 2.5 mods        mod  -     -                                                      1.0.1  nexus:34044:+mantis:non_lethal
+Aerial_Takedowns_Fix_Gorilla_Arms 2.5 mods        mod  -     -                                                       1.0.1  nexus:34044:+gorilla
 No_Crowd_Panic_From_Devices   2.5 mods        mod  -     -                                                           1.2.0  nexus:7353:+redscript
 Crowd_Voice_Unlocked          2.5 mods        mod  -     -                                                           1.1.0  nexus:36527
 Sit_Anywhere                  2.5 mods        mod  -     -                                                           1.4    nexus:7299
@@ -299,6 +301,13 @@ Heres_Brendan                 2.5 mods        mod  -     -                      
 Immersive_Rippers             2.5 mods        mod  -     -                                                           2.6.2  nexus:7064
 Immersive_Bartenders          2.5 mods        mod  -     -                                                           2.0.3  nexus:7203
 Parking_Spots_Enhanced        2.5 mods        mod  -     -                                                           1.2.5  nexus:15708:-:alt
+Deceptious_Bug_Fixes          2.5 mods        mod  -     -                                                           1.4.3  nexus:18318
+Apartment_Cats_Corpo_Plaza    2.5 mods        mod  -     -                                                           3.0.0  nexus:6329:-:colour
+Apartment_Cats_Japantown      2.5 mods        mod  -     -                                                           3.0.1  nexus:6493
+Apartment_Cats_Northside_Motel 2.5 mods        mod  -     -                                                          3.0.0  nexus:6379
+Apartment_Cats_The_Glen       2.5 mods        mod  -     -                                                           3.0.1  nexus:6276
+Apartment_Cats_Dogtown        2.5 mods        mod  -     -                                                           2.0.0  nexus:10325
+Apartment_Cats_Custom_Cats    2.5 mods        mod  -     -                                                           1.3.0  nexus:6837:+base_files:4k
 Night_City_Traffic_Overhaul   2.5 mods        mod  -     -                                                           2.50   nexus:25552:+v2.
 Fixed_NPC_Vehicle_Reactions   2.5 mods        mod  -     -                                                           1.0.0  nexus:19530
 Bike_Overhaul                 2.5 mods        mod  -     -                                                           1.0    nexus:27989:-:archv4
@@ -311,10 +320,18 @@ Clear_Skill_Checks            2.5 mods        mod  -     -                      
 Filter_Saves                  2.5 mods        mod  -     -                                                           1.7.0  nexus:3400
 Modded_Save_Loading_Screen_Fix 2.5 mods        mod  -     -                                                           1.0.0  nexus:35867:-:popups
 Always_First_Equip            2.5 mods        mod  -     -                                                           2.2.0  nexus:2557:-:translation
+Accidental_Fast_Travel_Fix    2.5 mods        mod  -     -                                                           1.0.0.0 nexus:36600
+Cutscene_Weapon_Swapper       2.5 mods        mod  -     -                                                           1.4.2  nexus:20743
 Reset_Attributes_Always_Available 2.5 mods        mod  -     -                                                           1.0.0.6 nexus:9240
 Mark_To_Sell                  2.5 mods        mod  -     -                                                           2.5.5  nexus:4725
 Purify_The_UI                 2.5 mods        mod  -     -                                                           2.00   nexus:2648:+only_2d:keep
 Loot_Icons_Extension          2.5 mods        mod  -     -                                                           1.60   nexus:16386:+light
+Better_Armor_Tooltip          2.5 mods        mod  -     -                                                           1.0.1  nexus:9706
+Cyberware_Screen_Tooltip_Fix  2.5 mods        mod  -     -                                                           1.0    nexus:23615
+Dynamic_Wanted_Stars          2.5 mods        mod  -     -                                                           1.0    nexus:15449
+Preem_Scopes                  2.5 mods        mod  -     -                                                           0.17.2 nexus:10021:-:~_-_
+Preem_Scopes_Smart_Weapons    2.5 mods        mod  -     -                                                           1.0.0  nexus:10021:+smart_weapons
+Preem_Scopes_Binoculars       2.5 mods        mod  -     -                                                           1.0.1  nexus:10021:+binoculars:frame
 Unified_Mod_Settings          2.5 mods        mod  -     -                                                           2.8    nexus:28308
 Fluff_Vendor_Fixes            2.5 mods        mod  -     -                                                           1.1.2  nexus:27795:-:only_drinks
 MaxTac_Suit                   2.5 mods        mod  -     -                                                           1.0    nexus:26517
@@ -419,7 +436,12 @@ Apex_Grapple:redscript,Codeware,TweakXL,Mod_Settings Stealth_Fixes:redscript Dua
 Silent_Silencers:redscript,ArchiveXL,TweakXL,Cyber_Engine_Tweaks,Native_Settings_UI Stealth_Finishers:redscript,Cyber_Engine_Tweaks
 No_Crowd_Panic_From_Devices:redscript Crowd_Voice_Unlocked:redscript,Codeware,Immersive_Audio_Distance Sit_Anywhere:Cyber_Engine_Tweaks
 Immersive_Rippers:redscript,Codeware,ArchiveXL Parking_Spots_Enhanced:ArchiveXL,Deceptious_Quest_Core
-Fixed_NPC_Vehicle_Reactions:TweakXL Nissan_240SX:ArchiveXL,TweakXL,Material_and_Texture_Override,Virtual_Car_Dealer"
+Fixed_NPC_Vehicle_Reactions:TweakXL Nissan_240SX:ArchiveXL,TweakXL,Material_and_Texture_Override,Virtual_Car_Dealer
+Aerial_Takedowns_Fix_Mantis_Blades:redscript Aerial_Takedowns_Fix_Gorilla_Arms:redscript Accidental_Fast_Travel_Fix:redscript
+Cutscene_Weapon_Swapper:redscript,Codeware,TweakXL Deceptious_Bug_Fixes:redscript,Codeware,ArchiveXL,TweakXL,Deceptious_Quest_Core
+Better_Armor_Tooltip:redscript,ArchiveXL Cyberware_Screen_Tooltip_Fix:redscript Dynamic_Wanted_Stars:redscript,ArchiveXL
+Apartment_Cats_Corpo_Plaza:ArchiveXL,TweakXL Apartment_Cats_Japantown:ArchiveXL,TweakXL Apartment_Cats_Northside_Motel:ArchiveXL,TweakXL
+Apartment_Cats_The_Glen:ArchiveXL,TweakXL Apartment_Cats_Dogtown:ArchiveXL,TweakXL,Phantom_Liberty"
 # Outfit mods: in co-op, a partner without the same mod sees a plain game piece in their place.
 OUTFITS="Zenitex_Ballistic_Mask Zenitex_Tactical_Harness Zenitex_Combat_Jacket Zenitex_Armor_Pads Zenitex_Panam_Pants
 Zenitex_Combat_Gloves Comfy_Boots Goliath_Coat Cityfolk_Hoodie Knife_Bandolier Bunny_Slippers Saul_Pants CrystalJock_Bomber
@@ -441,7 +463,8 @@ EYES="Beautiful_Exotics_Eyes Mecha_Robotic_Eyes Mecha_Robotic_Eyes_2"
 MAKEUP="Beautiful_Makeup Beautiful_Makeup_II"
 # Places the mods open or change, and their quests: every partner needs the same files.
 WORLD="The_Empathy_Club_Unlocked Dicky_Twister_Club_Unlocked Heavy_Hearts_Club_Unlocked Afterlife_Unlocked_and_Remastered Heres_Brendan
-Immersive_Rippers Immersive_Bartenders Parking_Spots_Enhanced"
+Immersive_Rippers Immersive_Bartenders Parking_Spots_Enhanced Deceptious_Bug_Fixes Apartment_Cats_Corpo_Plaza
+Apartment_Cats_Japantown Apartment_Cats_Northside_Motel Apartment_Cats_The_Glen Apartment_Cats_Dogtown"
 # Mods that change how NPCs act: the game that leads an NPC applies them, so every partner needs the same.
 NPC_MODS="Silent_Silencers Stealth_Fixes Stealth_Finishers No_Crowd_Panic_From_Devices Fixed_NPC_Vehicle_Reactions"
 # Files a mod writes to while the game runs (its settings, its database, what it has learned):
@@ -3273,6 +3296,13 @@ nexus_file() {   # nexus_file <component>: which file to download, of a mod with
         No_Crowd_Panic_From_Devices) echo "the redscript file, not the CET one" ;;
         Parking_Spots_Enhanced) echo "the main file, not Parking Spots Enhanced (alt), a build for patch 2.21" ;;
         Nissan_240SX) echo "the main file Nissan 240SX, not the bodykit, colour, wheel or interior options" ;;
+        Aerial_Takedowns_Fix_Mantis_Blades) echo "Mantis Blades Aerial Takedown Fix - Lethal, among the main files, not the Non Lethal one" ;;
+        Aerial_Takedowns_Fix_Gorilla_Arms) echo "Gorilla Arms Aerial Takedown Fix - Lethal, among the main files" ;;
+        Preem_Scopes) echo "the main file Preem Scopes, not the FOMOD, compatibility or No Scope Crosshairs files" ;;
+        Preem_Scopes_Smart_Weapons) echo "Preem Scopes - Smart Weapons, among the optional files" ;;
+        Preem_Scopes_Binoculars) echo "Preem Scopes - Binoculars, among the optional files, not Binoculars with Frame" ;;
+        Apartment_Cats_Corpo_Plaza) echo "the main file Apartment Cats - Corpo Plaza 3.0.0, not the Colour Variants file of 2022" ;;
+        Apartment_Cats_Custom_Cats) echo "the main file Apartment Cats Customs - Base files, with a look for each apartment, not the 4k replacer or the apartment variants files" ;;
     esac
 }
 nexus_avoided() {   # nexus_avoided <component>: what a file of it that is never installed is
@@ -3281,6 +3311,9 @@ nexus_avoided() {   # nexus_avoided <component>: what a file of it that is never
         No_Intro_Videos) echo "the redscript file of No Intro Videos, which hooks the game's start-up, where NightCoop skips the intro itself (take the archive file)" ;;
         Modded_Save_Loading_Screen_Fix) echo "No Load Popups, which replaces the game's Continue step in a menu NightCoop wraps and skips its modded-save checks (take the main file)" ;;
         Bike_Overhaul) echo "the ArchV4 compatibility patch of Bike Overhaul, which overwrites Bikes of the Dark Future's files (take the Handling Only file)" ;;
+        Aerial_Takedowns_Fix_Mantis_Blades) echo "Mantis Blades Aerial Takedown Fix - Non Lethal, which replaces the Lethal file's script (take Mantis Blades Aerial Takedown Fix - Lethal)" ;;
+        Apartment_Cats_Corpo_Plaza) echo "the Colour Variants file of Apartment Cats - Corpo Plaza: loose TweakXL files to swap in by hand, which beside the main file would define Leia twice (take the main file)" ;;
+        Apartment_Cats_Custom_Cats) echo "the 4k replacer of Apartment Cats - Custom Cats, which replaces its base archive and can crash the game, its author says (take the Base files file)" ;;
         *) h="$(nexus_file "$1")"; echo "another file of $(name_of "$1") than the one this script takes${h:+ ($h)}" ;;
     esac
 }
@@ -3657,7 +3690,7 @@ step_addons() {   # the add-on sets (--with-flight, --with-mods), matched to the
     fi
     if [ "$world" = 1 ]; then
         info "Places and scenes of mods in co-op (the clubs and the Afterlife opened, Brendan's quest, the ripperdocs' and"
-        info "bars' scenes, the parking spots): every partner needs the same files;"
+        info "bars' scenes, the parking spots, Deceptious Bug Fixes, the apartment cats): every partner needs the same files;"
         info "a partner without them sees locked doors and walls where you walk. Quests and their progress are the host's."
     fi
     if [ "${#scenes[@]}" -gt 0 ]; then
@@ -3684,6 +3717,29 @@ step_addons() {   # the add-on sets (--with-flight, --with-mods), matched to the
     if [[ "$ADDON_HAVE" == *" Sit_Anywhere "* ]]; then
         info "Sit Anywhere in co-op: a partner sees you sit only with Sit Anywhere too (otherwise you stand on the spot). The"
         info "HUD stays on while you sit, as hiding it tells NightCoop that a scene holds your V."
+    fi
+    if [[ "$ADDON_HAVE" == *" Aerial_Takedowns_Fix_Mantis_Blades "* ]] || [[ "$ADDON_HAVE" == *" Aerial_Takedowns_Fix_Gorilla_Arms "* ]]; then
+        info "Aerial Takedowns Fix in co-op: an aerial takedown with Mantis Blades or Gorilla Arms kills instead of knocking out."
+        info "The game of the V who drops decides and NightCoop passes the kill on, so every partner needs the mod too; its blood"
+        info "and head wounds show only on that player's screen."
+    fi
+    if [[ "$ADDON_HAVE" == *" Cutscene_Weapon_Swapper "* ]]; then
+        info "Cutscene Weapon Swapper in co-op: each game puts its own V's gun into the supported cutscenes, so partners may hold"
+        info "different guns there; the scenes stay the host's."
+    fi
+    if [[ "$ADDON_HAVE" == *" Deceptious_Bug_Fixes "* ]]; then
+        info "Deceptious Bug Fixes in co-op: its quest fixes act in the host's world in a session; a fix for an older save comes"
+        info "when you play your own world."
+    fi
+    if [[ "$ADDON_HAVE" == *" Apartment_Cats_"* ]]; then
+        info "Apartment cats in co-op: the apartments and what V bought are the host's. NightCoop keeps V's home scenes"
+        info "personal, so petting a cat is your own, and a cat may sit elsewhere on a partner's screen; a partner without the"
+        info "same cat mods sees no cat there. Custom Cats' looks show only where it is installed. Their files date from before"
+        info "patch 2.5: try each apartment's bed, shower, wardrobe and mirror once."
+    fi
+    if [[ "$ADDON_HAVE" == *" Dynamic_Wanted_Stars "* ]]; then
+        info "Dynamic Wanted Stars in co-op: your stars show your own wanted level, coloured by the district your own V is in"
+        info "(Dogtown, the Badlands); each partner's HUD shows their own."
     fi
     if [[ "$ADDON_HAVE" == *" Crowd_Voice_Unlocked "* ]]; then
         info "Crowd Voice Unlocked in co-op: each game voices the people near its own V, so you may hear different lines from"

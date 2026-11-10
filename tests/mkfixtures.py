@@ -357,6 +357,35 @@ ROUND9 = {   # round 9: hair, makeup, eyes, menus, combat, crowds, places and a 
     'ResetAttributesAlwaysAvailable 9240 1.0.0.7 2026-11-06T00-20Z LACBAImVM.zip': ['r6/scripts/ResetAttributesAlwaysAvailable.reds'],
     'ZKV_StealthFinishers_v2.1.0-9360-2-1-0-1758398350.zip': ['bin/x64/plugins/cyber_engine_tweaks/mods/ZKVTakedowns2/init.lua', 'r6/scripts/ZKVTakedowns2/ZKV_StealthFinishers.reds', 'r6/scripts/ZKVTakedowns2/ZKV_Takedowns_Utils.reds'],
 }
+ROUND10 = {   # round 10: fixes, tooltips, the wanted HUD, scopes and apartment cats; the chosen files and the decoys their
+    # rules pass over (the real archives' game folders, from Nexus Mods' file previews and the downloads)
+    'AccidentalFastTravelBugFix 36600 1.0.0.0 2026-10-30T22-20Z VquAqYExL.zip': ['r6/scripts/AccidentalFastTravelBugFix.reds'],
+    'Mantis Blades Aerial Takedown Fix - Lethal 34044 1.0.1 2026-09-18T16-37Z MTheTjhQw.zip': ['r6/scripts/Mantis Blades Aerial Takedown Fix/Mantis Blades Aerial Takedown Fix.reds'],
+    'Gorilla Arms Aerial Takedown Fix - Lethal 34044 1.0.1 2026-09-18T16-36Z 5em9eomho.zip': ['r6/scripts/Gorilla Arms Aerial Takedown Fix/Gorilla Arms Aerial Takedown Fix.reds'],
+    'Mantis Blades Aerial Takedown Fix - Non Lethal 34044 1.0.0 2026-09-18T04-08Z gMz5MuzG3.zip': ['r6/scripts/Mantis Blades Aerial Takedown Fix/Mantis Blades Aerial Takedown Fix.reds'],
+    'Bare Hands Aerial Takedown Bloodless 34044 1.0.0 2026-09-18T04-09Z E91D9d1vL.zip': ['r6/scripts/Bare Hand Aerial Takedown Bloodless/Bare Hand Aerial Takedown Bloodless.reds'],
+    'Cutscene Weapon Swapper 20743 1.4.2 2026-10-29T17-33Z 8ViLVPN0Z.zip': ['r6/scripts/CutsceneWeaponSwapper.reds'],
+    'Deceptious Bug Fixes 18318 1.4.3 2026-10-28T12-16Z psSjsvmAt.zip': ['archive/pc/mod/#DeceptiousBugFixes.archive', 'archive/pc/mod/#DeceptiousBugFixes.archive.xl', 'r6/scripts/#DeceptiousBugFixes/DeceptiousBugFixes.reds', 'r6/tweaks/#DeceptiousBugFixes/DeceptiousBugFixes.yaml'],
+    'Better Armor Tooltip-9706-1-0-1-1766882622.zip': ['archive/pc/mod/BetterArmorTooltip.archive', 'archive/pc/mod/BetterArmorTooltip.archive.xl', 'r6/scripts/BetterArmorTooltip.reds'],
+    'Cyberware Screen Tooltip Fix-23615-1-0-1755606888.zip': ['r6/scripts/CyberwareScreenTooltipFix.reds'],
+    'dynamic_wanted_stars_v1.0-15449-1-0-1719182074.zip': ['archive/pc/mod/dynamic_wanted_stars.archive', 'r6/scripts/dynamic_wanted_stars/DynamicWantedStars.reds'],
+    'Preem Scopes-10021-0-17-2-1744383914.zip': ['archive/pc/mod/PreemScopes.archive'],
+    'Preem Scopes - Smart Weapons-10021-1-0-0-1697849885.zip': ['archive/pc/mod/PreemScopes-Smart.archive'],
+    'Preem Scopes - Binoculars-10021-1-0-1b-1701895039.zip': ['archive/pc/mod/PreemScopes-Binoculars.archive'],
+    'Preem Scopes - Binoculars with Frame-10021-1-2-0b-1701900168.zip': ['archive/pc/mod/PreemScopes-Binoculars.archive'],
+    'Preem Scope - Militech Holosight Compat-10021-1-0-0-1697516068.zip': ['archive/pc/mod/PreemScopes-MHCompat.archive'],
+    'Preem Scope - FOMOD-10021-1-0-0-1702240531.zip': ['fomod/ModuleConfig.xml', 'Preem Scopes/archive/pc/mod/#PreemScopes.archive', 'Smart Weapons/archive/pc/mod/PreemScopes-Smart.archive'],
+    'Preem Scopes - No Scope Crosshairs-10021-1-0-0n-1703195684.zip': ['archive/pc/mod/##PreemScopes-NoScopeCrosshairs.archive'],
+    'Apartment Cats - Corpo Plaza 6329 3.0.0 2026-09-10T01-25Z 6ZNKZcNIY.zip': ['archive/pc/mod/#CorpoCat.archive', 'archive/pc/mod/CorpoCat.archive.xl', 'r6/tweaks/CorpoCat_Red.yaml'],
+    'Apartment Cats - Corpo Plaza Colour Variants-6329-1-2-1671631109.zip': ['CorpoCat_Blue.yaml', 'CorpoCat_Green.yaml', 'CorpoCat_NonHolo.yaml', 'CorpoCat_Red.yaml', 'CorpoCat_White.yaml'],
+    'Apartment Cats - Japantown 6493 3.0.1 2026-09-10T01-22Z KRvfRxvOv.zip': ['archive/pc/mod/#JapanCat.archive', 'archive/pc/mod/JapanCat.archive.xl', 'r6/tweaks/JapanCat.yaml'],
+    'Apartment Cats - Northside Motel 6379 3.0.0 2026-09-10T19-17Z AgoGgioru.zip': ['archive/pc/mod/#MotelCat.archive', 'archive/pc/mod/MotelCat.archive.xl', 'r6/tweaks/MotelCat.yaml'],
+    'Apartment Cats - The Glen 6276 3.0.1 2026-09-10T01-21Z LACBAIC7r.zip': ['archive/pc/mod/#LoftCat.archive', 'archive/pc/mod/LoftCat.archive.xl', 'r6/tweaks/LoftCat.yaml'],
+    'Apartment Cats - Dogtown 10325 2.0.0 2026-09-10T19-17Z lcXrcZX8T.zip': ['archive/pc/mod/DogtownCat.archive', 'archive/pc/mod/DogtownCat.archive.xl', 'r6/tweaks/DogtownCat.yaml'],
+    'Apartment Cats Customs - Base files-6837-1-3-0-1740786536.zip': ['archive/pc/mod/#ApartmentCatsCustoms_Base.archive', 'archive/pc/mod/#ApartmentCatsCustoms_Corpo_BlackAndWhite.archive', 'archive/pc/mod/#ApartmentCatsCustoms_Dogtown_Black.archive', 'archive/pc/mod/#ApartmentCatsCustoms_Glen_GreyTiger.archive', 'archive/pc/mod/#ApartmentCatsCustoms_Japan_OrangeTiger.archive', 'archive/pc/mod/#ApartmentCatsCustoms_Motel_OrangeWhite.archive'],
+    'Apartment Cats Customs - Base files - 4k replacer-6837-1-3-0-1740786473.zip': ['archive/pc/mod/#ApartmentCatsCustoms_Base.archive'],
+    'Apartment Cats Customs - Motel Apartment variants-6837-1-3-0-1740786652.zip': ['#ApartmentCatsCustoms_Motel_BlackAndWhite.archive', '#ApartmentCatsCustoms_Motel_GreyTiger.archive', '#ApartmentCatsCustoms_Motel_Black.archive', '#ApartmentCatsCustoms_Motel_WhiteOrange.archive', '#ApartmentCatsCustoms_Motel_OrangeWhite.archive', '#ApartmentCatsCustoms_Motel_White.archive', '#ApartmentCatsCustoms_Motel_OrangeTiger.archive'],
+}
 ROUND9_FILES = {   # real contents, where the tests read a file: a key binding to move, settings to keep
     ('Always First Equip 2557 2.2.0 2026-10-24T19-15Z mPgaPVVHG.zip', 'r6/input/AlwaysFirstEquip.xml'): b'<?xml version="1.0"?>\r\n<bindings>\r\n    <!-- inputContexts -->\r\n    <context name="AlwaysFirstEquip" >\r\n        <action name="AlwaysFirstEquip" map="AlwaysFirstEquip_Button" />\r\n        <action name="SafeWeapon" map="SafeWeapon_Button" />\r\n    </context>\r\n\r\n    <context name="Items" append="true">\r\n        <include name="AlwaysFirstEquip" />\r\n    </context>\r\n\t\r\n\t<hold action="AlwaysFirstEquip" timeout="0.4" />\r\n\r\n    <!-- inputUserMapping -->\r\n\t<mapping name="AlwaysFirstEquip_Button" type="Button" >\r\n        <button id="IK_F2" overridableUI="afeMainHotkey" />\r\n    </mapping>\r\n\t<mapping name="SafeWeapon_Button" type="Button" >\r\n        <button id="IK_F3" overridableUI="afeAdditionalHotkey" />\r\n    </mapping>\r\n</bindings>\r\n',
     ('Sit Anywhere 1.4-7299-1-4-1762025971.zip', 'bin/x64/plugins/cyber_engine_tweaks/mods/sitAnywhere/config/config.json'):
@@ -640,6 +669,9 @@ def archives(fix):
     for name, paths in ROUND9.items():
         zname = re.sub(r'\.(rar|7z)$', '.zip', name)
         zipdir(f'{fix}/round9/{zname}', {p: ROUND9_FILES.get((name, p)) or placeholder(p, name) for p in paths})
+    for name, paths in ROUND10.items():
+        zname = re.sub(r'\.(rar|7z)$', '.zip', name)
+        zipdir(f'{fix}/round10/{zname}', {p: placeholder(p, name) for p in paths})
     eqex = 'Equipment-EX 6945 1.2.11 2026-11-06T10-00Z Lt7Qw2zXa.zip'   # a later release, only on Nexus Mods
     zipdir(f'{fix}/nexus-later/{eqex}', {p: placeholder(p, eqex) for p in ROUND3['Equipment-EX 6945 1.2.10 2026-10-25T21-07Z k8Iw8mmPd.zip']})
     nexus_api(fix, sorted({r.split()[7].split(':')[1] for r in table if r.split()[7].startswith('nexus:')}, key=int))
@@ -670,7 +702,7 @@ def nexus_api(fix, ids):
     for period in ('?period=1d', '?period=1w', '?period=1m', ''):   # nothing changed lately (Python 3.14 opens a
         write(f'{game}/updated.json{period}', '[]')                  # file:// URL without its query)
     archives = []
-    for d in ('nexus', 'style', 'round3', 'round4', 'round5', 'round7', 'round9', 'nexus-bad', 'nexus-later'):
+    for d in ('nexus', 'style', 'round3', 'round4', 'round5', 'round7', 'round9', 'round10', 'nexus-bad', 'nexus-later'):
         archives += [(n, f'{fix}/{d}/{n}') for n in sorted(os.listdir(f'{fix}/{d}'))]
     md5s, fid, lists = {}, 100000, {}
     for mod in ids:
