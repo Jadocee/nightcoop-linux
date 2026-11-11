@@ -952,16 +952,22 @@ Ringbrothers_Camaro_Valkyrja|archive/pc/mod/MAXSA5_RB_Camaro_Valkyrja.archive|17
 Ford_GT|archive/pc/mod/CORNMILF_Ford_GT_2017.archive|1775610065
 Aston_Martin_Valkyrie_AMR_Pro|archive/pc/mod/Okrasha_Aston_Martin_Valkyrie_AMR _Pro.archive|1777991589
 Porsche_911_Dakar|archive/pc/mod/CORNMILF_Porsche_911_992_Dakar.archive|1775053338
+Stamina_Regen_Fixes|r6/scripts/Stamina Regen Fixes.reds|zhqmhWqGb
+Stamina_Consumption_Fix|r6/scripts/Stamina Consumption Fix/Stamina Consumption Fix.Global.reds|1754429738
+Sandevistan_Preemptive_End_Fix|r6/scripts/SandevistanPreemptiveEndFix/SandevistanPreemptiveEndFix.reds|bWY8WhuFq
+Sandevistan_Activation_Fix|r6/scripts/Sandevistan Activation Bug Fix.reds|G5yE5CSmg
+Status_Bar_Bug_Fixes|r6/scripts/StatusBarBugFixes.reds|1765496111
+Female_Standing_Peeing_Fix|r6/scripts/Female Standing Peeing Fix/FemaleStandingPeeingFix.reds|3dwHd9fg9
 EOF
 )"   # component|a file of its own|the part of its download's name that file came from
 r14own() { local c p t; while IFS='|' read -r c p t; do camei "$p" "$t" || echo "$c: $p is not from its download ($t)"; done <<<"$R14_PICKS"; }
 r14decoy() { local s; while IFS= read -r s; do [ -e "$FIX/round14/$s" ] || continue; grep -q -F -f <(cut -d'|' -f3 <<<"$R14_PICKS") <<<"$s" || echo "$s"; done < <(fromzips); }
 run install --yes --with-mods
-expect "each of the 24 components by its own file: the combat, quest, world, interface and loot fixes, and the cars" '[ $RC = 0 ] && [ -z "$(r14own)" ]' "$(r14own; echo "$OUT" | grep -i -E "left out|not installed|needs ")"
-expect "no other file of these mods (the Removed grace, the Limited HUD bars, the driver-loot file, the Camaro's Extras)" '[ -z "$(r14decoy)" ]' "$(r14decoy)"
+expect "each of the 30 components by its own file: the combat, stamina, Sandevistan, quest, world, interface and loot fixes, and the cars" '[ $RC = 0 ] && [ -z "$(r14own)" ]' "$(r14own; echo "$OUT" | grep -i -E "left out|not installed|needs ")"
+expect "no other file of these mods (the Removed grace, the Limited HUD bars, the driver-loot file, the Camaro's Extras, the CET stamina file, the two Sandevistan files that do not compile)" '[ -z "$(r14decoy)" ]' "$(r14decoy)"
 expect "the Dakar's copy of Vehicle Manufacturer Fix's script is left out; the set's own file stays" '[ ! -e "$G/r6/scripts/VehicleManufacturerFix.reds" ] && [ -f "$G/r6/scripts/VMF/vmf.reds" ]' "$(ls "$G/r6/scripts")"
 NPCL="$(echo "$OUT" | grep 'Mods that change how NPCs act')"
-expect "the co-op notes: the four NPC mods, the canyon and the Epistrophy fix among the places, the finisher, melee and looting notes" '[[ "$NPCL" == *"Enemies Melee Attacks Fixes"* ]] && [[ "$NPCL" == *"Enemy Melee Moves Unlocked"* ]] && [[ "$NPCL" == *"Enemy Quickhack Fixes"* ]] && [[ "$NPCL" == *"Crowd Seat Overlap Fix"* ]] && [[ "$OUT" == *"the canyon'"'"'s fixes and the Epistrophy cab fix): every partner needs the same files"* ]] && [[ "$OUT" == *"Machete Finisher Kill Fix in co-op"* ]] && [[ "$OUT" == *"Melee Attacks Fixes And Enhancements in co-op"* ]] && [[ "$OUT" == *"Impact Kill Looting Fix in co-op"* ]]' "$(echo "$OUT" | grep -E 'in co-op|NPCs act|cab fix')"
+expect "the co-op notes: the five NPC mods, the canyon and the Epistrophy fix among the places, the finisher, melee, looting and Sandevistan notes" '[[ "$NPCL" == *"Female Standing Peeing Fix"* ]] && [[ "$OUT" == *"Sandevistan Activation Fix in co-op"* ]] && [[ "$NPCL" == *"Enemies Melee Attacks Fixes"* ]] && [[ "$NPCL" == *"Enemy Melee Moves Unlocked"* ]] && [[ "$NPCL" == *"Enemy Quickhack Fixes"* ]] && [[ "$NPCL" == *"Crowd Seat Overlap Fix"* ]] && [[ "$OUT" == *"the canyon'"'"'s fixes and the Epistrophy cab fix): every partner needs the same files"* ]] && [[ "$OUT" == *"Machete Finisher Kill Fix in co-op"* ]] && [[ "$OUT" == *"Melee Attacks Fixes And Enhancements in co-op"* ]] && [[ "$OUT" == *"Impact Kill Looting Fix in co-op"* ]]' "$(echo "$OUT" | grep -E 'in co-op|NPCs act|cab fix')"
 run update --yes
 expect "a rerun changes nothing" '[ $RC = 0 ] && [[ "$OUT" == *"everything is up to date; nothing to do"* ]]' "$OUT"
 run uninstall --yes

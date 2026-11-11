@@ -447,6 +447,12 @@ with the patch.
 | Disappearing Enemy Health Bar Fix, its first file | [19815](https://www.nexusmods.com/cyberpunk2077/mods/19815?tab=files) | 1.0 or newer | Enemy health bars show every time they should (not the Limited HUD files or the scanning add-on) |
 | Empty Quickhack Menu Fix for 2.5 | [36114](https://www.nexusmods.com/cyberpunk2077/mods/36114?tab=files) | 1 or newer | Quickhacks and cyberware mods show in their menu at once, a 2.5 bug |
 | Impact Kill Looting Fix, its main file | [28099](https://www.nexusmods.com/cyberpunk2077/mods/28099?tab=files) | 1.0.0 or newer | A body killed by a car can be looted (its NPC interaction files date from before 2.5: try it once; not the Experimental file) |
+| Stamina Regen Fixes, its No CET file | [29547](https://www.nexusmods.com/cyberpunk2077/mods/29547?tab=files) | 1 or newer | No hard cap on stamina regeneration, and the same regeneration while a Sandevistan runs (your own V) |
+| Stamina Consumption Fix | [23230](https://www.nexusmods.com/cyberpunk2077/mods/23230?tab=files) | 1.0.0 or newer | Stamina spent over time no longer depends on your frame rate |
+| Sandevistan Preemptive End Fix (of Sandevistan QuickMelee And Other Bugs Fixes) | [29636](https://www.nexusmods.com/cyberpunk2077/mods/29636?tab=files) | 1 or newer | A Sandevistan no longer ends while it still has charge (not the QuickMelee or Aiming Blocked files) |
+| Sandevistan Activation Fix | [30571](https://www.nexusmods.com/cyberpunk2077/mods/30571?tab=files) | 1.1 or newer | A Sandevistan press no longer spends charge without slowing time; one pressed during other slow motion waits for it to end |
+| Status Bar Bug Fixes | [4316](https://www.nexusmods.com/cyberpunk2077/mods/4316?tab=files) | 1.8 or newer | Five fixes to the status bar's buff timers and icons and to the weapon wheel |
+| Female Standing Peeing Fix | [35082](https://www.nexusmods.com/cyberpunk2077/mods/35082?tab=files) | 1.0.0 or newer | Women in the streets no longer stand at walls to pee; every partner needs it |
 | Canyon Fixes | [25918](https://www.nexusmods.com/cyberpunk2077/mods/25918?tab=files) | 1.2.1 or newer | The eastern Badlands canyon and map border fixed, set in Native Settings UI; every partner needs it, as its tunnel walls block cars |
 | Crowd Seat Overlap - Duplication Fix | [34735](https://www.nexusmods.com/cyberpunk2077/mods/34735?tab=files) | 1.1.3 or newer | No more civilians sitting inside one another or doubled vendors; every partner needs it |
 | Epistrophy Delamain Despawn Fix | [29851](https://www.nexusmods.com/cyberpunk2077/mods/29851?tab=files) | 1.21 or newer | The Delamain cabs of Epistrophy leave once it is done, and its last holocall is fixed; install it before you finish Epistrophy; every partner needs it |
@@ -458,8 +464,15 @@ with the patch.
 
 **Requested and left out for now.** Each was checked against patch 2.5 and NightCoop's guides:
 
-- **No build for 2.5 yet**, and patch 2.5 changed the world sectors that their edits target (ArchiveXL skips edits that do not match): More H10 Interactions and Viktor Vektor's clinic overhaul. Their interactions also run on Native Interactions Framework, whose quest facts NightCoop shares from the host, so they need a bridge first.
+- **No build for 2.5 yet**, and patch 2.5 changed the world sectors that their edits target (ArchiveXL skips edits that do not match): More H10 Interactions and Viktor Vektor's clinic overhaul. Their interactions also run on Native Interactions Framework, whose quest facts NightCoop shares from the host, so they need a bridge first. Stats Bar UI Fix's only file is for patch 2.31, and it replaces the whole texture atlas that the full-screen menus share.
+- **They would stop every script compiling:** Sandevistan Tech Charge Fix, and the QuickMelee and Aiming Blocked
+  files of Sandevistan QuickMelee And Other Bugs Fixes, call `GetStatValue` on a game object, which no script of the
+  game, its frameworks or the set declares. One script that fails to compile stops all the mods' scripts, NightCoop's
+  included.
 - **A bridge or a native check first:**
+  - False Encumbrance Fix runs the game's encumbrance check itself for every player body, partners' included, past
+    the guard NightCoop puts on a partner's body; that check sets your HUD's carried weight and can mark your V as
+    overburdened. A bridge that lets it act on your own V only would make it safe.
   - Load Begone's plugin detours the splash-screen function NightCoop detours for its own intro skip, and skips the
     original of another; holding Space at launch loads your last save past the main menu, where NightCoop puts its
     Co-op entry; by default it turns the game's mod verification setting off for good; and it changes the Dogtown
@@ -503,6 +516,8 @@ with the patch.
     appearance file and its texts), so one of the two would show up without its body. The set keeps the 240SX it has.
   - Ava's 4k female complexions replace the game's female V head and skin, a material of the game's and the head
     maps of most women in the city with files from patch 2.1: every female V on your screen, partners' included.
+  - Low Stamina Dash Fix and the set's Dash Fix change the same dash function, and on low stamina Low Stamina Dash Fix
+    brings back the pull onto targets that Dash Fix removes.
   - Shift (Dynamic First Person Camera) and Immersive First Person both move your first-person camera every frame;
     Shift's author lists the clash.
   - Angy's Custom Face Presets each replace the game's head for every V of that body on your screen, partners'
@@ -678,6 +693,23 @@ new release of the mod changes the file it ships, and your copy is backed up fir
   copy of a game file, the Herrera Outlaw's cooked appearance: if an Outlaw looks wrong on
   your screen, that is why. The Thundergod rides with the Arch's animations. The cars' files
   for Dedka Car Dealership and Nova Traffic, which the set does not have, are left out.
+- **The additions of round 14.** The three enemy combat mods, Crowd Seat Overlap Fix and Female
+  Standing Peeing Fix change how NPCs act, and the game that leads an NPC applies them, so every
+  partner needs the same files. A finisher with Machete Finisher Kill Fix kills, decided by the
+  finishing V's game. Melee Attacks Fixes And Enhancements changes your own attacks, and enemies
+  react to them in the game that leads them. It replaces `MeleeStrongAttackEvents.OnEnter`, which
+  Katana Pack 2 wraps twice; the wraps call the original, so both run: try the Samurai katana's
+  charged attack once. Several of these date from before 2.5 and replace whole game files or
+  records: Enemies Melee Attacks Fixes (ten NPC animation sets and 773 AI records), Enemy Melee Moves
+  Unlocked (nine AI maps), Impact Kill Looting Fix (every NPC's interaction file; the layers NightCoop
+  switches keep their names) and Melee Attacks Fixes And Enhancements: try each once. Canyon Fixes' tunnel walls
+  block cars, so partners need them too. Better Quality Sort replaces five sort functions and the
+  crafting list's sort, Status Bar Bug Fixes three HUD functions, Finisher Grace Fix the grace
+  check and Disappearing Enemy Health Bar Fix one nameplate function; none of them is in NightCoop's tables
+  or hooked by another mod of the set. Vehicle Destruction Mesh Fix points Night City Traffic
+  Overhaul's bus and sweeper at its own wrecks, on purpose. Sandevistan Activation Fix makes a
+  Sandevistan pressed during other slow motion wait, a partner's nearby Sandevistan included; try
+  it once in a session.
 - **The cars of round 13.** The Huracan EVO's one script wraps the switch to driving with
   weapons out and calls the original (not in NightCoop's tables): its two armed builds open
   their rear doors and windows. Its police build's siren sound needs AudioXL, so it is silent
@@ -1246,6 +1278,11 @@ without the installs, in a few seconds. The suite covers:
   their names: each of the 8 components by its own file, not the Huracan's Disable Mirrors
   and Custom Audio files or the Zenitex patch's main file, the Comfy Boots texture left out
   without Comfy Boots, and GEAR's note;
+- the mods of round 14 by their real file names and entries, four of them from rar archives:
+  each of the 30 components by its own file over its mod's other current files (the Removed
+  grace, the Limited HUD bars, the driver-loot file, the Camaro's Extras, the CET stamina file,
+  the Sandevistan files that do not compile), the Dakar's copy of Vehicle Manufacturer Fix's
+  script left out, and their notes;
 - mods the script did not install cleared on install into the backup, put back by uninstall,
   and left alone with `--keep-other-mods`, while the script's own mods keep what they write;
 - a GitHub download that fails, and the copy downloaded in a browser taken from Downloads;

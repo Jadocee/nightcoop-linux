@@ -310,6 +310,12 @@ Melee_Attacks_Fixes_And_Enhancements 2.5 mods        mod  -     -               
 Disappearing_Enemy_Health_Bar_Fix 2.5 mods        mod  -     -                                                       1.0    nexus:19815:-:lhud,scanning
 Empty_Quickhack_Menu_Fix      2.5 mods        mod  -     -                                                           1      nexus:36114
 Impact_Kill_Looting_Fix       2.5 mods        mod  -     -                                                           1.0.0  nexus:28099:-:experimental
+Stamina_Regen_Fixes           2.5 mods        mod  -     -                                                           1      nexus:29547:+no_cet
+Stamina_Consumption_Fix       2.5 mods        mod  -     -                                                           1.0.0  nexus:23230
+Sandevistan_Preemptive_End_Fix 2.5 mods        mod  -     -                                                          1      nexus:29636:+preemptive
+Sandevistan_Activation_Fix    2.5 mods        mod  -     -                                                           1.1    nexus:30571
+Status_Bar_Bug_Fixes          2.5 mods        mod  -     -                                                           1.8    nexus:4316
+Female_Standing_Peeing_Fix    2.5 mods        mod  -     -                                                           1.0.0  nexus:35082
 No_Crowd_Panic_From_Devices   2.5 mods        mod  -     -                                                           1.2.0  nexus:7353:+redscript
 Crowd_Voice_Unlocked          2.5 mods        mod  -     -                                                           1.1.0  nexus:36527
 Sit_Anywhere                  2.5 mods        mod  -     -                                                           1.4    nexus:7299
@@ -554,6 +560,8 @@ Epistrophy_Delamain_Despawn_Fix:ArchiveXL Leaky_Interiors_Fixed:ArchiveXL Leaky_
 Better_Quality_Sort:redscript,ArchiveXL Looting_QoL:redscript,ArchiveXL,Codeware Stash_Search:redscript,Codeware
 Backpack_Search:redscript,Codeware Vehicle_Destruction_Mesh_Fix:ArchiveXL,TweakXL
 Ringbrothers_Camaro_Valkyrja:ArchiveXL,TweakXL,Virtual_Car_Dealer
+Stamina_Regen_Fixes:redscript,TweakXL Stamina_Consumption_Fix:redscript Sandevistan_Preemptive_End_Fix:redscript
+Sandevistan_Activation_Fix:redscript Status_Bar_Bug_Fixes:redscript,TweakXL Female_Standing_Peeing_Fix:redscript,Codeware
 Ford_GT:redscript,ArchiveXL,TweakXL,Cyber_Engine_Tweaks,Vehicle_Manufacturer_Fix,Virtual_Car_Dealer
 Aston_Martin_Valkyrie_AMR_Pro:redscript,ArchiveXL,TweakXL,Cyber_Engine_Tweaks,Vehicle_Manufacturer_Fix,Virtual_Car_Dealer
 Porsche_911_Dakar:redscript,ArchiveXL,TweakXL,Cyber_Engine_Tweaks,Vehicle_Manufacturer_Fix,Virtual_Car_Dealer"
@@ -590,7 +598,8 @@ Minor_Activities_Quest_Fixes Kerry_Mansion_Scene_Fixes Quest_Vehicle_Motion_Fixe
 Canyon_Fixes Epistrophy_Delamain_Despawn_Fix"
 # Mods that change how NPCs act: the game that leads an NPC applies them, so every partner needs the same.
 NPC_MODS="Silent_Silencers Stealth_Fixes Stealth_Finishers No_Crowd_Panic_From_Devices Fixed_NPC_Vehicle_Reactions Enemies_Dodging_Fix
-Traffic_Lights_Resolved Enemies_Melee_Attacks_Fixes Enemy_Melee_Moves_Unlocked Enemy_Quickhack_Fixes Crowd_Seat_Overlap_Fix"
+Traffic_Lights_Resolved Enemies_Melee_Attacks_Fixes Enemy_Melee_Moves_Unlocked Enemy_Quickhack_Fixes Crowd_Seat_Overlap_Fix
+Female_Standing_Peeing_Fix"
 # Files a mod writes to while the game runs (its settings, its database, what it has learned):
 # the player's copy stays, and is replaced only when a new release changes the file it ships.
 # "*" is every component; a "*" in a pattern also matches across folders. A pattern ending in "/*"
@@ -3494,6 +3503,8 @@ nexus_file() {   # nexus_file <component>: which file to download, of a mod with
         Stash_Search) echo "Stash Search, among the main files" ;;
         Backpack_Search) echo "Backpack Search, among the main files" ;;
         Ringbrothers_Camaro_Valkyrja) echo "RB Camaro Valkyrja - Main, not the Extras" ;;
+        Stamina_Regen_Fixes) echo "Stamina Regen Fixes No CET, not the file for Cyber Engine Tweaks" ;;
+        Sandevistan_Preemptive_End_Fix) echo "Sandevistan Preemptive End Fix, not QuickMelee Sandevistan Fix or Sandevistan Aiming Blocked Fix" ;;
         Apex_Grapple) echo "the main file ApexGrapple, not the one For v2.31 Kobat" ;;
         No_Crowd_Panic_From_Devices) echo "the redscript file, not the CET one" ;;
         Parking_Spots_Enhanced) echo "the main file, not Parking Spots Enhanced (alt), a build for patch 2.21" ;;
@@ -3528,6 +3539,7 @@ nexus_avoided() {   # nexus_avoided <component>: what a file of it that is never
         Disappearing_Enemy_Health_Bar_Fix) echo "the Limited HUD files of Disappearing Enemy Health Bar Fix, for a HUD mod the set does not have, or its scanning add-on (take 1. Better Enemy Health Bar)" ;;
         Impact_Kill_Looting_Fix) echo "Impact Kill Looting Fix Experimental (Driver loot), which also lets V loot and carry bodies seated in cars (take the main file)" ;;
         Ringbrothers_Camaro_Valkyrja) echo "RB Camaro Valkyrja - Extras: patches that take off the wing or the wipers, a personal look (take the Main file)" ;;
+        Sandevistan_Preemptive_End_Fix) echo "QuickMelee Sandevistan Fix and Sandevistan Aiming Blocked Fix, which call a function that no script of the game or the set declares: one script that fails to compile stops every mod's scripts, NightCoop's included (take Sandevistan Preemptive End Fix)" ;;
         *) h="$(nexus_file "$1")"; echo "another file of $(name_of "$1") than the one this script takes${h:+ ($h)}" ;;
     esac
 }
@@ -3925,6 +3937,10 @@ step_addons() {   # the add-on sets (--with-flight, --with-mods), matched to the
     if [[ "$ADDON_HAVE" == *" Melee_Attacks_Fixes_And_Enhancements "* ]]; then
         info "Melee Attacks Fixes And Enhancements in co-op: your swings are your own game's, and enemies react to them in the"
         info "game that leads them, so every partner needs it too."
+    fi
+    if [[ "$ADDON_HAVE" == *" Sandevistan_Activation_Fix "* ]]; then
+        info "Sandevistan Activation Fix in co-op: a Sandevistan you press while other slow motion runs (a partner's Sandevistan"
+        info "near you included) waits without spending its charge, and starts when that ends."
     fi
     if [[ "$ADDON_HAVE" == *" Impact_Kill_Looting_Fix "* ]]; then
         info "Impact Kill Looting Fix in co-op: only a player who has it can loot or carry a body that a car killed."
