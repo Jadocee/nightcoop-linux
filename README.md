@@ -369,6 +369,11 @@ with the patch.
 | Chevrolet Corvette C8 ZR1 '26 | [37929](https://www.nexusmods.com/cyberpunk2077/mods/37929?tab=files) | 1.5 or newer | A ZR1 in five liveries, with working dials |
 | Ford Hennessey VelociRaptor 6x6 (weaponized) - Remastered | [36409](https://www.nexusmods.com/cyberpunk2077/mods/36409?tab=files) | 3 (its v1.2) or newer | A six-wheeled pickup with four doors, in black, silver and an armed combat build |
 | Ford Bronco First Edition (CORNMILF) | [29942](https://www.nexusmods.com/cyberpunk2077/mods/29942?tab=files) | 1 or newer | A four-seat Bronco |
+| Vehicle Destruction Mesh Fix (SDH0) | [35121](https://www.nexusmods.com/cyberpunk2077/mods/35121?tab=files) | 1.2 or newer | A burnt wreck for the Mahir MT28 bus, the Kaukaz Aras sweeper and the Bratsk extended truck, on your own screen |
+| Ringbrothers Valkyrja (Chevrolet Camaro SS), its Main file | [25602](https://www.nexusmods.com/cyberpunk2077/mods/25602?tab=files) | 1.0.1 or newer | Two Camaro restomods, the Valkyrja and the Strode Alt. (not the Extras file; a rar from November 2025: try it once) |
+| Ford GT (CORNMILF) | [27722](https://www.nexusmods.com/cyberpunk2077/mods/27722?tab=files) | 1.0.5 or newer | A 2017 Ford GT |
+| Aston Martin Valkyrie AMR Pro (Okrasha) | [29039](https://www.nexusmods.com/cyberpunk2077/mods/29039?tab=files) | 1.2 or newer | A Valkyrie AMR Pro |
+| Porsche 911 (992) Dakar (Carryhan) | [28557](https://www.nexusmods.com/cyberpunk2077/mods/28557?tab=files) | 1.1 or newer | A 911 Dakar (its copy of Vehicle Manufacturer Fix's script is left out: the set's own is used) |
 
 **Gameplay**
 
@@ -433,11 +438,33 @@ with the patch.
 | Playable Roulette, with Gambling Props | [15450](https://www.nexusmods.com/cyberpunk2077/mods/15450?tab=files), [15229](https://www.nexusmods.com/cyberpunk2077/mods/15229?tab=files) | 1.1.4 and 1.0.1 or newer | Roulette at the Ho-Oh and the Tyger Claws casino, for your own eddies; every partner needs it |
 | Preem Mirrors, its Lite file | [25633](https://www.nexusmods.com/cyberpunk2077/mods/25633?tab=files) | 1.3.1 or newer | Mirrors that reflect, on your own screen (not the Full file, which needs a mod that empties thousands of world sectors' inplace data) |
 | GEAR - Gear Exhibited Always on Rig | [37913](https://www.nexusmods.com/cyberpunk2077/mods/37913?tab=files) | 2.5-1 or newer | The weapons you carry shown on your V, in the world, in first person, in the inventory and in photo mode, on your own screen |
+| Enemies Melee Attacks Fixes | [32747](https://www.nexusmods.com/cyberpunk2077/mods/32747?tab=files) | 0.1 or newer | Enemy melee attacks with fixed directions, timings, sounds, katana trails and Mantis Blades; every partner needs it (its AI records and ten animation sets date from before 2.5: try it once) |
+| Enemy Melee Moves Unlocked | [34153](https://www.nexusmods.com/cyberpunk2077/mods/34153?tab=files) | 1.0.0 or newer | Enemies use 25 restored game attacks and combos across 12 weapon types; every partner needs it |
+| Enemy Quickhack Fixes | [34525](https://www.nexusmods.com/cyberpunk2077/mods/34525?tab=files) | 1.0.0 or newer | Enemy quickhacks' damage, cooldowns, stacking and labels fixed, with a Weapon Jam on Hard and MaxTac hacks by difficulty; every partner needs it |
+| Finisher Grace Fix, its Fixed Version | [34456](https://www.nexusmods.com/cyberpunk2077/mods/34456?tab=files) | 1.0.0 or newer | Your killing blows no longer leave an enemy at 1 health at random (not the Removed Version, which takes the grace away altogether) |
+| Machete Finisher Kill Fix | [34454](https://www.nexusmods.com/cyberpunk2077/mods/34454?tab=files) | 1 or newer | A machete finisher kills its target, as the game meant; every partner needs it |
+| Melee Attacks Fixes And Enhancements | [16921](https://www.nexusmods.com/cyberpunk2077/mods/16921?tab=files) | 0.41 or newer | Your melee attacks' timings, records and animations fixed; every partner needs it (its records and animations date from before 2.5: try it once) |
+| Disappearing Enemy Health Bar Fix, its first file | [19815](https://www.nexusmods.com/cyberpunk2077/mods/19815?tab=files) | 1.0 or newer | Enemy health bars show every time they should (not the Limited HUD files or the scanning add-on) |
+| Empty Quickhack Menu Fix for 2.5 | [36114](https://www.nexusmods.com/cyberpunk2077/mods/36114?tab=files) | 1 or newer | Quickhacks and cyberware mods show in their menu at once, a 2.5 bug |
+| Impact Kill Looting Fix, its main file | [28099](https://www.nexusmods.com/cyberpunk2077/mods/28099?tab=files) | 1.0.0 or newer | A body killed by a car can be looted (its NPC interaction files date from before 2.5: try it once; not the Experimental file) |
+| Canyon Fixes | [25918](https://www.nexusmods.com/cyberpunk2077/mods/25918?tab=files) | 1.2.1 or newer | The eastern Badlands canyon and map border fixed, set in Native Settings UI; every partner needs it, as its tunnel walls block cars |
+| Crowd Seat Overlap - Duplication Fix | [34735](https://www.nexusmods.com/cyberpunk2077/mods/34735?tab=files) | 1.1.3 or newer | No more civilians sitting inside one another or doubled vendors; every partner needs it |
+| Epistrophy Delamain Despawn Fix | [29851](https://www.nexusmods.com/cyberpunk2077/mods/29851?tab=files) | 1.21 or newer | The Delamain cabs of Epistrophy leave once it is done, and its last holocall is fixed; install it before you finish Epistrophy; every partner needs it |
+| Leaky Interiors Fixed: its AIO file and the Voodoo Boys crypt file | [29002](https://www.nexusmods.com/cyberpunk2077/mods/29002?tab=files) | 1.1 and 1.0 or newer | Walls and ceilings that let light leak into eight interiors closed |
+| Basilisk Shadows Fix | [33808](https://www.nexusmods.com/cyberpunk2077/mods/33808?tab=files) | 1.0.0 or newer | No light leaking into the Basilisk's dark cockpit, on your own screen (a copy of the game's Basilisk appearance from September 2026: try it once) |
+| Better Quality Sort V2 | [20267](https://www.nexusmods.com/cyberpunk2077/mods/20267?tab=files) | 2.3.2 or newer | Sorting by quality counts an item's plus grade and iconic status |
+| Looting QoL | [14730](https://www.nexusmods.com/cyberpunk2077/mods/14730?tab=files) | 2.0 or newer | The loot window names who or what you are looting |
+| Stash and Backpack Search: Stash Search and Backpack Search | [14264](https://www.nexusmods.com/cyberpunk2077/mods/14264?tab=files) | 1.1.0 and 1.2.1 or newer | A search field in the stash and the backpack |
 
 **Requested and left out for now.** Each was checked against patch 2.5 and NightCoop's guides:
 
 - **No build for 2.5 yet**, and patch 2.5 changed the world sectors that their edits target (ArchiveXL skips edits that do not match): More H10 Interactions and Viktor Vektor's clinic overhaul. Their interactions also run on Native Interactions Framework, whose quest facts NightCoop shares from the host, so they need a bridge first.
 - **A bridge or a native check first:**
+  - Load Begone's plugin detours the splash-screen function NightCoop detours for its own intro skip, and skips the
+    original of another; holding Space at launch loads your last save past the main menu, where NightCoop puts its
+    Co-op entry; by default it turns the game's mod verification setting off for good; and it changes the Dogtown
+    gate's quest phase and sector in memory, in its owner's game only. It also replaces the file No Intro Videos
+    replaces, so the two cannot sit side by side; No Intro Videos stays.
   - Eden Plaza - Charter Hill Player Penthouse and its self-playing piano: the penthouse's purchase, beds, wardrobes and
     showers run on Native Interactions Framework, whose scenes start from quest facts that NightCoop shares from the
     host, so one player's interaction would start on every partner. The piano also needs RadioExt.
@@ -455,6 +482,10 @@ with the patch.
   - Pet Your Cat replaces The Pickup's quest phase and scene, where the game runs Nibbles, with copies from patch 2.31, and its Fuss and Pet choices sit in that main-story scene, which NightCoop puts to a vote in a session. It needs a 2.5 build and a session test first.
   - Ragdoll Physics Overhaul 3.0 is a beta of 7 November 2026 whose new RED4ext plugin hooks the game's ragdoll and PhysX functions, found by byte patterns, while NightCoop carries ragdolls, deaths and impulses between players. It needs a session test first; its earlier builds are for patch 2.1 and clash with 3.0. (When it joins, its Disable MaxTac option, shipped on by mistake, must be off.)
 - **Nothing to use in the set:**
+  - The Liberty Walk liveries for SDH0's Ferrari 458 Spider WBK and Ferrari F40 LB-WORKS replace SDH0's livery
+    textures, which are picked in a tuning garage the set leaves out, so they would never show. The F40 itself takes
+    its engine sound from SDH0's Vehicle Audio, which needs AudioXL: in the set it would drive silent.
+  - No uncrouching when melee attacking from stealth: Stealth Fixes, in the set, has the same fix.
   - Garage Manager and Garage tune SDH0's and the Quadra Turbo-Z's parts, which each player's game would show on every
     copy of a car, partners' included.
   - Crystal Coat Fix v2.12 serves hgyi56's CrystalCoat mods, which the set does not have (the game has not needed it
@@ -468,6 +499,10 @@ with the patch.
   - Enhanced Vehicle System, No Crash Reporter and RedData, listed by SDH0's cars, which do not use them.
   - V49 Footwear Atelier is a store for about 45 shoe mods published separately.
 - **Not for co-op play:**
+  - Okrasha's Nissan 240SX 1993 and the set's Nissan 240SX put different files at the same game paths (the car's
+    appearance file and its texts), so one of the two would show up without its body. The set keeps the 240SX it has.
+  - Ava's 4k female complexions replace the game's female V head and skin, a material of the game's and the head
+    maps of most women in the city with files from patch 2.1: every female V on your screen, partners' included.
   - Shift (Dynamic First Person Camera) and Immersive First Person both move your first-person camera every frame;
     Shift's author lists the clash.
   - Angy's Custom Face Presets each replace the game's head for every V of that body on your screen, partners'

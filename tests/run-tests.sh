@@ -883,7 +883,7 @@ expect "the overlays win: the GT-R's game engine sounds, the Quadra's 2.5 hotfix
 expect "left out: the entries for Dedka Car Dealership and Nova Traffic, and the Appearance Menu Mod prop lists" '[ ! -e "$CETM/Dedka Auto Shop" ] && [ ! -e "$CETM/NovaTraffic" ] && [ ! -e "$CETM/AppearanceMenuMod" ] && [ -f "$CETM/Gambling System - Roulette/init.lua" ] && [ -f "$CETM/SDH0_Ferrari458SpiderWBK/init.lua" ]' "$(ls "$CETM")"
 MS12="$(hp findci "$G" red4ext/plugins/mod_settings/user.ini 2>/dev/null)"
 expect "the Ferrari's roof key moves off O, Let There Be Flight's, to Home" '[ "$(ini "$MS12" SDH0.Ferrari458WBKSettings activationKey)" = IK_Home ]' "$(cat "$MS12" 2>/dev/null)"
-expect "the co-op notes: the traffic lights among the NPC mods, the roulette among the places, the new notes, the eyebrows and hair colours, the outfit's layers" '[[ "$OUT" == *"Mods that change how NPCs act (Traffic Lights Resolved)"* ]] && [[ "$OUT" == *"air traffic fix, the roulette tables): every partner needs the same files"* ]] && [[ "$OUT" == *"Traffic Lights Resolved shows lights, lamps and signs from further away"* ]] && [[ "$OUT" == *"Perks And Skills Fixes in co-op"* ]] && [[ "$OUT" == *"Playable Roulette in co-op: its tables"* ]] && [[ "$OUT" == *"Ferrari 458 Spider WBK: its roof opens with Home"* ]] && [[ "$OUT" == *"keep their default parts"* ]] && [[ "$OUT" == *"Eyebrows and eyelashes of mods in co-op"* ]] && [[ "$OUT" == *"Hair Color Profiles in co-op"* ]] && [[ "$OUT" == *"The pieces of The Division Hunter Outfit are worn together with Equipment-EX"* ]] && [[ "$OUT" != *"these mods use .tweak files"* ]]' "$(echo "$OUT" | grep -E 'in co-op|NPCs act|roulette tables|lights, lamps|roof opens|default parts|pieces of')"
+expect "the co-op notes: the traffic lights among the NPC mods, the roulette among the places, the new notes, the eyebrows and hair colours, the outfit's layers" '[[ "$OUT" == *"Mods that change how NPCs act (Traffic Lights Resolved)"* ]] && [[ "$OUT" == *"air traffic fix, the roulette tables, the canyon'"'"'s fixes and the Epistrophy cab fix): every partner needs the same files"* ]] && [[ "$OUT" == *"Traffic Lights Resolved shows lights, lamps and signs from further away"* ]] && [[ "$OUT" == *"Perks And Skills Fixes in co-op"* ]] && [[ "$OUT" == *"Playable Roulette in co-op: its tables"* ]] && [[ "$OUT" == *"Ferrari 458 Spider WBK: its roof opens with Home"* ]] && [[ "$OUT" == *"keep their default parts"* ]] && [[ "$OUT" == *"Eyebrows and eyelashes of mods in co-op"* ]] && [[ "$OUT" == *"Hair Color Profiles in co-op"* ]] && [[ "$OUT" == *"The pieces of The Division Hunter Outfit are worn together with Equipment-EX"* ]] && [[ "$OUT" != *"these mods use .tweak files"* ]]' "$(echo "$OUT" | grep -E 'in co-op|NPCs act|roulette tables|lights, lamps|roof opens|default parts|pieces of')"
 run update --yes
 expect "a rerun changes nothing" '[ $RC = 0 ] && [[ "$OUT" == *"everything is up to date; nothing to do"* ]]' "$OUT"
 run uninstall --yes
@@ -920,6 +920,52 @@ expect "uninstall puts the game folder back exactly" '[ $RC = 0 ] && [ "$PRISTIN
 rm -f -- "$D/$(basename "$COMFY")" "$H/.cache/nightcoop-linux/mods/$(basename "$COMFY")"   # gone from Downloads and the cache
 run install --yes --with-mods
 expect "without Comfy Boots, its texture fix is left out too" '[ $RC = 0 ] && [ ! -e "$G/archive/pc/mod/comfy-fix.archive" ] && [ -z "$(r13own | grep -v ^Comfy_Boots_Texture_Fix)" ]' "$(echo "$OUT" | grep -i comfy)"
+
+section "Mods (--with-mods): round 14: combat, quest, world, interface and loot fixes, and five cars"
+newworld round14 native; OSR="$T/os-arch"; D="$H/Downloads"; mkdir -p "$D" "$G/archive/pc/ep1"
+PRISTINE_R14="$(snapshot "$G")"
+R14_DL=("$FIX/nexus/Virtual Car Dealer 4454 2.3.0 2026-10-25T11-18Z lcXrcZZMt.zip" "$FIX/style/VMF-28744-1-0-1775609654.zip"
+        "$FIX/nexus/Native Settings UI 1.97 3518 1.97 2026-10-22T15-26Z cB3xB00Va.zip")   # what they need, from Nexus Mods
+cp "${R14_DL[@]}" "$FIX"/round14/* "$D/"
+R14_PICKS="$(cat <<'EOF'
+Enemies_Melee_Attacks_Fixes|archive/pc/mod/EnemiesMeleeAttacksFixes.archive|LACBAIryl
+Enemy_Melee_Moves_Unlocked|r6/tweaks/Enemy Melee Moves Unlocked/Enemy Melee Moves Unlocked.yaml|AgoGgioUd
+Enemy_Quickhack_Fixes|r6/tweaks/Enemy Quickhack Fixes/EnemyQuickhackFixes.yaml|gMz5Mucyj
+Finisher_Grace_Fix|r6/scripts/Finisher Grace Fix/Finisher Grace Fix.reds|zhqmhW3LZ
+Machete_Finisher_Kill_Fix|r6/scripts/Machete Finisher Kill Fix/Machete Finisher Kill Fix.reds|X32s3EYJy
+Melee_Attacks_Fixes_And_Enhancements|archive/pc/mod/MeleeAttacksFixesAndImprovements.archive|1761400779
+Disappearing_Enemy_Health_Bar_Fix|r6/scripts/Z_BetterEnemyHealthBar.reds|1739766543
+Empty_Quickhack_Menu_Fix|r6/scripts/CyberwareSlotSelectionFix/CyberwareSlotSelectionFix.reds|X32s3Ehzc
+Impact_Kill_Looting_Fix|archive/pc/mod/ImpactKillLootingFix.archive|1772990692
+Canyon_Fixes|archive/pc/mod/CanyonFixesAIO.archive|1769489512
+Crowd_Seat_Overlap_Fix|r6/scripts/Crowd Seat Overlap Fix/CrowdSeatOverlapFix.reds|cB3xB00Es
+Epistrophy_Delamain_Despawn_Fix|archive/pc/mod/EpistrophyDelamainDespawnFix.archive|tvQTvss44
+Leaky_Interiors_Fixed|archive/pc/mod/##LeakyInteriorsFixed.archive|1778789179
+Leaky_Interiors_Voodoo_Crypt|archive/pc/mod/##LeakyVoodoo.archive|1776549583
+Basilisk_Shadows_Fix|archive/pc/mod/! basilisk_shadows_fix_game_2.x.archive|9ka2kyaOG
+Better_Quality_Sort|archive/pc/mod/SortPlus.archive|aI50IAscm
+Looting_QoL|archive/pc/mod/LootingQoL.archive|RXDpXNDZw
+Stash_Search|r6/scripts/stashSearch.reds|1715929772
+Backpack_Search|r6/scripts/backpackSearch.reds|1752387587
+Vehicle_Destruction_Mesh_Fix|archive/pc/mod/VehicleDestructionMeshFix.archive|Z0ER0BwsR
+Ringbrothers_Camaro_Valkyrja|archive/pc/mod/MAXSA5_RB_Camaro_Valkyrja.archive|1762985465
+Ford_GT|archive/pc/mod/CORNMILF_Ford_GT_2017.archive|1775610065
+Aston_Martin_Valkyrie_AMR_Pro|archive/pc/mod/Okrasha_Aston_Martin_Valkyrie_AMR _Pro.archive|1777991589
+Porsche_911_Dakar|archive/pc/mod/CORNMILF_Porsche_911_992_Dakar.archive|1775053338
+EOF
+)"   # component|a file of its own|the part of its download's name that file came from
+r14own() { local c p t; while IFS='|' read -r c p t; do camei "$p" "$t" || echo "$c: $p is not from its download ($t)"; done <<<"$R14_PICKS"; }
+r14decoy() { local s; while IFS= read -r s; do [ -e "$FIX/round14/$s" ] || continue; grep -q -F -f <(cut -d'|' -f3 <<<"$R14_PICKS") <<<"$s" || echo "$s"; done < <(fromzips); }
+run install --yes --with-mods
+expect "each of the 24 components by its own file: the combat, quest, world, interface and loot fixes, and the cars" '[ $RC = 0 ] && [ -z "$(r14own)" ]' "$(r14own; echo "$OUT" | grep -i -E "left out|not installed|needs ")"
+expect "no other file of these mods (the Removed grace, the Limited HUD bars, the driver-loot file, the Camaro's Extras)" '[ -z "$(r14decoy)" ]' "$(r14decoy)"
+expect "the Dakar's copy of Vehicle Manufacturer Fix's script is left out; the set's own file stays" '[ ! -e "$G/r6/scripts/VehicleManufacturerFix.reds" ] && [ -f "$G/r6/scripts/VMF/vmf.reds" ]' "$(ls "$G/r6/scripts")"
+NPCL="$(echo "$OUT" | grep 'Mods that change how NPCs act')"
+expect "the co-op notes: the four NPC mods, the canyon and the Epistrophy fix among the places, the finisher, melee and looting notes" '[[ "$NPCL" == *"Enemies Melee Attacks Fixes"* ]] && [[ "$NPCL" == *"Enemy Melee Moves Unlocked"* ]] && [[ "$NPCL" == *"Enemy Quickhack Fixes"* ]] && [[ "$NPCL" == *"Crowd Seat Overlap Fix"* ]] && [[ "$OUT" == *"the canyon'"'"'s fixes and the Epistrophy cab fix): every partner needs the same files"* ]] && [[ "$OUT" == *"Machete Finisher Kill Fix in co-op"* ]] && [[ "$OUT" == *"Melee Attacks Fixes And Enhancements in co-op"* ]] && [[ "$OUT" == *"Impact Kill Looting Fix in co-op"* ]]' "$(echo "$OUT" | grep -E 'in co-op|NPCs act|cab fix')"
+run update --yes
+expect "a rerun changes nothing" '[ $RC = 0 ] && [[ "$OUT" == *"everything is up to date; nothing to do"* ]]' "$OUT"
+run uninstall --yes
+expect "uninstall puts the game folder back exactly" '[ $RC = 0 ] && [ "$PRISTINE_R14" = "$(snapshot "$G")" ]' "$(diff <(echo "$PRISTINE_R14") <(snapshot "$G"))"
 
 # ------------------------------------------------------ Nexus Mods API ----
 section "Nexus Mods API: with a Premium account's key, the script downloads the Nexus mods itself"
