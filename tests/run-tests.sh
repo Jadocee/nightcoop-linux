@@ -93,6 +93,8 @@ newworld() {   # newworld <name> <layout> [options for mkfixtures.py world]
 }
 snapshot() { (cd "$1" && find . -print | sort && find . -type f -print0 | sort -z | xargs -0 sha256sum); }
 ini() { awk -v s="[$2]" -v k="$3" '$0 == s { on = 1; next } /^\[/ { on = 0 } on && $1 == k { print $3 }' "$1"; }   # ini <file> <section> <key>
+camei() { local f; f="$(hp findci "$G" "$1" 2>/dev/null)" && grep -q -a -F -- "$2" "$f"; }   # camei <file> <part of a download's name>: came from it (path without case)
+fromzips() { grep -r -h -o -a ' from [^"]*\.zip' "$G" 2>/dev/null | sed 's/^ from //' | sort -u; }   # the downloads the game folder's files came from
 launch_opts() { sed -n 's/.*"LaunchOptions"[[:space:]]*"\(.*\)"$/\1/p' "$LC"; }
 set_lo() { sed -i "s|\"LaunchOptions\"\([[:space:]]*\)\".*\"\$|\"LaunchOptions\"\1\"$1\"|" "$LC"; }   # a value without quotes
 REG_KEY='Software\Wine\AppDefaults\Cyberpunk2077.exe\DllOverrides'
@@ -872,10 +874,8 @@ Eyelashes_CCXL|archive/pc/mod/!!!!!!_SEDTH_ccxl eyelashes(FEM).archive|176065802
 Eyelashes_CCXL_Male|archive/pc/mod/!!!_SEDTH_ccxl eyelashes(MALE).archive|1760658169
 EOF
 )"   # component|a file of its own|the part of its download's name that file came from
-camei() { local f; f="$(hp findci "$G" "$1" 2>/dev/null)" && grep -q -a -F -- "$2" "$f"; }   # came, the path without case
 r12own() { local c p t; while IFS='|' read -r c p t; do camei "$p" "$t" || echo "$c: $p is not from its download ($t)"; done <<<"$R12_PICKS"; }
-r12from() { grep -r -h -o -a ' from [^"]*\.zip' "$G" 2>/dev/null | sed 's/^ from //' | sort -u; }   # the downloads files came from
-r12decoy() { local s; while IFS= read -r s; do [ -e "$FIX/round12/$s" ] || continue; grep -q -F -f <(cut -d'|' -f3 <<<"$R12_PICKS") <<<"$s" || echo "$s"; done < <(r12from); }
+r12decoy() { local s; while IFS= read -r s; do [ -e "$FIX/round12/$s" ] || continue; grep -q -F -f <(cut -d'|' -f3 <<<"$R12_PICKS") <<<"$s" || echo "$s"; done < <(fromzips); }
 run install --yes --with-mods
 expect "each of the 31 components by its own file: the cars, frameworks, character-creator options, the outfit, the fixes and the roulette" '[ $RC = 0 ] && [ -z "$(r12own)" ]' "$(r12own; echo "$OUT" | grep -i -E "left out|not installed|needs ")"
 expect "no other file of these mods (the Full mirrors, the Fuller eyebrows, liveries, rims, props, tuning parts, the AudioXL sound files)" '[ -z "$(r12decoy)" ]' "$(r12decoy)"
@@ -888,6 +888,38 @@ run update --yes
 expect "a rerun changes nothing" '[ $RC = 0 ] && [[ "$OUT" == *"everything is up to date; nothing to do"* ]]' "$OUT"
 run uninstall --yes
 expect "uninstall puts the game folder back exactly" '[ $RC = 0 ] && [ "$PRISTINE_R12" = "$(snapshot "$G")" ]' "$(diff <(echo "$PRISTINE_R12") <(snapshot "$G"))"
+
+section "Mods (--with-mods): round 13: GEAR, two hairstyles, the Comfy Boots texture fix and four cars"
+newworld round13 native; OSR="$T/os-arch"; D="$H/Downloads"; mkdir -p "$D" "$G/archive/pc/ep1"
+PRISTINE_R13="$(snapshot "$G")"
+COMFY="$FIX/style/Comfy Boots - Female V and Male V-11212-1-1-1701090170.zip"
+R13_DL=("$FIX/nexus/Virtual Car Dealer 4454 2.3.0 2026-10-25T11-18Z lcXrcZZMt.zip" "$FIX/style/VMF-28744-1-0-1775609654.zip"
+        "$FIX/style/Material and Texture Override-5266-1-2-1695907754.zip" "$COMFY")   # what they need, from Nexus Mods
+cp "${R13_DL[@]}" "$FIX"/round13/* "$D/"
+R13_PICKS="$(cat <<'EOF'
+GEAR|r6/scripts/GEAR/GEAR.reds|AgoGgiPhk
+Selkie_Hair|archive/pc/mod/Atomiic_Selkie_Hair_CCXL.archive|PYMIYqWbh
+Kaisa_Hair|archive/pc/mod/_0_Vesna_HoV_HAIR_FV_Kaisa_CCXL.archive|3dwHd9Gd8
+Comfy_Boots_Texture_Fix|archive/pc/mod/comfy-fix.archive|Q6xF6lDcm
+Lamborghini_Huracan_EVO|r6/scripts/maxsa5/lamborghini_huracan_evo_weapons.reds|k8Iw8moEh
+Chevrolet_Corvette_C8_ZR1|r6/scripts/Ninegage/corvette_c8_zr1.reds|HncQn2EKr
+Ford_Hennessey_VelociRaptor|archive/pc/mod/Ford Hennessey V3.archive|YfTif7daR
+Ford_Bronco_First_Edition|r6/tweaks/cornmilf/ford_bronco_raptor_fronco.tweak|gMz5Mu25T
+EOF
+)"   # component|a file of its own|the part of its download's name that file came from
+r13own() { local c p t; while IFS='|' read -r c p t; do camei "$p" "$t" || echo "$c: $p is not from its download ($t)"; done <<<"$R13_PICKS"; }
+r13decoy() { local s; while IFS= read -r s; do [ -e "$FIX/round13/$s" ] || continue; grep -q -F -f <(cut -d'|' -f3 <<<"$R13_PICKS") <<<"$s" || echo "$s"; done < <(fromzips); }
+run install --yes --with-mods
+expect "each of the 8 components by its own file: GEAR, the hairstyles, the Comfy Boots texture fix and the cars, names with quotes included" '[ $RC = 0 ] && [ -z "$(r13own)" ]' "$(r13own; echo "$OUT" | grep -i -E "left out|not installed|needs ")"
+expect "no other file of these mods (the Huracan's Disable Mirrors and Custom Audio files, the Zenitex patch's stats file)" '[ -z "$(r13decoy)" ] && [ -z "$(find "$G/r6" -iname 'zz_zenitex_core5_addon_*' 2>/dev/null)" ] && ! camei r6/scripts/maxsa5/lamborghini_huracan_evo_audio.reds LACBAIm2B' "$(r13decoy)"
+expect "the co-op notes: GEAR's weapons on your own screen, and the hairstyles" '[[ "$OUT" == *"GEAR shows the weapons you carry on your V on your own screen"* ]] && [[ "$OUT" == *"Hairstyles of mods in co-op"* ]]' "$(echo "$OUT" | grep -E 'GEAR|Hairstyles')"
+run update --yes
+expect "a rerun changes nothing" '[ $RC = 0 ] && [[ "$OUT" == *"everything is up to date; nothing to do"* ]]' "$OUT"
+run uninstall --yes
+expect "uninstall puts the game folder back exactly" '[ $RC = 0 ] && [ "$PRISTINE_R13" = "$(snapshot "$G")" ]' "$(diff <(echo "$PRISTINE_R13") <(snapshot "$G"))"
+rm -f -- "$D/$(basename "$COMFY")" "$H/.cache/nightcoop-linux/mods/$(basename "$COMFY")"   # gone from Downloads and the cache
+run install --yes --with-mods
+expect "without Comfy Boots, its texture fix is left out too" '[ $RC = 0 ] && [ ! -e "$G/archive/pc/mod/comfy-fix.archive" ] && [ -z "$(r13own | grep -v ^Comfy_Boots_Texture_Fix)" ]' "$(echo "$OUT" | grep -i comfy)"
 
 # ------------------------------------------------------ Nexus Mods API ----
 section "Nexus Mods API: with a Premium account's key, the script downloads the Nexus mods itself"

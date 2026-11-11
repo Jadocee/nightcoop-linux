@@ -192,6 +192,7 @@ Zenitex_Armor_Pads            2.5 mods        mod  -     -                      
 Zenitex_Panam_Pants           2.5 mods        mod  -     -                                                           4.0    nexus:10842:-:alt._colo,_-_gs
 Zenitex_Combat_Gloves         2.5 mods        mod  -     -                                                           2.0.1  nexus:19432:-:alt._colo,garment_support
 Comfy_Boots                   2.5 mods        mod  -     -                                                           1.1    nexus:11212:-:gymfiend
+Comfy_Boots_Texture_Fix       2.5 mods        mod  -     -                                                           0.1    nexus:37842:+comfy
 Vehicle_Pack_Basic_1          2.5 mods        mod  -     -                                                           1.8.2  nexus:4625:-:~car_pack_2
 Vehicle_Pack_Basic_2          2.5 mods        mod  -     -                                                           1.9.0  nexus:4625:+car_pack_2
 Cyberpunk_Bikes_Edge          2.5 mods        mod  -     -                                                           1.03   nexus:14719
@@ -325,6 +326,7 @@ Vik_Voiceline_Cut             2.5 mods        mod  -     -                      
 Gambling_Props                2.5 mods        lib  -     -                                                           1.0.1  nexus:15229:-:roulette
 Playable_Roulette             2.5 mods        mod  -     -                                                           1.1.4  nexus:15450:-:props,exampleaddon
 Preem_Mirrors                 2.5 mods        mod  -     -                                                           1.3.1  nexus:25633:(lite):(full),reflection
+GEAR                          2.5 mods        mod  -     -                                                           2.5-1  nexus:37913
 Apartment_Cats_Corpo_Plaza    2.5 mods        mod  -     -                                                           3.0.0  nexus:6329:-:colour
 Apartment_Cats_Japantown      2.5 mods        mod  -     -                                                           3.0.1  nexus:6493
 Apartment_Cats_Northside_Motel 2.5 mods        mod  -     -                                                          3.0.0  nexus:6379
@@ -357,6 +359,10 @@ Ford_Mustang_RTR_Spec_5       2.5 mods        mod  -     -                      
 Audi_R8_Liberty_Walk          2.5 mods        mod  -     -                                                           1.3    nexus:8827:-:spoilers
 Militech_WDG3                 2.5 mods        mod  -     -                                                           1      nexus:37099:-:rims
 Harley-Davidson_Thundergod    2.5 mods        mod  -     -                                                           1.1.0  nexus:21522:-:prop,template
+Lamborghini_Huracan_EVO       2.5 mods        mod  -     -                                                           1.0.0  nexus:37520:-:mirrors,audio
+Chevrolet_Corvette_C8_ZR1     2.5 mods        mod  -     -                                                           1.5    nexus:37929
+Ford_Hennessey_VelociRaptor   2.5 mods        mod  -     -                                                           3      nexus:36409
+Ford_Bronco_First_Edition     2.5 mods        mod  -     -                                                           1      nexus:29942
 FPP_Speedometer               2.5 mods        mod  -     -                                                           1.3.0  nexus:26156
 Clear_Skill_Checks            2.5 mods        mod  -     -                                                           1.1.1  nexus:2805
 Filter_Saves                  2.5 mods        mod  -     -                                                           1.7.0  nexus:3400
@@ -389,6 +395,8 @@ Yumeko_Hair                   2.5 mods        mod  -     -                      
 Xyla_Shag_Mullet              2.5 mods        mod  -     -                                                           1      nexus:36246
 Geralt_of_Rivia_Hair          2.5 mods        mod  -     -                                                           1      nexus:36769
 Soft_Blunt_Bob                2.5 mods        mod  -     -                                                           1      nexus:35463
+Selkie_Hair                   2.5 mods        mod  -     -                                                           1      nexus:37381
+Kaisa_Hair                    2.5 mods        mod  -     -                                                           1      nexus:37302
 Makeup_Enhancer               2.5 mods        mod  -     -                                                           1      nexus:28869:+256x256
 Beautiful_Makeup              2.5 mods        mod  -     -                                                           1      nexus:29336:+@1777732105
 Beautiful_Makeup_II           2.5 mods        mod  -     -                                                           1      nexus:29513:+basegame_head
@@ -513,7 +521,13 @@ Militech_WDG3:redscript,ArchiveXL,TweakXL,Vehicle_Manufacturer_Fix,Virtual_Car_D
 Harley-Davidson_Thundergod:ArchiveXL,TweakXL,Virtual_Car_Dealer
 The_Division_Hunter_Outfit:ArchiveXL,TweakXL,Virtual_Atelier
 Hair_Color_Profiles:ArchiveXL,TweakXL Beautiful_Eyebrows:ArchiveXL Beautiful_Eyebrows_II:ArchiveXL
-Eyelashes_CCXL:ArchiveXL Eyelashes_CCXL_Male:ArchiveXL"
+Eyelashes_CCXL:ArchiveXL Eyelashes_CCXL_Male:ArchiveXL
+Comfy_Boots_Texture_Fix:Comfy_Boots GEAR:redscript,Codeware,ArchiveXL,TweakXL
+Lamborghini_Huracan_EVO:redscript,Codeware,ArchiveXL,TweakXL,Cyber_Engine_Tweaks,Virtual_Car_Dealer
+Chevrolet_Corvette_C8_ZR1:redscript,ArchiveXL,TweakXL,Cyber_Engine_Tweaks,Virtual_Car_Dealer
+Ford_Hennessey_VelociRaptor:ArchiveXL,TweakXL,Cyber_Engine_Tweaks,Material_and_Texture_Override,Virtual_Car_Dealer
+Ford_Bronco_First_Edition:redscript,ArchiveXL,TweakXL,Cyber_Engine_Tweaks,Vehicle_Manufacturer_Fix,Virtual_Car_Dealer
+Selkie_Hair:ArchiveXL Kaisa_Hair:ArchiveXL"
 # Outfit mods: in co-op, a partner without the same mod sees a plain game piece in their place.
 OUTFITS="Zenitex_Ballistic_Mask Zenitex_Tactical_Harness Zenitex_Combat_Jacket Zenitex_Armor_Pads Zenitex_Panam_Pants
 Zenitex_Combat_Gloves Comfy_Boots Goliath_Coat Cityfolk_Hoodie Knife_Bandolier Bunny_Slippers Saul_Pants CrystalJock_Bomber
@@ -529,7 +543,8 @@ The_Division_Hunter_Outfit"
 # Hairstyles added to the character creator: in co-op, a partner without the same mod sees no hair there.
 HAIRS="Wolfcut_Messy Wolfcut_Emo Wolfcut_Hime_Short Wolfcut_Hime_Medium Wolfcut_Hime_Long Subleader_Hair_Pack
 Hyst_Hair_Collection Meluminary_Hair_Megapak Undercut_Slickback Undercut_Sidewave Undercut_ManBun Undercut_Slickback_Braids
-Violet_Hair Updo_Hair_Collection Himiko_Buns_Hair Yumeko_Hair Xyla_Shag_Mullet Geralt_of_Rivia_Hair Soft_Blunt_Bob"
+Violet_Hair Updo_Hair_Collection Himiko_Buns_Hair Yumeko_Hair Xyla_Shag_Mullet Geralt_of_Rivia_Hair Soft_Blunt_Bob
+Selkie_Hair Kaisa_Hair"
 # Eye colours added to the character creator: in co-op, a partner without the same mod sees one of the game's.
 EYES="Beautiful_Exotics_Eyes Mecha_Robotic_Eyes Mecha_Robotic_Eyes_2"
 # Eye makeup added to the character creator: in co-op, a partner without the same mod sees none there.
@@ -3438,6 +3453,8 @@ nexus_file() {   # nexus_file <component>: which file to download, of a mod with
         Audi_R8_Liberty_Walk) echo "the main file KRNLNIK Audi R8 LBW, not its SPOILERS STICKERS AND AERODISC file" ;;
         Militech_WDG3) echo "the main file CORNMILF X RadekStepan WDG3, not WDG3 Alt Front RIms" ;;
         Harley-Davidson_Thundergod) echo "the main file Harley-Davidson Thundergod, not the PROP or the pose template" ;;
+        Lamborghini_Huracan_EVO) echo "the main file Lamborghini Huracan EVO, not Disable Mirrors or Custom Audio, which needs AudioXL" ;;
+        Comfy_Boots_Texture_Fix) echo "Patch for Comfy Boots, among the main files of the Zenitex clothing patch, not The patch file" ;;
         Apex_Grapple) echo "the main file ApexGrapple, not the one For v2.31 Kobat" ;;
         No_Crowd_Panic_From_Devices) echo "the redscript file, not the CET one" ;;
         Parking_Spots_Enhanced) echo "the main file, not Parking Spots Enhanced (alt), a build for patch 2.21" ;;
@@ -3466,6 +3483,8 @@ nexus_avoided() {   # nexus_avoided <component>: what a file of it that is never
         Militech_WDG3) echo "WDG3 Alt Front RIms, which changes the WDG3's wheels only on your screen (take the main file)" ;;
         Harley-Davidson_Thundergod) echo "the Thundergod's PROP and pose-template files, for Appearance Menu Mod, World Builder and pose making, which the set does not have (take the main file)" ;;
         Ferrari_458_Spider_WBK) echo "the Ferrari 458 Spider WBK's SDH0's Vehicle Audio Ver file, which needs AudioXL, left out of the set (take 458spiderWBK MainFile)" ;;
+        Lamborghini_Huracan_EVO) echo "the Huracan EVO's Disable Mirrors file, a personal choice, or its Custom Audio file, which needs AudioXL, left out of the set (take Lamborghini Huracan EVO)" ;;
+        Comfy_Boots_Texture_Fix) echo "The patch file of the Zenitex clothing patch: an untested stats add-on (Zenitex Core 5 classes) for nine older Zenitex packs, most of whose edits are for item rarities the set's packs do not have (take Patch for Comfy Boots)" ;;
         *) h="$(nexus_file "$1")"; echo "another file of $(name_of "$1") than the one this script takes${h:+ ($h)}" ;;
     esac
 }
@@ -3855,6 +3874,10 @@ step_addons() {   # the add-on sets (--with-flight, --with-mods), matched to the
     if [[ "$ADDON_HAVE" == *" Vehicle_Core "* ]]; then
         info "SDH0's cars and the Quadra Turbo-Z's tuneable versions keep their default parts: the set has no tuning garage, as"
         info "each player's game would show its own tuning on every copy of a car."
+    fi
+    if [[ "$ADDON_HAVE" == *" GEAR "* ]]; then
+        info "GEAR shows the weapons you carry on your V on your own screen, photo mode included: NightCoop does not share a"
+        info "mod's props, so partners do not see them, with GEAR or without."
     fi
     if [[ "$ADDON_HAVE" == *" VendorsXL "* ]]; then
         info "VendorsXL changes how every vendor restocks (larger stock limits). The RVC00N Dumpster 3's shop is"

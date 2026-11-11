@@ -502,6 +502,21 @@ ROUND12 = {   # round 12: cars, character-creator options, an outfit, gameplay f
     'Perks And Skills Fixes 1.0.0 37252 1.0.0 2026-11-04T16-24Z YfTif74jt.zip': ['r6/scripts/PerksAndSkillsFixes/PerksAndSkillsFixes.reds', 'r6/scripts/PerksAndSkillsFixes/Texts.en-us.reds', 'r6/scripts/PerksAndSkillsFixes/Texts.reds', 'r6/tweaks/PerksAndSkillsFixes.yaml'],
     'Black Lace Load Fix 1.0 37404 1 2026-11-05T19-15Z 9ka2kyC8C.zip': ['LICENSE', 'red4ext/plugins/BlackLaceLoadFix/BlackLaceLoadFix.dll', 'red4ext/plugins/BlackLaceLoadFix/BlackLaceLoadFix.ini', 'red4ext/plugins/BlackLaceLoadFix/BlackLaceLoadFix.pdb', 'red4ext/plugins/BlackLaceLoadFix/LICENSE', 'red4ext/plugins/BlackLaceLoadFix/RED4ext.SDK.LICENSE.txt', 'red4ext/plugins/BlackLaceLoadFix/RED4ext.SDK.THIRD_PARTY_LICENSES.txt'],
 }
+
+ROUND13 = {   # round 13: GEAR, two hairstyles, the Comfy Boots texture fix and four cars; the chosen files (their
+    # real game folders, from the downloads) and the files their rules pass over
+    'GEAR 37913 2.5-1 2026-11-09T23-34Z AgoGgiPhk.zip': ['archive/pc/mod/GEAR.archive', 'archive/pc/mod/GEAR.archive.xl', 'r6/scripts/GEAR/GEAR.reds', 'r6/tweaks/GEAR/gear.yaml', 'r6/tweaks/GEAR/gear_looks.yaml', 'r6/tweaks/GEAR/gear_slots.yaml'],
+    'Atomiic Selkie Hair CCXL 37381 1 2026-11-08T05-31Z PYMIYqWbh.zip': ['archive/pc/mod/Atomiic_Selkie_Hair_CCXL.archive', 'archive/pc/mod/atomiic_selkie_hair_ccxl.xl'],
+    "Firestarter Kai'sa Hair CCXL 37302 1 2026-11-04T21-54Z 3dwHd9Gd8.zip": ['archive/pc/mod/_0_Vesna_HoV_HAIR_FV_Kaisa_CCXL.archive', 'archive/pc/mod/_0_Vesna_HoV_HAIR_FV_Kaisa_CCXL.archive.xl', 'archive/pc/mod/_0_Vesna_HoV_HAIR_FV_Kaisa_CCXL_NO_PHYSICS.archive.xl'],
+    'The patch file 37842 1 2026-11-09T05-52Z X32s3EBww.zip': ['r6/tweaks/scorpiontank/zz_zenitex_core5_addon_scorpion_military_accessories_zenitex_goggles.yaml', 'r6/tweaks/scorpiontank/zz_zenitex_core5_addon_scorpion_military_armored_ballistic_vest.yaml', 'r6/tweaks/scorpiontank/zz_zenitex_core5_addon_scorpion_military_combat_armor.yaml', 'r6/tweaks/scorpiontank/zz_zenitex_core5_addon_scorpion_military_combat_boots.yaml', 'r6/tweaks/scorpiontank/zz_zenitex_core5_addon_scorpion_military_covert_shoes.yaml', 'r6/tweaks/scorpiontank/zz_zenitex_core5_addon_scorpion_military_dual_pistol_holsters.yaml', 'r6/tweaks/scorpiontank/zz_zenitex_core5_addon_scorpion_military_zenitex_backpack.yaml', 'r6/tweaks/scorpiontank/zz_zenitex_core5_addon_scorpion_military_zenitex_underwear.yaml', 'r6/tweaks/scorpiontank/zz_zenitex_core5_addon_scorpion_zenitex_sleeveless_turtleneck.yaml', 'r6/tweaks/scorpiontank', 'r6/tweaks', 'r6'],
+    'Patch for Comfy Boots 37842 0.1 2026-11-09T12-56Z Q6xF6lDcm.zip': ['archive/pc/mod/comfy-fix.archive'],
+    'Lamborghini Huracan EVO 37520 1.0.0 2026-11-10T08-05Z k8Iw8moEh.zip': ['archive/pc/mod/MAXSA5_Lamborghini_Huracan_EVO.archive', 'r6/scripts/maxsa5/lamborghini_huracan_evo_weapons.reds', 'r6/tweaks/maxsa5/lamborghini_huracan_evo.tweak', 'r6/tweaks/maxsa5/lamborghini_huracan_evo_ICONS.tweak', 'archive/pc/mod/MAXSA5_Lamborghini_Huracan_EVO.xl'],
+    'Lamborghini Huracan EVO - Disable Mirrors 37520 1.0.0 2026-11-10T08-07Z SlR4l6HTd.zip': ['archive/pc/mod/#MAXSA5_Lamborghini_Huracan_EVO_DISABLE_MIRRORS.archive'],
+    'Lamborghini Huracan EVO - Custom Audio 37520 1.0.0 2026-11-10T08-08Z LACBAIm2B.zip': ['r6/scripts/maxsa5/lamborghini_huracan_evo_audio.reds', 'r6/tweaks/maxsa5/lamborghini_huracan_evo_AUDIO.tweak'],
+    "Chevrolet Corvette C8 ZR1 '26 37929 1.5 2026-11-10T13-47Z HncQn2EKr.zip": ['archive/pc/mod/ninegage_corvette_c8_zr1.archive', 'archive/pc/mod/ninegage_corvette_c8_zr1.archive.xl', 'r6/scripts/Ninegage/corvette_c8_zr1.reds', 'r6/tweaks/ninegage_corvette_c8_zr1.yaml'],
+    'Ford Hennessey VelociRaptor 6x6 Remastered v1.2 36409 3 2026-11-01T19-41Z YfTif7daR.zip': ['archive/pc/mod/bonk_ford_hennessey.xl', 'archive/pc/mod/Ford Hennessey V3.archive', 'r6/tweaks/Ford Hennessey V3/bonk_ford_hennessey.yaml'],
+    'CORNMILF Ford Fronco Bronco 29942 1 2026-11-03T02-26Z gMz5Mu25T.zip': ['archive/pc/mod/fronco_bronco.xl', 'r6/tweaks/cornmilf/ford_bronco_raptor_fronco_ICONS.tweak', 'archive/pc/mod/CORNMILF_Ford_Fronco_Bronco.archive', 'r6/tweaks/cornmilf/ford_bronco_raptor_fronco.tweak'],
+}
 ROUND9_FILES = {   # real contents, where the tests read a file: a key binding to move, settings to keep
     ('Always First Equip 2557 2.2.0 2026-10-24T19-15Z mPgaPVVHG.zip', 'r6/input/AlwaysFirstEquip.xml'): b'<?xml version="1.0"?>\r\n<bindings>\r\n    <!-- inputContexts -->\r\n    <context name="AlwaysFirstEquip" >\r\n        <action name="AlwaysFirstEquip" map="AlwaysFirstEquip_Button" />\r\n        <action name="SafeWeapon" map="SafeWeapon_Button" />\r\n    </context>\r\n\r\n    <context name="Items" append="true">\r\n        <include name="AlwaysFirstEquip" />\r\n    </context>\r\n\t\r\n\t<hold action="AlwaysFirstEquip" timeout="0.4" />\r\n\r\n    <!-- inputUserMapping -->\r\n\t<mapping name="AlwaysFirstEquip_Button" type="Button" >\r\n        <button id="IK_F2" overridableUI="afeMainHotkey" />\r\n    </mapping>\r\n\t<mapping name="SafeWeapon_Button" type="Button" >\r\n        <button id="IK_F3" overridableUI="afeAdditionalHotkey" />\r\n    </mapping>\r\n</bindings>\r\n',
     ('Sit Anywhere 1.4-7299-1-4-1762025971.zip', 'bin/x64/plugins/cyber_engine_tweaks/mods/sitAnywhere/config/config.json'):
@@ -794,6 +809,9 @@ def archives(fix):
     for name, paths in ROUND12.items():
         zname = re.sub(r'\.(rar|7z)$', '.zip', name)
         zipdir(f'{fix}/round12/{zname}', {p: placeholder(p, name) for p in paths})
+    for name, paths in ROUND13.items():
+        zname = re.sub(r'\.(rar|7z)$', '.zip', name)
+        zipdir(f'{fix}/round13/{zname}', {p: placeholder(p, name) for p in paths})
     eqex = 'Equipment-EX 6945 1.2.11 2026-11-06T10-00Z Lt7Qw2zXa.zip'   # a later release, only on Nexus Mods
     zipdir(f'{fix}/nexus-later/{eqex}', {p: placeholder(p, eqex) for p in ROUND3['Equipment-EX 6945 1.2.10 2026-10-25T21-07Z k8Iw8mmPd.zip']})
     nexus_api(fix, sorted({r.split()[7].split(':')[1] for r in table if r.split()[7].startswith('nexus:')}, key=int))
@@ -867,6 +885,8 @@ NEXUS_CATEGORY = {   # what is not a main file
     'More Grip 29122 2.1 2026-10-04T21-19Z NEnvE3qbM.zip': 'OPTIONAL',
     'Turbo Z update 2.5 hotfix 29122 2.11.1 2026-10-31T10-24Z cB3xB0Tbt.zip': 'UPDATE',
     'WDG3 Alt Front RIms 37099 1 2026-11-03T04-06Z 5em9eol9i.zip': 'OPTIONAL',
+    'Lamborghini Huracan EVO - Disable Mirrors 37520 1.0.0 2026-11-10T08-07Z SlR4l6HTd.zip': 'OPTIONAL',
+    'Lamborghini Huracan EVO - Custom Audio 37520 1.0.0 2026-11-10T08-08Z LACBAIm2B.zip': 'OPTIONAL',
 }
 NEXUS_LATER = ('Drive an Aerial Vehicle 13842 3.5.1 2026-11-02T09-30Z Zx81kQp0a.zip',   # listed in nexusapi/later only
                'Equipment-EX 6945 1.2.11 2026-11-06T10-00Z Lt7Qw2zXa.zip')
@@ -885,7 +905,7 @@ def nexus_api(fix, ids):
     for period in ('?period=1d', '?period=1w', '?period=1m', ''):   # nothing changed lately (Python 3.14 opens a
         write(f'{game}/updated.json{period}', '[]')                  # file:// URL without its query)
     archives = []
-    for d in ('nexus', 'style', 'round3', 'round4', 'round5', 'round7', 'round9', 'round10', 'round11', 'round12', 'nexus-bad', 'nexus-later'):
+    for d in ('nexus', 'style', 'round3', 'round4', 'round5', 'round7', 'round9', 'round10', 'round11', 'round12', 'round13', 'nexus-bad', 'nexus-later'):
         archives += [(n, f'{fix}/{d}/{n}') for n in sorted(os.listdir(f'{fix}/{d}'))]
     md5s, fid, lists = {}, 100000, {}
     for mod in ids:
