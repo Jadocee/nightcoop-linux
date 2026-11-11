@@ -218,7 +218,7 @@ WINEDLLOVERRIDES="winmm,version=n,b" MANGOHUD=1 game-performance %command% --lau
 | `--without-flight` | Remove Let There Be Flight again, unless the mod set is on. The mods it needed stay, because other mods use them too. |
 | `--with-mods` | Also install the mod set: Virtual Atelier with clothing and item stores and their outfits (Zenitex, The RVC00N Dumpster, Nola Dreamer, Street Ninja), hairstyles, Let There Be Flight, Virtual Car Dealer with car and bike packs, Drive an Aerial Vehicle, Vehicle Customizer, Curbside, Cyber Drift, Impact FX, Immersive Audio Distance, Immersive First Person, Katana Pack 2, Quick Stash, No Intro Videos, and the frameworks they need (see below). Later runs keep it up to date. |
 | `--without-mods` | Remove the mod set's mods again. The frameworks stay. |
-| `--with-equipment-ex` | Also install Equipment-EX, to wear layered outfits, and with `--with-mods` raem's jewellery made for its slots (see below). Every partner in a session needs it too. |
+| `--with-equipment-ex` | Also install Equipment-EX, to wear layered outfits, and with `--with-mods` raem's jewellery made for its slots (see below). In a session, partners see one piece per game slot of a layered outfit, with Equipment-EX or without. |
 | `--without-equipment-ex` | Remove Equipment-EX again. |
 | `--mods-from DIR` | Look for the Nexus Mods downloads in DIR instead of your Downloads folder. |
 | `--save-nexus-key` | Ask for your Nexus Mods API key (it is not shown) and keep it in `~/.config/nightcoop-linux/nexus-api-key`, readable by you alone. With a Premium account's key, this run and later ones download the Nexus mods themselves (see [Downloads through the Nexus Mods API](#downloads-through-the-nexus-mods-api)). |
@@ -290,6 +290,7 @@ with the patch.
 | Zenitex Ballistic Mask, Tactical Harness, Combat Jacket, Armor Pads, Panam Pants, Combat Gloves, and Comfy Boots | [12422](https://www.nexusmods.com/cyberpunk2077/mods/12422?tab=files), [9774](https://www.nexusmods.com/cyberpunk2077/mods/9774?tab=files), [19119](https://www.nexusmods.com/cyberpunk2077/mods/19119?tab=files), [12044](https://www.nexusmods.com/cyberpunk2077/mods/12044?tab=files), [10842](https://www.nexusmods.com/cyberpunk2077/mods/10842?tab=files), [19432](https://www.nexusmods.com/cyberpunk2077/mods/19432?tab=files), [11212](https://www.nexusmods.com/cyberpunk2077/mods/11212?tab=files) | 4.1, 4.0, 2.0.1, 4.1, 4.0, 2.0.1, 1.1 | Seven of the outfits the Zenitex store sells: each main file (not Alt. Colors or GS); for Comfy Boots, the Female V and Male V file |
 | Zenitex Military Combat Armor, Ballistic Vest, Combat Boots and Underwear | [13212](https://www.nexusmods.com/cyberpunk2077/mods/13212?tab=files), [14348](https://www.nexusmods.com/cyberpunk2077/mods/14348?tab=files), [14781](https://www.nexusmods.com/cyberpunk2077/mods/14781?tab=files), [20394](https://www.nexusmods.com/cyberpunk2077/mods/20394?tab=files) | 3.3, 3.6, 3.4, 1.5 or newer | Four more Zenitex outfits, each main file (not Garment Support or Alt. Colors) |
 | Zenitex Ops-Core FAST Helmet, Pistol Holsters and Backpack | [13557](https://www.nexusmods.com/cyberpunk2077/mods/13557?tab=files), [18002](https://www.nexusmods.com/cyberpunk2077/mods/18002?tab=files), [18152](https://www.nexusmods.com/cyberpunk2077/mods/18152?tab=files) | 3.4, 1.5, 1.5 or newer | Three more, each main file; they need Phantom Liberty, and are left out without it |
+| The Zenitex clothing patch's Comfy Boots file | [37842](https://www.nexusmods.com/cyberpunk2077/mods/37842?tab=files) | 0.1 or newer | A texture that Comfy Boots' four meshes name and no archive has; installed with Comfy Boots (not the patch's main file, below) |
 | Zenitex Combat Goggles and Balaclava Pack | [17049](https://www.nexusmods.com/cyberpunk2077/mods/17049?tab=files), [17411](https://www.nexusmods.com/cyberpunk2077/mods/17411?tab=files) | 1.4, 2.1 or newer | Military accessories: goggles and balaclavas, each main file |
 | The RVC00N Dumpster 3 | [25981](https://www.nexusmods.com/cyberpunk2077/mods/25981?tab=files) | 21.0.0 or newer | PinkyDude's store: on computers, and at its own shop behind Dakota's garage (VendorsXL) |
 | The RVC00N Dumpster: Goliath Coat and Cityfolk Hoodie | [36516](https://www.nexusmods.com/cyberpunk2077/mods/36516?tab=files), [37493](https://www.nexusmods.com/cyberpunk2077/mods/37493?tab=files) | 1.0.0, 1.0.2 or newer | Two of PinkyDude's garments for game 2.5 |
@@ -300,6 +301,7 @@ with the patch.
 | MaxTac Suit | [26517](https://www.nexusmods.com/cyberpunk2077/mods/26517?tab=files) | 1.0 or newer | MaxTac's armour in 33 pieces for both bodies, added in Cyber Engine Tweaks' console (layers with Equipment-EX); needs Phantom Liberty |
 | Prestige Glasses | [27118](https://www.nexusmods.com/cyberpunk2077/mods/27118?tab=files) | 1.11 or newer | 24 pairs of glasses for both bodies, added in Cyber Engine Tweaks' console |
 | Nike Jordan 1s x Off-White, with Catherwood's - Virtual Atelier Shop | [27597](https://www.nexusmods.com/cyberpunk2077/mods/27597?tab=files), [27599](https://www.nexusmods.com/cyberpunk2077/mods/27599?tab=files) | 1.12.0, 1.0.2 or newer | Sneakers for both bodies, and the store that sells them |
+| The Division Hunter Outfit | [24902](https://www.nexusmods.com/cyberpunk2077/mods/24902?tab=files) | 1.1 or newer | The Division's Hunter armour in 15 pieces for both bodies, a tomahawk and 163 patches, sold in two Virtual Atelier stores (layers with Equipment-EX; a 1 GB download) |
 
 **Hair, makeup and eyes** (the character creator, a mirror in an apartment, or a ripperdoc)
 
@@ -317,9 +319,14 @@ with the patch.
 | Himiko Buns Hair and Bangs | [34688](https://www.nexusmods.com/cyberpunk2077/mods/34688?tab=files) | 1 or newer | Buns for Fem V. The bangs are items, added in Cyber Engine Tweaks' console; without Equipment-EX they take the face slot, so not with glasses or a mask |
 | XYLA Shag Mullet | [36246](https://www.nexusmods.com/cyberpunk2077/mods/36246?tab=files) | 1 or newer | A mullet for Fem V |
 | House of Vesna: Geralt of Rivia CCXL Hair | [36769](https://www.nexusmods.com/cyberpunk2077/mods/36769?tab=files) | 1 or newer | Geralt's hair for Masc V |
+| Selkie Hair CCXL (Atomiic) | [37381](https://www.nexusmods.com/cyberpunk2077/mods/37381?tab=files) | 1 or newer | A hairstyle for Fem V |
+| House of Vesna: Kai'sa CCXL Hair with Physics | [37302](https://www.nexusmods.com/cyberpunk2077/mods/37302?tab=files) | 1 or newer | Two hairstyles for Fem V: Firestarter Kai'sa, with physics, and Kai'sa [NO BACK PHYSICS] |
 | Makeup Enhancer, its 256x256 file | [28869](https://www.nexusmods.com/cyberpunk2077/mods/28869?tab=files) | 1 or newer | Sharper eye makeup for both V and NPCs; it replaces a texture of the game, so only your screen shows it |
 | Beautiful Makeup and Beautiful Makeup II, each its file for the basegame head | [29336](https://www.nexusmods.com/cyberpunk2077/mods/29336?tab=files), [29513](https://www.nexusmods.com/cyberpunk2077/mods/29513?tab=files) | 1 or newer | 60 eye makeups (casual and gothic) for both V; a partner without them sees none. Beautiful Makeup's two main files share a name: the script takes the one of 2 May 2026 |
 | Mecha Robotic Eyes and its Part 2 (protossvoid) | [35373](https://www.nexusmods.com/cyberpunk2077/mods/35373?tab=files), [35807](https://www.nexusmods.com/cyberpunk2077/mods/35807?tab=files) | 1 or newer | 58 robotic eyes for both V; a partner without them sees one of the game's |
+| Hair Color Profiles CCXL | [19115](https://www.nexusmods.com/cyberpunk2077/mods/19115?tab=files) | 1.02 or newer | 45 colours for hair, brows, lashes and beard, for the game's hair and the set's; a partner without it sees one of the game's |
+| Beautiful Eyebrows and Beautiful Eyebrows II, each its Default file | [18783](https://www.nexusmods.com/cyberpunk2077/mods/18783?tab=files), [26168](https://www.nexusmods.com/cyberpunk2077/mods/26168?tab=files) | 1.0 or newer | 80 eyebrows for both V (not the Fuller files, which define the same ones) |
+| Eyelashes CCXL: its FEM V1 file and its MALE file | [25068](https://www.nexusmods.com/cyberpunk2077/mods/25068?tab=files) | 2 and 1 or newer | Lashes in 9 shapes and 21 colours for Fem V, 5 shapes and 35 colours for Masc V (not V2 to V4 or the EKT Asian files) |
 
 **Vehicles** (Virtual Car Dealer, on in-game computers)
 
@@ -333,7 +340,6 @@ with the patch.
 | Porsche 911 GT3 RS, its Main File, with Material and Texture Override's Legacy file | [11180](https://www.nexusmods.com/cyberpunk2077/mods/11180?tab=files), [5266](https://www.nexusmods.com/cyberpunk2077/mods/5266?tab=files) | 1.2, 1.2 or newer | A 911 GT3 RS |
 | Drive an Aerial Vehicle | [13842](https://www.nexusmods.com/cyberpunk2077/mods/13842?tab=files) | 3.5.0 or newer | Fly AVs and helicopters, with an autopilot; buy them at Virtual Car Dealer |
 | Vehicle Customizer (stolen vehicles edition): SVE 3dot0, then its 3dot1 update | [9034](https://www.nexusmods.com/cyberpunk2077/mods/9034?tab=files) | 3.0, 3.1 or newer | Switch a car you own or claim between the appearances the game has for it |
-| Apollo Intensa Emozione, Lamborghini Countach LPI 800-4 and Countach Liberty Walk | [37233](https://www.nexusmods.com/cyberpunk2077/mods/37233?tab=files), [37234](https://www.nexusmods.com/cyberpunk2077/mods/37234?tab=files), [37235](https://www.nexusmods.com/cyberpunk2077/mods/37235?tab=files) | 1 or newer | xa1res's cars, tested on 2.5 |
 | VAZ Oka Yozakura Sport | [36381](https://www.nexusmods.com/cyberpunk2077/mods/36381?tab=files) | 4 or newer | A VAZ-1111 Oka in a night-sakura livery; hood and hatch on two CET hotkeys you bind |
 | Toyota GR Yaris: its All Purpose Drive Spec and its Rocket Bunny Kit | [34357](https://www.nexusmods.com/cyberpunk2077/mods/34357?tab=files) | 3.3, 3.2 or newer | A GR Yaris with an optional widebody kit |
 | Nissan Silvia S14 'Marked One', its main file, with Vehicle Manufacturers Resource | [25997](https://www.nexusmods.com/cyberpunk2077/mods/25997?tab=files), [7855](https://www.nexusmods.com/cyberpunk2077/mods/7855?tab=files) | 1.1, 1.1 or newer | A nomad-tuned S14 (a 7z archive) |
@@ -345,6 +351,29 @@ with the patch.
 | Night City Traffic Overhaul v2.51 | [25552](https://www.nexusmods.com/cyberpunk2077/mods/25552?tab=files) | 2.51 or newer of v2 | Traffic and crowds by district (v3 needs frameworks the set does not have) |
 | Fixed NPC Vehicle Reactions | [19530](https://www.nexusmods.com/cyberpunk2077/mods/19530?tab=files) | 1.0.0 or newer | Pedestrians dodge cars instead of jumping in front of them; every partner needs it |
 | Parking Spots Enhanced, its main file | [15708](https://www.nexusmods.com/cyberpunk2077/mods/15708?tab=files) | 1.2.5 or newer | V's car waits in a parking spot near each home after a stay (not the alt file, a build for 2.21); in a session it is the host's quest |
+| Traffic Lights Resolved (404TLR) | [27956](https://www.nexusmods.com/cyberpunk2077/mods/27956?tab=files) | 1.8.4 or newer | Traffic lights no longer turn green as V comes near, and lights, lamps and signs show from further away; every partner needs it |
+| Vehicle Core and SDH0's Vehicle Resources | [31684](https://www.nexusmods.com/cyberpunk2077/mods/31684?tab=files), [20956](https://www.nexusmods.com/cyberpunk2077/mods/20956?tab=files) | 1.0.0 and 2.0.1 or newer | Frameworks of SDH0's cars and the Quadra Turbo-Z's tuneable versions |
+| Ferrari 458 Spider WBK (Garage), its main file | [24910](https://www.nexusmods.com/cyberpunk2077/mods/24910?tab=files) | 2.0.0 or newer | A two-seat 458 Spider with an opening roof (its key: Home); with the game's engine sound, not the file for SDH0's Vehicle Audio |
+| Volkswagen Super Beetle 1971 (Garage) | [20785](https://www.nexusmods.com/cyberpunk2077/mods/20785?tab=files) | 2.0.2 or newer | A Super Beetle, with the game's engine sound |
+| Nissan GT-R 'Lone Wanderer', its main file and its shion nomad engine sounds file | [20237](https://www.nexusmods.com/cyberpunk2077/mods/20237?tab=files) | 1.1 or newer | A four-seat armed GT-R nomad build; the sounds file gives it the game's engine sound in place of SDH0's Vehicle Audio |
+| Quadra Turbo-Z, its main file, its 2.5 hotfix and its Garage Tuning Scripts | [29122](https://www.nexusmods.com/cyberpunk2077/mods/29122?tab=files) | 2.11, 2.11.1 and 2.11 or newer | A Quadra Turbo-Z in several builds, two of them tuneable, with their default parts |
+| Bugatti Tourbillon, its main file | [22107](https://www.nexusmods.com/cyberpunk2077/mods/22107?tab=files) | 1.0.0 or newer | A two-seat Tourbillon (a file from June 2025: try it once on 2.5) |
+| Lamborghini Diablo VT 6.0, its main file | [17998](https://www.nexusmods.com/cyberpunk2077/mods/17998?tab=files) | 0.9.4.5 or newer | A Diablo with pop-up headlights (a file from January 2025: try it once on 2.5) |
+| 2021 Lexus LC 500 Liberty Walk, its All in One file | [16979](https://www.nexusmods.com/cyberpunk2077/mods/16979?tab=files) | 1.4 or newer | Six LC 500 bundles, built on the Quadra Turbo-R |
+| Nissan Skyline GTR R34 HYCADE Bodykit, its main file | [16570](https://www.nexusmods.com/cyberpunk2077/mods/16570?tab=files) | 1.12 or newer | An R34 with the HYCADE kit; needs Phantom Liberty, and its author lists a possible crash on getting out: try it once |
+| Lamborghini Countach K.S Edition: its main file without neon, and its tweaks 2.1 update | [11110](https://www.nexusmods.com/cyberpunk2077/mods/11110?tab=files) | 1.0 and 1.11 or newer | The 1974 Countach in 12 colours (a file from 2023: try it once on 2.5) |
+| Ford Mustang RTR Spec 5 and Audi R8 Liberty Walk (KRNLNIK), each its main file | [8912](https://www.nexusmods.com/cyberpunk2077/mods/8912?tab=files), [8827](https://www.nexusmods.com/cyberpunk2077/mods/8827?tab=files) | 1.4 and 1.3 or newer | A Mustang RTR and an R8 LBW (not the R8's spoilers, stickers and aerodisc file) |
+| Militech WDG3 | [37099](https://www.nexusmods.com/cyberpunk2077/mods/37099?tab=files) | 1 or newer | A Militech wedge with blocking headlights, made for 2.5 (not its alternative front rims) |
+| Harley-Davidson Thundergod | [21522](https://www.nexusmods.com/cyberpunk2077/mods/21522?tab=files) | 1.1.0 or newer | A Thundergod bike on the Arch's frame; Virtual Car Dealer sells its default look |
+| Lamborghini Huracan EVO, its main file | [37520](https://www.nexusmods.com/cyberpunk2077/mods/37520?tab=files) | 1.0.0 or newer | A Huracan EVO in five looks, two of them armed and one with a police light bar (not the Disable Mirrors file, or the Custom Audio file, which needs AudioXL) |
+| Chevrolet Corvette C8 ZR1 '26 | [37929](https://www.nexusmods.com/cyberpunk2077/mods/37929?tab=files) | 1.5 or newer | A ZR1 in five liveries, with working dials |
+| Ford Hennessey VelociRaptor 6x6 (weaponized) - Remastered | [36409](https://www.nexusmods.com/cyberpunk2077/mods/36409?tab=files) | 3 (its v1.2) or newer | A six-wheeled pickup with four doors, in black, silver and an armed combat build |
+| Ford Bronco First Edition (CORNMILF) | [29942](https://www.nexusmods.com/cyberpunk2077/mods/29942?tab=files) | 1 or newer | A four-seat Bronco |
+| Vehicle Destruction Mesh Fix (SDH0) | [35121](https://www.nexusmods.com/cyberpunk2077/mods/35121?tab=files) | 1.2 or newer | A burnt wreck for the Mahir MT28 bus, the Kaukaz Aras sweeper and the Bratsk extended truck, on your own screen |
+| Ringbrothers Valkyrja (Chevrolet Camaro SS), its Main file | [25602](https://www.nexusmods.com/cyberpunk2077/mods/25602?tab=files) | 1.0.1 or newer | Two Camaro restomods, the Valkyrja and the Strode Alt. (not the Extras file; a rar from November 2025: try it once) |
+| Ford GT (CORNMILF) | [27722](https://www.nexusmods.com/cyberpunk2077/mods/27722?tab=files) | 1.0.5 or newer | A 2017 Ford GT |
+| Aston Martin Valkyrie AMR Pro (Okrasha) | [29039](https://www.nexusmods.com/cyberpunk2077/mods/29039?tab=files) | 1.2 or newer | A Valkyrie AMR Pro |
+| Porsche 911 (992) Dakar (Carryhan) | [28557](https://www.nexusmods.com/cyberpunk2077/mods/28557?tab=files) | 1.1 or newer | A 911 Dakar (its copy of Vehicle Manufacturer Fix's script is left out: the set's own is used) |
 
 **Gameplay**
 
@@ -404,11 +433,61 @@ with the patch.
 | Cyberware Screen Tooltip Fix | [23615](https://www.nexusmods.com/cyberpunk2077/mods/23615?tab=files) | 1.0 or newer | The cyberware slot tooltips count the items you own and can fit |
 | Dynamic Wanted Stars | [15449](https://www.nexusmods.com/cyberpunk2077/mods/15449?tab=files) | 1.0 or newer | Wanted stars coloured by district (Dogtown, the Badlands); each HUD shows its own player's level |
 | Preem Scopes, with its Smart Weapons and Binoculars files | [10021](https://www.nexusmods.com/cyberpunk2077/mods/10021?tab=files) | 0.17.2, 1.0.0, 1.0.1 or newer | Scopes without tint, glitches, scanlines or the 3D effect (not the FOMOD, compatibility, Binoculars with Frame or No Scope Crosshairs files); only your own screen changes |
+| Perks And Skills Fixes | [37252](https://www.nexusmods.com/cyberpunk2077/mods/37252?tab=files) | 1.0.0 or newer | About 45 fixes to perks and skills, made for 2.5; every partner needs it |
+| Black Lace Load Fix | [37404](https://www.nexusmods.com/cyberpunk2077/mods/37404?tab=files) | 1 or newer | Black Lace's effect no longer breaks when you load a save (a RED4ext plugin made for 2.5) |
+| Playable Roulette, with Gambling Props | [15450](https://www.nexusmods.com/cyberpunk2077/mods/15450?tab=files), [15229](https://www.nexusmods.com/cyberpunk2077/mods/15229?tab=files) | 1.1.4 and 1.0.1 or newer | Roulette at the Ho-Oh and the Tyger Claws casino, for your own eddies; every partner needs it |
+| Preem Mirrors, its Lite file | [25633](https://www.nexusmods.com/cyberpunk2077/mods/25633?tab=files) | 1.3.1 or newer | Mirrors that reflect, on your own screen (not the Full file, which needs a mod that empties thousands of world sectors' inplace data) |
+| GEAR - Gear Exhibited Always on Rig | [37913](https://www.nexusmods.com/cyberpunk2077/mods/37913?tab=files) | 2.5-1 or newer | The weapons you carry shown on your V, in the world, in first person, in the inventory and in photo mode, on your own screen |
+| Enemies Melee Attacks Fixes | [32747](https://www.nexusmods.com/cyberpunk2077/mods/32747?tab=files) | 0.1 or newer | Enemy melee attacks with fixed directions, timings, sounds, katana trails and Mantis Blades; every partner needs it (its AI records and ten animation sets date from before 2.5: try it once) |
+| Enemy Melee Moves Unlocked | [34153](https://www.nexusmods.com/cyberpunk2077/mods/34153?tab=files) | 1.0.0 or newer | Enemies use 25 restored game attacks and combos across 12 weapon types; every partner needs it |
+| Enemy Quickhack Fixes | [34525](https://www.nexusmods.com/cyberpunk2077/mods/34525?tab=files) | 1.0.0 or newer | Enemy quickhacks' damage, cooldowns, stacking and labels fixed, with a Weapon Jam on Hard and MaxTac hacks by difficulty; every partner needs it |
+| Finisher Grace Fix, its Fixed Version | [34456](https://www.nexusmods.com/cyberpunk2077/mods/34456?tab=files) | 1.0.0 or newer | Your killing blows no longer leave an enemy at 1 health at random (not the Removed Version, which takes the grace away altogether) |
+| Machete Finisher Kill Fix | [34454](https://www.nexusmods.com/cyberpunk2077/mods/34454?tab=files) | 1 or newer | A machete finisher kills its target, as the game meant; every partner needs it |
+| Melee Attacks Fixes And Enhancements | [16921](https://www.nexusmods.com/cyberpunk2077/mods/16921?tab=files) | 0.41 or newer | Your melee attacks' timings, records and animations fixed; every partner needs it (its records and animations date from before 2.5: try it once) |
+| Disappearing Enemy Health Bar Fix, its first file | [19815](https://www.nexusmods.com/cyberpunk2077/mods/19815?tab=files) | 1.0 or newer | Enemy health bars show every time they should (not the Limited HUD files or the scanning add-on) |
+| Empty Quickhack Menu Fix for 2.5 | [36114](https://www.nexusmods.com/cyberpunk2077/mods/36114?tab=files) | 1 or newer | Quickhacks and cyberware mods show in their menu at once, a 2.5 bug |
+| Impact Kill Looting Fix, its main file | [28099](https://www.nexusmods.com/cyberpunk2077/mods/28099?tab=files) | 1.0.0 or newer | A body killed by a car can be looted (its NPC interaction files date from before 2.5: try it once; not the Experimental file) |
+| Stamina Regen Fixes, its No CET file | [29547](https://www.nexusmods.com/cyberpunk2077/mods/29547?tab=files) | 1 or newer | No hard cap on stamina regeneration, and the same regeneration while a Sandevistan runs (your own V) |
+| Stamina Consumption Fix | [23230](https://www.nexusmods.com/cyberpunk2077/mods/23230?tab=files) | 1.0.0 or newer | Stamina spent over time no longer depends on your frame rate |
+| Sandevistan Preemptive End Fix (of Sandevistan QuickMelee And Other Bugs Fixes) | [29636](https://www.nexusmods.com/cyberpunk2077/mods/29636?tab=files) | 1 or newer | A Sandevistan no longer ends while it still has charge (not the QuickMelee or Aiming Blocked files) |
+| Sandevistan Activation Fix | [30571](https://www.nexusmods.com/cyberpunk2077/mods/30571?tab=files) | 1.1 or newer | A Sandevistan press no longer spends charge without slowing time; one pressed during other slow motion waits for it to end |
+| Status Bar Bug Fixes | [4316](https://www.nexusmods.com/cyberpunk2077/mods/4316?tab=files) | 1.8 or newer | Five fixes to the status bar's buff timers and icons and to the weapon wheel |
+| Female Standing Peeing Fix | [35082](https://www.nexusmods.com/cyberpunk2077/mods/35082?tab=files) | 1.0.0 or newer | Women in the streets no longer stand at walls to pee; every partner needs it |
+| Canyon Fixes | [25918](https://www.nexusmods.com/cyberpunk2077/mods/25918?tab=files) | 1.2.1 or newer | The eastern Badlands canyon and map border fixed, set in Native Settings UI; every partner needs it, as its tunnel walls block cars |
+| Crowd Seat Overlap - Duplication Fix | [34735](https://www.nexusmods.com/cyberpunk2077/mods/34735?tab=files) | 1.1.3 or newer | No more civilians sitting inside one another or doubled vendors; every partner needs it |
+| Epistrophy Delamain Despawn Fix | [29851](https://www.nexusmods.com/cyberpunk2077/mods/29851?tab=files) | 1.21 or newer | The Delamain cabs of Epistrophy leave once it is done, and its last holocall is fixed; install it before you finish Epistrophy; every partner needs it |
+| Leaky Interiors Fixed: its AIO file and the Voodoo Boys crypt file | [29002](https://www.nexusmods.com/cyberpunk2077/mods/29002?tab=files) | 1.1 and 1.0 or newer | Walls and ceilings that let light leak into eight interiors closed |
+| Basilisk Shadows Fix | [33808](https://www.nexusmods.com/cyberpunk2077/mods/33808?tab=files) | 1.0.0 or newer | No light leaking into the Basilisk's dark cockpit, on your own screen (a copy of the game's Basilisk appearance from September 2026: try it once) |
+| Better Quality Sort V2 | [20267](https://www.nexusmods.com/cyberpunk2077/mods/20267?tab=files) | 2.3.2 or newer | Sorting by quality counts an item's plus grade and iconic status |
+| Looting QoL | [14730](https://www.nexusmods.com/cyberpunk2077/mods/14730?tab=files) | 2.0 or newer | The loot window names who or what you are looting |
+| Stash and Backpack Search: Stash Search and Backpack Search | [14264](https://www.nexusmods.com/cyberpunk2077/mods/14264?tab=files) | 1.1.0 and 1.2.1 or newer | A search field in the stash and the backpack |
 
 **Requested and left out for now.** Each was checked against patch 2.5 and NightCoop's guides:
 
-- **No build for 2.5 yet**, and patch 2.5 changed the world sectors that their edits target (ArchiveXL skips edits that do not match): More H10 Interactions and Viktor Vektor's clinic overhaul. Their interactions also run on Native Interactions Framework, whose quest facts NightCoop shares from the host, so they need a bridge first.
+- **No build for 2.5 yet**, and patch 2.5 changed the world sectors that their edits target (ArchiveXL skips edits that do not match): More H10 Interactions and Viktor Vektor's clinic overhaul. Their interactions also run on Native Interactions Framework, whose quest facts NightCoop shares from the host, so they need a bridge first. Stats Bar UI Fix's only file is for patch 2.31, and it replaces the whole texture atlas that the full-screen menus share.
+- **They would stop every script compiling:** Sandevistan Tech Charge Fix, and the QuickMelee and Aiming Blocked
+  files of Sandevistan QuickMelee And Other Bugs Fixes, call `GetStatValue` on a game object, which no script of the
+  game, its frameworks or the set declares. One script that fails to compile stops all the mods' scripts, NightCoop's
+  included.
 - **A bridge or a native check first:**
+  - False Encumbrance Fix runs the game's encumbrance check itself for every player body, partners' included, past
+    the guard NightCoop puts on a partner's body; that check sets your HUD's carried weight and can mark your V as
+    overburdened. A bridge that lets it act on your own V only would make it safe.
+  - Load Begone's plugin detours the splash-screen function NightCoop detours for its own intro skip, and skips the
+    original of another; holding Space at launch loads your last save past the main menu, where NightCoop puts its
+    Co-op entry; by default it turns the game's mod verification setting off for good; and it changes the Dogtown
+    gate's quest phase and sector in memory, in its owner's game only. It also replaces the file No Intro Videos
+    replaces, so the two cannot sit side by side; No Intro Videos stays.
+  - Eden Plaza - Charter Hill Player Penthouse and its self-playing piano: the penthouse's purchase, beds, wardrobes and
+    showers run on Native Interactions Framework, whose scenes start from quest facts that NightCoop shares from the
+    host, so one player's interaction would start on every partner. The piano also needs RadioExt.
+  - Showerpunk 2077 needs REDGraph, a render host on GitHub (not on Nexus Mods) that replaces the game's shaders and
+    records its own GPU work on the game's command lists; its 0.6.1 of 7 November fixed a GPU crash, and it has not
+    been tried under Proton here. The shower's water also starts on the game's quest fact for the apartment shower,
+    which NightCoop shares from the host, and the mod slows your V with the game's local-player time dilation, which
+    NightCoop's time rules watch.
+  - Remove Mods (mod.io) Menu replaces the main menu's start-up, which NightCoop wraps for its Co-op entry, with a copy
+    of 2.5's, and drops the mod.io menu call that Native Settings UI builds its Mods entry on.
   - Consumable Animations plays its animations through quest facts that NightCoop shares from the host, so one player's snack would animate everyone.
   - Vehicle Navigation System needs three new frameworks and four DLLs, one of which detours the game's GPS functions.
   - Preem Menu replaces the main-menu and pause-menu widgets, where NightCoop's Co-op entry and shared pause live, with copies from patch 2.31.
@@ -416,9 +495,36 @@ with the patch.
   - Pet Your Cat replaces The Pickup's quest phase and scene, where the game runs Nibbles, with copies from patch 2.31, and its Fuss and Pet choices sit in that main-story scene, which NightCoop puts to a vote in a session. It needs a 2.5 build and a session test first.
   - Ragdoll Physics Overhaul 3.0 is a beta of 7 November 2026 whose new RED4ext plugin hooks the game's ragdoll and PhysX functions, found by byte patterns, while NightCoop carries ragdolls, deaths and impulses between players. It needs a session test first; its earlier builds are for patch 2.1 and clash with 3.0. (When it joins, its Disable MaxTac option, shipped on by mistake, must be off.)
 - **Nothing to use in the set:**
-  - Garage Manager only manages SDH0's cars, which the set does not have.
+  - The Liberty Walk liveries for SDH0's Ferrari 458 Spider WBK and Ferrari F40 LB-WORKS replace SDH0's livery
+    textures, which are picked in a tuning garage the set leaves out, so they would never show. The F40 itself takes
+    its engine sound from SDH0's Vehicle Audio, which needs AudioXL: in the set it would drive silent.
+  - No uncrouching when melee attacking from stealth: Stealth Fixes, in the set, has the same fix.
+  - Garage Manager and Garage tune SDH0's and the Quadra Turbo-Z's parts, which each player's game would show on every
+    copy of a car, partners' included.
+  - Crystal Coat Fix v2.12 serves hgyi56's CrystalCoat mods, which the set does not have (the game has not needed it
+    since 2.13). It replaces ten of the game's car-paint functions with 2025 copies and loads your own saved paint into
+    every car as it appears, partners' cars included.
+  - Multicolored Hair CCXL's core: no hairstyle of the set uses it.
+  - The Zenitex clothing patch's main file (The patch file) moves nine older Zenitex packs to Zenitex Core 5's gear
+    classes. Its README calls it an untested beta that does not fix wardrobe crashes, the packs already find every
+    stat record they name in Zenitex Core 5.1.8, and 1,407 of its 1,638 edits are for rarities (Common to Legendary)
+    that the set's packs do not define, which TweakXL would report at every start. The set takes its Comfy Boots file.
+  - Enhanced Vehicle System, No Crash Reporter and RedData, listed by SDH0's cars, which do not use them.
   - V49 Footwear Atelier is a store for about 45 shoe mods published separately.
 - **Not for co-op play:**
+  - Okrasha's Nissan 240SX 1993 and the set's Nissan 240SX put different files at the same game paths (the car's
+    appearance file and its texts), so one of the two would show up without its body. The set keeps the 240SX it has.
+  - Ava's 4k female complexions replace the game's female V head and skin, a material of the game's and the head
+    maps of most women in the city with files from patch 2.1: every female V on your screen, partners' included.
+  - Low Stamina Dash Fix and the set's Dash Fix change the same dash function, and on low stamina Low Stamina Dash Fix
+    brings back the pull onto targets that Dash Fix removes.
+  - Shift (Dynamic First Person Camera) and Immersive First Person both move your first-person camera every frame;
+    Shift's author lists the clash.
+  - Angy's Custom Face Presets each replace the game's head for every V of that body on your screen, partners'
+    included: a personal pick, one face per body.
+  - Realistic Complexion II needs UNIVERSAL SKIN TONE, which, like the body frameworks it needs, is marked adult.
+  - Mazda RX7 FD (Garage) takes its whole sound from SDH0's Vehicle Audio, which needs AudioXL: without them it has
+    no engine, horn or door sound.
   - Kai Silva Outfit is made for photo mode, its author says.
   - Teeth and Braces CCXL removes every V's teeth until a set is chosen, and needs Character Customization Anywhere, which replaces the mirror's editor.
 
@@ -436,13 +542,22 @@ the in-game browser's home page.
 **Equipment-EX** (`--with-equipment-ex`, from Nexus Mods,
 [6945](https://www.nexusmods.com/cyberpunk2077/mods/6945?tab=files), 1.2.10 or newer, its main file)
 wears clothes in layers, such as Street Ninja's four layers.
-Every piece of the set is wearable without it, one per game slot. It is a set of its own
-because NightCoop lists it as a known overlap: NightCoop sends looks by its slots, so a
-partner without it sees other slots, and it overrides photo-mode functions. Use it only if
-everyone you play with does. `--without-equipment-ex` removes it again.
+Every piece of the set is wearable without it, one per game slot. It is a set of its own,
+left out by default, because partners do not see the layers. NightCoop reads an Equipment-EX
+outfit itself and sends partners one piece per game slot (each item's first placement slot):
+the outer one, with the layers under it left out, and every partner sees that, with
+Equipment-EX or without. Street Ninja's waist piece, trousers and shin guards share the legs
+slot, so partners see the shin guards alone. For a session, wear one piece per game slot, or
+choose "No outfit" in its wardrobe. Its photo-mode changes also act on NightCoop's photo copies
+of partners, and its stash code skips the game's set-up of a stash (a stash still works).
+Installing it with the mod set by default would make the cut-down look the default for
+everyone; a proper fix belongs in NightCoop, or in a bridge built on NightCoop's SDK, which
+could send each item with its Equipment-EX slot. `--without-equipment-ex` removes it again.
 
 With the mod set too, it brings raem's jewellery, made for Equipment-EX's neck, wrist and
-hand slots (without it, a ring would take the whole torso slot):
+hand slots (without it, a ring would take the whole torso slot). In a session, a bracelet,
+watch or ring you wear takes your shirt's place for partners (a plain T-shirt for a partner
+without the jewellery), and a necklace worn over a shirt is not shown:
 
 | Mod | Nexus | Version | What it adds |
 | --- | --- | --- | --- |
@@ -481,7 +596,7 @@ over. Zip archives need nothing extra; 7z and RAR archives are unpacked with
 read-only (Windows' attribute, as in the Nissan Silvia S14's) are made writable as they are
 unpacked, so files can still be left out of them and nothing stays behind. The mods are
 unpacked in `~/.cache/nightcoop-linux/tmp`, on disk beside the downloads, not in `/tmp`,
-which these systems keep in memory: with both sets that takes about 3 GB while the script
+which these systems keep in memory: with both sets that takes about 5 GB while the script
 runs, one copy of each mod, and the folder is removed at the end (`NIGHTCOOP_TMPDIR` picks
 another). The script checks the room before it unpacks each mod, and stops before anything
 in the game folder changes if there is too little. A download the script cannot use
@@ -513,10 +628,11 @@ new release of the mod changes the file it ships, and your copy is backed up fir
 - **Clothes that ask for Equipment-EX** still work without it. In every outfit of the set,
   each item keeps a game slot first (checked in each mod's TweakXL files): Equipment-EX
   only adds its own slots, so that layered pieces can be worn together. NightCoop sends
-  looks by the game slot when Equipment-EX is absent. This also holds for the seven Zenitex
+  looks by the game slot, an Equipment-EX outfit's too (one piece per slot). This also holds for the seven Zenitex
   outfits whose pages list Equipment-EX, which earlier versions of this script left out
-  (an earlier note here said ten); the set has them now. NC Fashion's store lists
-  Equipment-EX as mandatory and is left out.
+  (an earlier note here said ten); the set has them now. So does The Division Hunter Outfit,
+  whose page calls Equipment-EX mandatory for the full outfit: each of its 15 pieces keeps a
+  game slot first. NC Fashion's store lists Equipment-EX as mandatory and is left out.
 - **Hairstyles.** NightCoop draws a partner's V from their character-creator choices, with
   your game's own files, and leaves out an option your game does not have. Preem Hair
   replaces the textures of the game's own hairstyles: a partner without it sees the game's.
@@ -547,28 +663,70 @@ new release of the mod changes the file it ships, and your copy is backed up fir
 - **Cars and AVs of mods.** A partner sees your modded car, or your Drive an Aerial Vehicle
   AV, only when they have the mod that adds it; otherwise NightCoop shows a game vehicle
   with as many seats in its place. A car bought from Virtual Car Dealer opens in a guest's
-  garage in the host's world: NightCoop reads its name from the mod's own TweakXL files.
-  It reads only `.yaml` files, though, and Bikes of the Dark Future and both Toyota Supras
-  define their vehicles in `.tweak` files, so a guest's vehicle of these three is not in
-  their garage there. So the simplest rule is the same mods for everyone. Drive an Aerial Vehicle's hooks call
-  the game's own functions, its hook on dialogue choices included, which NightCoop relies
-  on. Several of the vehicle mods have not been updated since before patch 2.5: Vehicle
+  garage in the host's world, a car of any mod with NightCoop 0.2.1 (0.2.0 found only cars
+  defined in the mods' TweakXL `.yaml` files). So the simplest rule is the same mods for
+  everyone. Drive an Aerial Vehicle's hooks call the game's own functions, its hook on
+  dialogue choices included, which NightCoop relies on. Several of the vehicle mods have not
+  been updated since before patch 2.5: Vehicle
   Pack - Basic (2023), the Porsche (2023), Material and Texture Override (2023), and
   Bikes of the Dark Future with its Vehicle Exit Fix, which was made for patch 2.3. Vehicle
   mods are mostly data and usually outlast patches, but try each once.
-- **This round's cars.** Their scripts wrap game functions and call the originals: the
-  speedometer and tachometer of the HUD, and the Countach's spoiler and air brake (none in
-  NightCoop's tables). They are built on game vehicles with the game's seats, so a partner
-  riding along sits properly. The VAZ Oka's hood and hatch hotkeys are unbound until you
-  bind them in Cyber Engine Tweaks. The GR Yaris and the Silvia are data only. The Silvia
-  also ships a file for Dedka Car Dealership, which Dedka reads if you install it and is
-  inert otherwise. The GR Yaris's newest kit (3.2) is a version behind its main file (3.3),
+- **The VAZ Oka, the GR Yaris and the Silvia** are built on game vehicles with the game's
+  seats, so a partner riding along sits properly. The VAZ Oka's hood and hatch hotkeys are unbound until you
+  bind them in Cyber Engine Tweaks. The GR Yaris and the Silvia are data only. The Silvia's
+  file for Dedka Car Dealership, which the set does not have, is left out. The GR Yaris's newest kit (3.2) is a version behind its main file (3.3),
   and the car was tested on 2.31; try the kit once.
-- **Six cars are left out: the Porsche 992 GT3 R and SDH0's five Garage cars** (Porsche 911
-  Targa 4 GTS, Porsche Singer 911 Armed and three Mazda RX7s). They need AudioXL for their
-  engine sounds, and AudioXL watches whichever player body appeared last. NightCoop's
+- **Nine cars are left out: the Porsche 992 GT3 R, SDH0's five Garage cars** (Porsche 911
+  Targa 4 GTS, Porsche Singer 911 Armed and three Mazda RX7s) **and xa1res's Apollo Intensa
+  Emozione, Countach LPI 800-4 and Countach Liberty Walk**, which the set had until it was
+  found that they drove silent there. They need AudioXL for their engine sounds, and AudioXL watches whichever player body appeared last. NightCoop's
   partners' bodies are player bodies too, so in co-op AudioXL's underwater muffling can
-  follow a partner instead of you.
+  follow a partner instead of you. AudioXL 0.9.4 (November 2026) still does. SDH0's Ferrari
+  458 Spider WBK and VW Super Beetle use the game's engine sounds and are in the set, as is the
+  GT-R Lone Wanderer with its game-sound file; the Mazda RX7 FD has no such file.
+- **The cars of round 12** are data but for three scripts, which wrap game functions and
+  call the originals (none in NightCoop's tables): the Ferrari's roof, the Bugatti's radio
+  toggle and the WDG3's headlights. All use the game's seats. The Ferrari's roof key moves
+  from O, Let There Be Flight's, to Home. Vehicle Core keeps each car model's tuning in your
+  save and applies it to every copy of that model, partners' cars included, so the set has no
+  tuning garage and the tuneable cars keep their default parts. The Audi R8 carries a 2024
+  copy of a game file, the Herrera Outlaw's cooked appearance: if an Outlaw looks wrong on
+  your screen, that is why. The Thundergod rides with the Arch's animations. The cars' files
+  for Dedka Car Dealership and Nova Traffic, which the set does not have, are left out.
+- **The additions of round 14.** The three enemy combat mods, Crowd Seat Overlap Fix and Female
+  Standing Peeing Fix change how NPCs act, and the game that leads an NPC applies them, so every
+  partner needs the same files. A finisher with Machete Finisher Kill Fix kills, decided by the
+  finishing V's game. Melee Attacks Fixes And Enhancements changes your own attacks, and enemies
+  react to them in the game that leads them. It replaces `MeleeStrongAttackEvents.OnEnter`, which
+  Katana Pack 2 wraps twice; the wraps call the original, so both run: try the Samurai katana's
+  charged attack once. Several of these date from before 2.5 and replace whole game files or
+  records: Enemies Melee Attacks Fixes (ten NPC animation sets and 773 AI records), Enemy Melee Moves
+  Unlocked (nine AI maps), Impact Kill Looting Fix (every NPC's interaction file; the layers NightCoop
+  switches keep their names) and Melee Attacks Fixes And Enhancements: try each once. Canyon Fixes' tunnel walls
+  block cars, so partners need them too. Better Quality Sort replaces five sort functions and the
+  crafting list's sort, Status Bar Bug Fixes three HUD functions, Finisher Grace Fix the grace
+  check and Disappearing Enemy Health Bar Fix one nameplate function; none of them is in NightCoop's tables
+  or hooked by another mod of the set. Vehicle Destruction Mesh Fix points Night City Traffic
+  Overhaul's bus and sweeper at its own wrecks, on purpose. Sandevistan Activation Fix makes a
+  Sandevistan pressed during other slow motion wait, a partner's nearby Sandevistan included; try
+  it once in a session.
+- **The cars of round 13.** The Huracan EVO's one script wraps the switch to driving with
+  weapons out and calls the original (not in NightCoop's tables): its two armed builds open
+  their rear doors and windows. Its police build's siren sound needs AudioXL, so it is silent
+  in the set, and Virtual Car Dealer sells its Classico for 1 eddie, its author's price. The
+  Corvette's script hooks nothing: it turns the dials of the car you drive, and would play an
+  engine sound of its own through Audioware, but this car ships none, so it sounds like the
+  Caliburn it is built on. The VelociRaptor's glass borrows a dirt texture from the Ford
+  Mustang RTR Spec 5's folder, which the set has. None of the four has files for other mods,
+  and none carries a copy of a game file.
+- **GEAR** shows the weapons you carry on your own V, on your own screen: it spawns a prop for
+  each and binds it to your body, and NightCoop shares a mod's props only when the mod asks
+  it to, so partners do not see them, with GEAR or without. It follows your own V only (the
+  game's player attach, not partners' bodies), its inventory and photo-mode wraps call the
+  originals, and it adds its own slots to every weapon's record after the game's.
+- **Comfy Boots' texture.** The boots' four meshes name a placeholder texture
+  (`emissive_texture_here.xbm`, under a template's path) that no archive has; the Zenitex
+  clothing patch's Comfy Boots file adds one there.
 - **Impact FX** wraps hit and attach functions and calls the originals. When a partner's
   body appears it re-applies its own local settings once. Its smoke and debris are local:
   each player with the mod sees their own.
@@ -610,10 +768,12 @@ new release of the mod changes the file it ships, and your copy is backed up fir
   show only on your screen for NPCs a partner leads, but its chance is 0 as shipped.
 - **Curbside** drives only your own summoned car. A partner sees it arrive through
   NightCoop's car sync, including the jumps it makes when it moves a car out of sight.
-- **Makeup and eyes** add options to the character creator with ArchiveXL, like the hair, and
-  hook nothing: a partner without the same mod sees your V without that makeup, or with one
-  of the game's eye colours. Makeup Enhancer replaces one texture of the game, so it changes
-  only your own screen.
+- **Makeup, eyes, eyebrows, lashes and hair colours** add options to the character creator
+  with ArchiveXL, like the hair, and hook nothing: a partner without the same mod sees your V
+  without that makeup, those eyebrows or lashes, or with one of the game's eye or hair
+  colours. Before you remove the set, pick a game hair colour: hair whose colour is gone can
+  vanish, Hair Color Profiles' author says. Makeup Enhancer replaces one texture of the game,
+  so it changes only your own screen.
 - **The menus of this round.** Modded Save Loading Screen Fix wraps functions in NightCoop's
   tables and calls the originals; its No Load Popups file returns early from the Continue
   step of a menu NightCoop wraps, and is left out. Always First Equip, Mark To Sell and
@@ -666,6 +826,18 @@ new release of the mod changes the file it ships, and your copy is backed up fir
   node count before it deletes a node, so a sector that 2.5 changed is skipped, not broken;
   one Phantom Liberty sector it replaces whole, and the Kerry scene and the air traffic
   sectors are copies from before 2.5.
+- **The gameplay additions of round 12.** Traffic Lights Resolved wraps car functions that
+  NightCoop does not hook. It calms the car behind a stopped V, in a session for the host only,
+  whose game leads the traffic, and its longer view distances show on your own screen. Perks
+  And Skills Fixes wraps six functions in NightCoop's tables: five call the original, and one
+  skips it only while a Cripple Movement quickhack lands on your V during Unstoppable Force's
+  overshield. Black Lace Load Fix's plugin hooks one function of the game's effect system, not
+  one that NightCoop detours, and checks its bytes first; try loading a save with Black Lace
+  active once in a session. Playable Roulette's tables are world edits every partner needs;
+  the wheel, ball and chips are your own game's, so partners see you at the table but not your
+  spins, and chips are your eddies, not saved: cash out before a save or a load. Its choice
+  skips the game's dialogue-hub function only while it is alone on screen, as Sit Anywhere's
+  does. Preem Mirrors' Lite file replaces mirror meshes and materials, on your own screen.
 - **Apartment cats.** Each cat mod replaces its apartment's home scene, which spawns the cat,
   and the apartment's quest sector, which holds the bowls and boxes; no scripts. NightCoop
   keeps V's home scenes personal, so each game spawns and leads its own cat, and petting is
@@ -687,10 +859,12 @@ new release of the mod changes the file it ships, and your copy is backed up fir
   changing view would move yours. A bridge can skip both in a session, through NightCoop's
   SDK; none is shipped until it has been compiled and tried.
 - **Equipment-EX NightCoop Compatibility Bridge is left out.** It replaces NightCoop's
-  plugin (`red4ext/plugins/NightCoop/NightCoop.dll`) with a copy of 0.2.0-beta whose machine
-  code is patched in nine places. It works only with that release and Equipment-EX 1.2.10,
-  every player must install it, and its author lists its current release as untested in
-  game. NightCoop asks mods to ship only their own files. If you install it by hand,
+  plugin (`red4ext/plugins/NightCoop/NightCoop.dll`) with a copy of 0.2.0-beta patched in
+  five functions (479 bytes) so that each item goes into its Equipment-EX slot, and replaces
+  Equipment-EX's two script files with edited copies. It works only with NightCoop 0.2.0-beta
+  and Equipment-EX 1.2.10, and 0.2.0-beta does not play with 0.2.1-beta (11 November), which
+  the script now installs. Every player must install it; its page calls it experimental, and
+  its 1.25 package says it was not tried in game. NightCoop asks mods to ship only their own files. If you install it by hand,
   `check` reports NightCoop's plugin as changed, and the next run puts the official one back
   (the other is kept in the backup).
 - **Quick Stash in co-op:** NightCoop keeps a guest's stash their own: in the host's world it
@@ -742,10 +916,12 @@ Each run with the key then:
   sets; later runs ask again only about mods whose files changed since (one request names
   them), so a run with nothing new makes two requests.
 - **Downloads only what you do not have**, in your downloads or in the script's cache,
-  into `~/.cache/nightcoop-linux` (the whole mod set is over 2 GB, so not into `/tmp`,
+  into `~/.cache/nightcoop-linux` (the whole mod set is over 4 GB, so not into `/tmp`,
   which is often held in memory), and installs a file only after checking it: its size
   against the one Nexus Mods lists, and its MD5 checksum with Nexus Mods, which must name
-  that mod and file. Download links must point to Nexus Mods' own servers.
+  that mod and file. Nexus Mods' MD5 index lacks a few files (the Skyline R34's, in November
+  2026); for those, the file's SHA-256 must be the one Nexus Mods recorded at upload, in its
+  virus scan. Download links must point to Nexus Mods' own servers.
 - **Keeps the mods up to date:** a new release on Nexus Mods comes in with the next run.
   To stay on what you have, add `--no-nexus-api`.
 
@@ -884,7 +1060,7 @@ Start with `check`.
   a copy in `~/.cache/nightcoop-linux/mods` for later runs. With `--no-github-downloads`
   the script does not try GitHub at all and takes these files from that folder only.
 - **"No space left on device" or "not enough space to unpack".** The script unpacks the
-  mods in `~/.cache/nightcoop-linux/tmp`, which needs about 3 GB with both sets while it
+  mods in `~/.cache/nightcoop-linux/tmp`, which needs about 5 GB with both sets while it
   runs and is removed at the end. Free some space on that drive, or point the script at a
   folder on a bigger one: `NIGHTCOOP_TMPDIR=/path/to/folder ./nightcoop-install.sh` (or
   `nightcoop-install`). Releases before this fix unpacked into `/tmp`, which SteamOS,
@@ -912,7 +1088,10 @@ The installer was run against real components in Arch Linux, CachyOS and SteamOS
 roots built from each distribution's own signed package repositories:
 
 - `proton-cachyos-native` 11.0 from CachyOS's repository;
-- the live NightCoop 0.2.0 archives and release list;
+- the live NightCoop 0.2.0 and 0.2.1-beta archives and release list: the script takes
+  0.2.1-beta (11 November, protocol 183) from nightcoop.net, with the RED4ext 1.31.0 it
+  bundles. It holds the same files as 0.2.0; only its plugin differs, and its SDK scripts and
+  NightCoop's guides are the same;
 - RED4ext 1.31;
 - Microsoft's VC++ 2019, 2022 and v14 installers;
 - the GitHub releases of both mod sets.
@@ -1071,7 +1250,8 @@ without the installs, in a few seconds. The suite covers:
     list; a dry run that only lists what it would download;
   - a new release downloaded by the next run, which fetches that mod's file list alone;
   - downloads changed in one byte (MD5), cut short (size) or linked outside Nexus Mods'
-    servers refused, neither installed nor kept;
+    servers refused, neither installed nor kept; a file Nexus Mods' MD5 index lacks taken by
+    the SHA-256 of its upload, and refused with another;
   - an account without Premium: nothing downloaded, each file linked;
   - the key from `NEXUS_API_KEY`, `--nexus-key-file` or the key file (with a warning when
     others can read it), `--no-nexus-api`, a file without a key, an API that does not
@@ -1089,6 +1269,20 @@ without the installs, in a few seconds. The suite covers:
 - the mods of round 11 by their real file names and entries, over the releases before 2.5 of
   Dash Fix and Easier Controller Sprint, which are named as too old when they are the only
   ones; their notes, Pepe's scene with Immersive Bartenders among them;
+- the mods of round 12 by their real file names and entries, each of the 31 components by its
+  own file over every other current file of its mod (no file of those installed), the
+  GT-R's sound file, the Quadra's hotfix and the Countach's update over their main files,
+  the Dedka, Nova Traffic and Appearance Menu Mod files left out, the Ferrari's roof key
+  moved to Home, and their notes;
+- the mods of round 13 by their real file names and entries, two of them with quotes in
+  their names: each of the 8 components by its own file, not the Huracan's Disable Mirrors
+  and Custom Audio files or the Zenitex patch's main file, the Comfy Boots texture left out
+  without Comfy Boots, and GEAR's note;
+- the mods of round 14 by their real file names and entries, four of them from rar archives:
+  each of the 30 components by its own file over its mod's other current files (the Removed
+  grace, the Limited HUD bars, the driver-loot file, the Camaro's Extras, the CET stamina file,
+  the Sandevistan files that do not compile), the Dakar's copy of Vehicle Manufacturer Fix's
+  script left out, and their notes;
 - mods the script did not install cleared on install into the backup, put back by uninstall,
   and left alone with `--keep-other-mods`, while the script's own mods keep what they write;
 - a GitHub download that fails, and the copy downloaded in a browser taken from Downloads;

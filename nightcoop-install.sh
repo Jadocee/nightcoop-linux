@@ -70,8 +70,8 @@
 #                         Extension and more); kept up to date
 #   --without-mods        remove those mods again (the frameworks stay)
 #   --with-equipment-ex   also install Equipment-EX (from Nexus Mods), to wear layered outfits,
-#                         and with --with-mods jewellery made for its slots; every partner in a
-#                         session needs it too
+#                         and with --with-mods jewellery made for its slots. In a session, partners
+#                         see one piece per game slot of an outfit, with Equipment-EX or without
 #   --without-equipment-ex remove Equipment-EX again
 #   --mods-from DIR       where the Nexus downloads are (default: your Downloads folder)
 #   --save-nexus-key      ask for your Nexus Mods API key (not shown) and keep it, readable by
@@ -101,14 +101,14 @@
 # Needs bash, python3, curl, coreutils, findutils and procps-ng. SteamOS and CachyOS
 # ship all of them; on a minimal Arch install: sudo pacman -S --needed python curl
 #
-# The mods are unpacked in ~/.cache/nightcoop-linux/tmp (about 3 GB with both sets, removed when
+# The mods are unpacked in ~/.cache/nightcoop-linux/tmp (about 5 GB with both sets, removed when
 # the script ends), not in /tmp, which SteamOS, CachyOS and Arch keep in memory. To use another
 # folder, set NIGHTCOOP_TMPDIR=<folder>.
 
 # SPDX-License-Identifier: MIT
 set -euo pipefail
 
-SCRIPT_VERSION="3.7.0"
+SCRIPT_VERSION="3.8.0"
 APPID=1091500
 GAME_EXE_REL="bin/x64/Cyberpunk2077.exe"
 RED4EXT_VER="1.31.0"
@@ -140,8 +140,8 @@ MIN_GAME_FILEVER="3.0.88.46235" MIN_GAME_PATCH="2.5"
 #                           Curbside, Cyber Drift (Light), Impact FX, Immersive Audio Distance,
 #                           Immersive First Person, Katana Pack 2, Quick Stash and No Intro Videos,
 #                           and the frameworks they need.
-#   eqex (--with-equipment-ex)  Equipment-EX, which wears clothes in layers. NightCoop sends looks by
-#                           its slots: a partner without it sees other slots.
+#   eqex (--with-equipment-ex)  Equipment-EX, which wears clothes in layers. NightCoop sends partners
+#                           one piece per game slot of its outfits, whether they have it or not.
 #   mods+eqex               Only with both: raem's jewellery, made for Equipment-EX's slots, the
 #                           store that sells it, and The Community Palette Project, which it needs.
 # A component in both sets is installed once. When its sets are dropped (--without-...), a
@@ -192,6 +192,7 @@ Zenitex_Armor_Pads            2.5 mods        mod  -     -                      
 Zenitex_Panam_Pants           2.5 mods        mod  -     -                                                           4.0    nexus:10842:-:alt._colo,_-_gs
 Zenitex_Combat_Gloves         2.5 mods        mod  -     -                                                           2.0.1  nexus:19432:-:alt._colo,garment_support
 Comfy_Boots                   2.5 mods        mod  -     -                                                           1.1    nexus:11212:-:gymfiend
+Comfy_Boots_Texture_Fix       2.5 mods        mod  -     -                                                           0.1    nexus:37842:+comfy
 Vehicle_Pack_Basic_1          2.5 mods        mod  -     -                                                           1.8.2  nexus:4625:-:~car_pack_2
 Vehicle_Pack_Basic_2          2.5 mods        mod  -     -                                                           1.9.0  nexus:4625:+car_pack_2
 Cyberpunk_Bikes_Edge          2.5 mods        mod  -     -                                                           1.03   nexus:14719
@@ -209,9 +210,6 @@ Vehicle_Manufacturers_Resource 2.5 mods        lib  -     -                     
 Equipment_EX                  2.5 eqex        mod  -     -                                                           1.2.10 nexus:6945:+equipment-ex
 Impact_FX                     2.5 mods        mod  -     -                                                           0.8.3.3 nexus:36631
 Immersive_Audio_Distance      2.5 mods        mod  -     -                                                           1.2.0  nexus:36809:+(2.5)
-Apollo_Intensa_Emozione       2.5 mods        mod  -     -                                                           1      nexus:37233
-Countach_LPI_800-4            2.5 mods        mod  -     -                                                           1      nexus:37234
-Countach_Liberty_Walk         2.5 mods        mod  -     -                                                           1      nexus:37235
 VAZ_Oka_Yozakura              2.5 mods        mod  -     -                                                           4      nexus:36381
 Toyota_GR_Yaris               2.5 mods        mod  -     -                                                           3.3    nexus:34357:+all_purpose
 Toyota_GR_Yaris_Rocket_Bunny  2.5 mods        mod  -     -                                                           3.2    nexus:34357:+rocket_bunny
@@ -300,6 +298,24 @@ Easier_Controller_Sprint      2.5 mods        mod  -     -                      
 Enemies_Dodging_Fix           2.5 mods        mod  -     -                                                           0.11   nexus:17923
 Eye_In_The_Sky_Highlight_Fix  2.5 mods        mod  -     -                                                           1      nexus:30246
 Melee_Finisher_Camera_Fix     2.5 mods        mod  -     -                                                           1      nexus:32173
+Traffic_Lights_Resolved       2.5 mods        mod  -     -                                                           1.8.4  nexus:27956
+Perks_And_Skills_Fixes        2.5 mods        mod  -     -                                                           1.0.0  nexus:37252
+Black_Lace_Load_Fix           2.5 mods        mod  -     -                                                           1      nexus:37404
+Enemies_Melee_Attacks_Fixes   2.5 mods        mod  -     -                                                           0.1    nexus:32747
+Enemy_Melee_Moves_Unlocked    2.5 mods        mod  -     -                                                           1.0.0  nexus:34153
+Enemy_Quickhack_Fixes         2.5 mods        mod  -     -                                                           1.0.0  nexus:34525
+Finisher_Grace_Fix            2.5 mods        mod  -     -                                                           1.0.0  nexus:34456:fixed_version:removed_version
+Machete_Finisher_Kill_Fix     2.5 mods        mod  -     -                                                           1      nexus:34454
+Melee_Attacks_Fixes_And_Enhancements 2.5 mods        mod  -     -                                                    0.41   nexus:16921
+Disappearing_Enemy_Health_Bar_Fix 2.5 mods        mod  -     -                                                       1.0    nexus:19815:-:lhud,scanning
+Empty_Quickhack_Menu_Fix      2.5 mods        mod  -     -                                                           1      nexus:36114
+Impact_Kill_Looting_Fix       2.5 mods        mod  -     -                                                           1.0.0  nexus:28099:-:experimental
+Stamina_Regen_Fixes           2.5 mods        mod  -     -                                                           1      nexus:29547:+no_cet
+Stamina_Consumption_Fix       2.5 mods        mod  -     -                                                           1.0.0  nexus:23230
+Sandevistan_Preemptive_End_Fix 2.5 mods        mod  -     -                                                          1      nexus:29636:+preemptive
+Sandevistan_Activation_Fix    2.5 mods        mod  -     -                                                           1.1    nexus:30571
+Status_Bar_Bug_Fixes          2.5 mods        mod  -     -                                                           1.8    nexus:4316
+Female_Standing_Peeing_Fix    2.5 mods        mod  -     -                                                           1.0.0  nexus:35082
 No_Crowd_Panic_From_Devices   2.5 mods        mod  -     -                                                           1.2.0  nexus:7353:+redscript
 Crowd_Voice_Unlocked          2.5 mods        mod  -     -                                                           1.1.0  nexus:36527
 Sit_Anywhere                  2.5 mods        mod  -     -                                                           1.4    nexus:7299
@@ -319,6 +335,16 @@ Quest_Vehicle_Motion_Fixes    2.5 mods        mod  -     -                      
 Air_Traffic_Dupe_Fix          2.5 mods        mod  -     -                                                           1.0.0  nexus:31304
 Fix_Advert_Animations         2.5 mods        mod  -     -                                                           1.1    nexus:17726
 Vik_Voiceline_Cut             2.5 mods        mod  -     -                                                           1.0    nexus:16932
+Gambling_Props                2.5 mods        lib  -     -                                                           1.0.1  nexus:15229:-:roulette
+Playable_Roulette             2.5 mods        mod  -     -                                                           1.1.4  nexus:15450:-:props,exampleaddon
+Preem_Mirrors                 2.5 mods        mod  -     -                                                           1.3.1  nexus:25633:(lite):(full),reflection
+GEAR                          2.5 mods        mod  -     -                                                           2.5-1  nexus:37913
+Canyon_Fixes                  2.5 mods        mod  -     -                                                           1.2.1  nexus:25918
+Crowd_Seat_Overlap_Fix        2.5 mods        mod  -     -                                                           1.1.3  nexus:34735
+Epistrophy_Delamain_Despawn_Fix 2.5 mods        mod  -     -                                                         1.21   nexus:29851
+Leaky_Interiors_Fixed         2.5 mods        mod  -     -                                                           1.1    nexus:29002:+aio
+Leaky_Interiors_Voodoo_Crypt  2.5 mods        mod  -     -                                                           1.0    nexus:29002:+voodoo
+Basilisk_Shadows_Fix          2.5 mods        mod  -     -                                                           1.0.0  nexus:33808
 Apartment_Cats_Corpo_Plaza    2.5 mods        mod  -     -                                                           3.0.0  nexus:6329:-:colour
 Apartment_Cats_Japantown      2.5 mods        mod  -     -                                                           3.0.1  nexus:6493
 Apartment_Cats_Northside_Motel 2.5 mods        mod  -     -                                                          3.0.0  nexus:6379
@@ -332,6 +358,34 @@ Edgerunner_Emperor            2.5 mods        mod  -     -                      
 Toyota_Supra_Mk3              2.5 mods        mod  -     -                                                           1.1    nexus:27955
 Polestar_1_Hero               2.5 mods        mod  -     -                                                           1.1    nexus:26891:-:spoiler
 Nissan_240SX                  2.5 mods        mod  -     -                                                           1.32   nexus:8730:+nissan_240sx
+Vehicle_Core                  2.5 mods        lib  -     -                                                           1.0.0  nexus:31684
+SDH0_Vehicle_Resources        2.5 mods        lib  -     -                                                           2.0.1  nexus:20956
+Ferrari_458_Spider_WBK        2.5 mods        mod  -     -                                                           2.0.0  nexus:24910:+mainfile
+VW_Super_Beetle               2.5 mods        mod  -     -                                                           2.0.2  nexus:20785:+super_beetle
+Nissan_GTR_Lone_Wanderer      2.5 mods        mod  -     -                                                           1.1    nexus:20237:+nomad_main
+Nissan_GTR_Lone_Wanderer_Sound 2.5 mods        mod  -     -                                                          1.1    nexus:20237:+shion_nomad_engine
+Quadra_Turbo_Z                2.5 mods        mod  -     -                                                           2.11   nexus:29122:+quadra_turbo-z:~tuning
+Quadra_Turbo_Z_Hotfix         2.5 mods        mod  -     -                                                           2.11.1 nexus:29122:+hotfix
+Quadra_Turbo_Z_Tuning         2.5 mods        mod  -     -                                                           2.11   nexus:29122:+tuning_scripts
+Bugatti_Tourbillon            2.5 mods        mod  -     -                                                           1.0.0  nexus:22107:+main
+Lamborghini_Diablo_VT         2.5 mods        mod  -     -                                                           0.9.4.5 nexus:17998:+mainfile
+Lexus_LC500_Liberty_Walk      2.5 mods        mod  -     -                                                           1.4    nexus:16979:+all_in_one
+Nissan_Skyline_R34_HYCADE     2.5 mods        mod  -     -                                                           1.12   nexus:16570:+hycade_r34
+Countach_KS_Edition           2.5 mods        mod  -     -                                                           1.0    nexus:11110:+without_neon:no_spoiler
+Countach_KS_Edition_update    2.5 mods        mod  -     -                                                           1.11   nexus:11110:+tweaks_2.1
+Ford_Mustang_RTR_Spec_5       2.5 mods        mod  -     -                                                           1.4    nexus:8912
+Audi_R8_Liberty_Walk          2.5 mods        mod  -     -                                                           1.3    nexus:8827:-:spoilers
+Militech_WDG3                 2.5 mods        mod  -     -                                                           1      nexus:37099:-:rims
+Harley-Davidson_Thundergod    2.5 mods        mod  -     -                                                           1.1.0  nexus:21522:-:prop,template
+Lamborghini_Huracan_EVO       2.5 mods        mod  -     -                                                           1.0.0  nexus:37520:-:mirrors,audio
+Chevrolet_Corvette_C8_ZR1     2.5 mods        mod  -     -                                                           1.5    nexus:37929
+Ford_Hennessey_VelociRaptor   2.5 mods        mod  -     -                                                           3      nexus:36409
+Ford_Bronco_First_Edition     2.5 mods        mod  -     -                                                           1      nexus:29942
+Vehicle_Destruction_Mesh_Fix  2.5 mods        mod  -     -                                                           1.2    nexus:35121
+Ringbrothers_Camaro_Valkyrja  2.5 mods        mod  -     -                                                           1.0.1  nexus:25602:+main
+Ford_GT                       2.5 mods        mod  -     -                                                           1.0.5  nexus:27722
+Aston_Martin_Valkyrie_AMR_Pro 2.5 mods        mod  -     -                                                           1.2    nexus:29039
+Porsche_911_Dakar             2.5 mods        mod  -     -                                                           1.1    nexus:28557
 FPP_Speedometer               2.5 mods        mod  -     -                                                           1.3.0  nexus:26156
 Clear_Skill_Checks            2.5 mods        mod  -     -                                                           1.1.1  nexus:2805
 Filter_Saves                  2.5 mods        mod  -     -                                                           1.7.0  nexus:3400
@@ -350,8 +404,13 @@ Preem_Scopes                  2.5 mods        mod  -     -                      
 Preem_Scopes_Smart_Weapons    2.5 mods        mod  -     -                                                           1.0.0  nexus:10021:+smart_weapons
 Preem_Scopes_Binoculars       2.5 mods        mod  -     -                                                           1.0.1  nexus:10021:+binoculars:frame
 Unified_Mod_Settings          2.5 mods        mod  -     -                                                           2.8    nexus:28308
+Better_Quality_Sort           2.5 mods        mod  -     -                                                           2.3.2  nexus:20267
+Looting_QoL                   2.5 mods        mod  -     -                                                           2.0    nexus:14730
+Stash_Search                  2.5 mods        mod  -     -                                                           1.1.0  nexus:14264:+stash
+Backpack_Search               2.5 mods        mod  -     -                                                           1.2.1  nexus:14264:+backpack
 Fluff_Vendor_Fixes            2.5 mods        mod  -     -                                                           1.1.2  nexus:27795:-:only_drinks
 MaxTac_Suit                   2.5 mods        mod  -     -                                                           1.0    nexus:26517
+The_Division_Hunter_Outfit    2.5 mods        mod  -     -                                                           1.1    nexus:24902
 Prestige_Glasses              2.5 mods        mod  -     -                                                           1.11   nexus:27118
 Nike_Jordan_1_Off-White       2.5 mods        mod  -     -                                                           1.12.0 nexus:27597
 Catherwood_Atelier_Shop       2.5 mods        mod  -     -                                                           1.0.2  nexus:27599
@@ -363,11 +422,18 @@ Yumeko_Hair                   2.5 mods        mod  -     -                      
 Xyla_Shag_Mullet              2.5 mods        mod  -     -                                                           1      nexus:36246
 Geralt_of_Rivia_Hair          2.5 mods        mod  -     -                                                           1      nexus:36769
 Soft_Blunt_Bob                2.5 mods        mod  -     -                                                           1      nexus:35463
+Selkie_Hair                   2.5 mods        mod  -     -                                                           1      nexus:37381
+Kaisa_Hair                    2.5 mods        mod  -     -                                                           1      nexus:37302
 Makeup_Enhancer               2.5 mods        mod  -     -                                                           1      nexus:28869:+256x256
 Beautiful_Makeup              2.5 mods        mod  -     -                                                           1      nexus:29336:+@1777732105
 Beautiful_Makeup_II           2.5 mods        mod  -     -                                                           1      nexus:29513:+basegame_head
 Mecha_Robotic_Eyes            2.5 mods        mod  -     -                                                           1      nexus:35373
 Mecha_Robotic_Eyes_2          2.5 mods        mod  -     -                                                           1      nexus:35807
+Hair_Color_Profiles           2.5 mods        mod  -     -                                                           1.02   nexus:19115
+Beautiful_Eyebrows            2.5 mods        mod  -     -                                                           1.0    nexus:18783:default:fuller
+Beautiful_Eyebrows_II         2.5 mods        mod  -     -                                                           1.0    nexus:26168:default:fuller
+Eyelashes_CCXL                2.5 mods        mod  -     -                                                           2      nexus:25068:+fem_v1:ekt
+Eyelashes_CCXL_Male           2.5 mods        mod  -     -                                                           1      nexus:25068:+(male)
 "
 # <<< add-on sets
 # What a component needs besides RED4ext: without it, it is not installed (a store without
@@ -396,9 +462,6 @@ Porsche_911_GT3_RS:ArchiveXL,TweakXL,Cyber_Engine_Tweaks,Material_and_Texture_Ov
 Vehicle_Customizer:Cyber_Engine_Tweaks Vehicle_Customizer_update:Vehicle_Customizer Deceptious_Quest_Core:ArchiveXL
 VendorsXL:redscript,Codeware,ArchiveXL,TweakXL,Deceptious_Quest_Core Equipment_EX:redscript,Codeware,ArchiveXL,TweakXL
 Impact_FX:redscript,Codeware,TweakXL Immersive_Audio_Distance:redscript,Codeware,Mod_Settings Vehicle_Manufacturer_Fix:redscript
-Apollo_Intensa_Emozione:redscript,Codeware,ArchiveXL,TweakXL,Cyber_Engine_Tweaks,Virtual_Car_Dealer
-Countach_LPI_800-4:redscript,Codeware,ArchiveXL,TweakXL,Cyber_Engine_Tweaks,Virtual_Car_Dealer
-Countach_Liberty_Walk:redscript,Codeware,ArchiveXL,TweakXL,Cyber_Engine_Tweaks,Virtual_Car_Dealer
 VAZ_Oka_Yozakura:redscript,Codeware,ArchiveXL,TweakXL,Cyber_Engine_Tweaks,Virtual_Car_Dealer
 Toyota_GR_Yaris:ArchiveXL,TweakXL,Virtual_Car_Dealer Toyota_GR_Yaris_Rocket_Bunny:Toyota_GR_Yaris
 Nissan_Silvia_S14:redscript,ArchiveXL,TweakXL,Vehicle_Manufacturers_Resource,Virtual_Car_Dealer
@@ -462,7 +525,46 @@ Apartment_Cats_The_Glen:ArchiveXL,TweakXL Apartment_Cats_Dogtown:ArchiveXL,Tweak
 Dash_Fix:redscript,ArchiveXL Dont_Hide_Stamina_Bar_on_Holster:redscript Easier_Controller_Sprint:redscript Enemies_Dodging_Fix:redscript
 Eye_In_The_Sky_Highlight_Fix:redscript Melee_Finisher_Camera_Fix:redscript
 Story_Quest_Fixes:ArchiveXL,Codeware,Cyber_Engine_Tweaks Minor_Activities_Quest_Fixes:ArchiveXL,Codeware,Cyber_Engine_Tweaks
-Quest_Vehicle_Motion_Fixes:ArchiveXL"
+Quest_Vehicle_Motion_Fixes:ArchiveXL
+Traffic_Lights_Resolved:redscript,Codeware Perks_And_Skills_Fixes:redscript,Codeware,TweakXL
+Playable_Roulette:ArchiveXL,TweakXL,Codeware,Cyber_Engine_Tweaks,Gambling_Props
+Vehicle_Core:redscript,Codeware,TweakXL,Cyber_Engine_Tweaks SDH0_Vehicle_Resources:ArchiveXL,TweakXL
+Ferrari_458_Spider_WBK:redscript,Codeware,ArchiveXL,TweakXL,Cyber_Engine_Tweaks,Mod_Settings,Vehicle_Core,SDH0_Vehicle_Resources,Virtual_Car_Dealer
+VW_Super_Beetle:redscript,Codeware,ArchiveXL,TweakXL,Cyber_Engine_Tweaks,Vehicle_Core,SDH0_Vehicle_Resources,Virtual_Car_Dealer
+Nissan_GTR_Lone_Wanderer:ArchiveXL,TweakXL,Vehicle_Manufacturers_Resource,Virtual_Car_Dealer Nissan_GTR_Lone_Wanderer_Sound:Nissan_GTR_Lone_Wanderer
+Quadra_Turbo_Z:ArchiveXL,TweakXL,Virtual_Car_Dealer Quadra_Turbo_Z_Hotfix:Quadra_Turbo_Z
+Quadra_Turbo_Z_Tuning:redscript,Cyber_Engine_Tweaks,Vehicle_Core,Quadra_Turbo_Z
+Bugatti_Tourbillon:redscript,ArchiveXL,TweakXL,Virtual_Car_Dealer Lamborghini_Diablo_VT:redscript,ArchiveXL,TweakXL,Virtual_Car_Dealer
+Lexus_LC500_Liberty_Walk:ArchiveXL,TweakXL,Virtual_Car_Dealer
+Nissan_Skyline_R34_HYCADE:ArchiveXL,TweakXL,Material_and_Texture_Override,Vehicle_Manufacturers_Resource,Virtual_Car_Dealer,Phantom_Liberty
+Countach_KS_Edition:ArchiveXL,TweakXL,Material_and_Texture_Override,Vehicle_Manufacturers_Resource,Virtual_Car_Dealer
+Countach_KS_Edition_update:Countach_KS_Edition
+Ford_Mustang_RTR_Spec_5:ArchiveXL,TweakXL,Material_and_Texture_Override,Vehicle_Manufacturer_Fix,Virtual_Car_Dealer
+Audi_R8_Liberty_Walk:ArchiveXL,TweakXL,Material_and_Texture_Override,Vehicle_Manufacturer_Fix,Virtual_Car_Dealer
+Militech_WDG3:redscript,ArchiveXL,TweakXL,Vehicle_Manufacturer_Fix,Virtual_Car_Dealer
+Harley-Davidson_Thundergod:ArchiveXL,TweakXL,Virtual_Car_Dealer
+The_Division_Hunter_Outfit:ArchiveXL,TweakXL,Virtual_Atelier
+Hair_Color_Profiles:ArchiveXL,TweakXL Beautiful_Eyebrows:ArchiveXL Beautiful_Eyebrows_II:ArchiveXL
+Eyelashes_CCXL:ArchiveXL Eyelashes_CCXL_Male:ArchiveXL
+Comfy_Boots_Texture_Fix:Comfy_Boots GEAR:redscript,Codeware,ArchiveXL,TweakXL
+Lamborghini_Huracan_EVO:redscript,Codeware,ArchiveXL,TweakXL,Cyber_Engine_Tweaks,Virtual_Car_Dealer
+Chevrolet_Corvette_C8_ZR1:redscript,ArchiveXL,TweakXL,Cyber_Engine_Tweaks,Virtual_Car_Dealer
+Ford_Hennessey_VelociRaptor:ArchiveXL,TweakXL,Cyber_Engine_Tweaks,Material_and_Texture_Override,Virtual_Car_Dealer
+Ford_Bronco_First_Edition:redscript,ArchiveXL,TweakXL,Cyber_Engine_Tweaks,Vehicle_Manufacturer_Fix,Virtual_Car_Dealer
+Selkie_Hair:ArchiveXL Kaisa_Hair:ArchiveXL
+Enemies_Melee_Attacks_Fixes:TweakXL Enemy_Melee_Moves_Unlocked:TweakXL Enemy_Quickhack_Fixes:redscript,TweakXL
+Finisher_Grace_Fix:redscript Machete_Finisher_Kill_Fix:redscript Melee_Attacks_Fixes_And_Enhancements:redscript,TweakXL,Cyber_Engine_Tweaks
+Disappearing_Enemy_Health_Bar_Fix:redscript Empty_Quickhack_Menu_Fix:redscript
+Canyon_Fixes:ArchiveXL,Codeware,Cyber_Engine_Tweaks,Native_Settings_UI Crowd_Seat_Overlap_Fix:redscript,Codeware
+Epistrophy_Delamain_Despawn_Fix:ArchiveXL Leaky_Interiors_Fixed:ArchiveXL Leaky_Interiors_Voodoo_Crypt:ArchiveXL
+Better_Quality_Sort:redscript,ArchiveXL Looting_QoL:redscript,ArchiveXL,Codeware Stash_Search:redscript,Codeware
+Backpack_Search:redscript,Codeware Vehicle_Destruction_Mesh_Fix:ArchiveXL,TweakXL
+Ringbrothers_Camaro_Valkyrja:ArchiveXL,TweakXL,Virtual_Car_Dealer
+Stamina_Regen_Fixes:redscript,TweakXL Stamina_Consumption_Fix:redscript Sandevistan_Preemptive_End_Fix:redscript
+Sandevistan_Activation_Fix:redscript Status_Bar_Bug_Fixes:redscript,TweakXL Female_Standing_Peeing_Fix:redscript,Codeware
+Ford_GT:redscript,ArchiveXL,TweakXL,Cyber_Engine_Tweaks,Vehicle_Manufacturer_Fix,Virtual_Car_Dealer
+Aston_Martin_Valkyrie_AMR_Pro:redscript,ArchiveXL,TweakXL,Cyber_Engine_Tweaks,Vehicle_Manufacturer_Fix,Virtual_Car_Dealer
+Porsche_911_Dakar:redscript,ArchiveXL,TweakXL,Cyber_Engine_Tweaks,Vehicle_Manufacturer_Fix,Virtual_Car_Dealer"
 # Outfit mods: in co-op, a partner without the same mod sees a plain game piece in their place.
 OUTFITS="Zenitex_Ballistic_Mask Zenitex_Tactical_Harness Zenitex_Combat_Jacket Zenitex_Armor_Pads Zenitex_Panam_Pants
 Zenitex_Combat_Gloves Comfy_Boots Goliath_Coat Cityfolk_Hoodie Knife_Bandolier Bunny_Slippers Saul_Pants CrystalJock_Bomber
@@ -473,22 +575,31 @@ Dexter_Pants Dexter_Vest Dexter_Shoes PinkyBlume_Croptop Street_Ninja_Remake Air
 Nola_Barbed_Accessories Nola_Bracelets Nola_Heart_Choker Nola_Mini_Dress Nola_Moon_Accessories
 Nola_Spiked_Collar Zenitex_Combat_Armor Zenitex_FAST_Helmet Zenitex_Ballistic_Vest Zenitex_Combat_Boots
 Zenitex_Pistol_Holsters Zenitex_Military_Backpack Zenitex_Military_Underwear Zenitex_Combat_Goggles Zenitex_Balaclava_Pack
-Bullet_Necklace Chain_Jewelry Reyes_Accessories MaxTac_Suit Prestige_Glasses Nike_Jordan_1_Off-White Himiko_Buns_Hair"
+Bullet_Necklace Chain_Jewelry Reyes_Accessories MaxTac_Suit Prestige_Glasses Nike_Jordan_1_Off-White Himiko_Buns_Hair
+The_Division_Hunter_Outfit"
 # Hairstyles added to the character creator: in co-op, a partner without the same mod sees no hair there.
 HAIRS="Wolfcut_Messy Wolfcut_Emo Wolfcut_Hime_Short Wolfcut_Hime_Medium Wolfcut_Hime_Long Subleader_Hair_Pack
 Hyst_Hair_Collection Meluminary_Hair_Megapak Undercut_Slickback Undercut_Sidewave Undercut_ManBun Undercut_Slickback_Braids
-Violet_Hair Updo_Hair_Collection Himiko_Buns_Hair Yumeko_Hair Xyla_Shag_Mullet Geralt_of_Rivia_Hair Soft_Blunt_Bob"
+Violet_Hair Updo_Hair_Collection Himiko_Buns_Hair Yumeko_Hair Xyla_Shag_Mullet Geralt_of_Rivia_Hair Soft_Blunt_Bob
+Selkie_Hair Kaisa_Hair"
 # Eye colours added to the character creator: in co-op, a partner without the same mod sees one of the game's.
 EYES="Beautiful_Exotics_Eyes Mecha_Robotic_Eyes Mecha_Robotic_Eyes_2"
 # Eye makeup added to the character creator: in co-op, a partner without the same mod sees none there.
 MAKEUP="Beautiful_Makeup Beautiful_Makeup_II"
+# Eyebrows and eyelashes added to the character creator: in co-op, a partner without the same mod sees your V without them.
+BROWS="Beautiful_Eyebrows Beautiful_Eyebrows_II Eyelashes_CCXL Eyelashes_CCXL_Male"
+# Hair colours added to the character creator: in co-op, a partner without the same mod sees one of the game's.
+HAIR_COLOURS="Hair_Color_Profiles"
 # Places the mods open or change, and their quests: every partner needs the same files.
 WORLD="The_Empathy_Club_Unlocked Dicky_Twister_Club_Unlocked Heavy_Hearts_Club_Unlocked Afterlife_Unlocked_and_Remastered Heres_Brendan
 Immersive_Rippers Immersive_Bartenders Parking_Spots_Enhanced Deceptious_Bug_Fixes Apartment_Cats_Corpo_Plaza
 Apartment_Cats_Japantown Apartment_Cats_Northside_Motel Apartment_Cats_The_Glen Apartment_Cats_Dogtown Story_Quest_Fixes
-Minor_Activities_Quest_Fixes Kerry_Mansion_Scene_Fixes Quest_Vehicle_Motion_Fixes Air_Traffic_Dupe_Fix"
+Minor_Activities_Quest_Fixes Kerry_Mansion_Scene_Fixes Quest_Vehicle_Motion_Fixes Air_Traffic_Dupe_Fix Playable_Roulette
+Canyon_Fixes Epistrophy_Delamain_Despawn_Fix"
 # Mods that change how NPCs act: the game that leads an NPC applies them, so every partner needs the same.
-NPC_MODS="Silent_Silencers Stealth_Fixes Stealth_Finishers No_Crowd_Panic_From_Devices Fixed_NPC_Vehicle_Reactions Enemies_Dodging_Fix"
+NPC_MODS="Silent_Silencers Stealth_Fixes Stealth_Finishers No_Crowd_Panic_From_Devices Fixed_NPC_Vehicle_Reactions Enemies_Dodging_Fix
+Traffic_Lights_Resolved Enemies_Melee_Attacks_Fixes Enemy_Melee_Moves_Unlocked Enemy_Quickhack_Fixes Crowd_Seat_Overlap_Fix
+Female_Standing_Peeing_Fix"
 # Files a mod writes to while the game runs (its settings, its database, what it has learned):
 # the player's copy stays, and is replaced only when a new release changes the file it ships.
 # "*" is every component; a "*" in a pattern also matches across folders. A pattern ending in "/*"
@@ -521,6 +632,7 @@ Mark_To_Sell            r6/input/MarkToSell.xml
 #     its cover debuff is off, as it goes to that game's own V (a partner's silenced hit put it on the host's V).
 #   Sit Anywhere: the HUD stays on while V sits, as hiding it sets V's scene tier to 3, which NightCoop reads as a
 #     scene holding V (a talk, for the story NPCs around).
+#   Ferrari 458 Spider WBK: its roof key moved off O, Let There Be Flight's flight key while driving, to Home.
 ADDON_CONFIG="
 Loot_Icons_Extension        ini  red4ext/plugins/mod_settings/user.ini LootIconsExtension.LootIconsExtensionSSX fMS_ADSOpacity 100.0
 Loot_Icons_Extension        ini  red4ext/plugins/mod_settings/user.ini LootIconsExtension.LootIconsExtensionSSX fMS_ScannerOpacity 100.0
@@ -552,18 +664,27 @@ Silent_Silencers            json bin/x64/plugins/cyber_engine_tweaks/mods/Silent
 Silent_Silencers            json bin/x64/plugins/cyber_engine_tweaks/mods/SilentSilencersAndKnives/settings.json / perHitDetectionChance 0
 Silent_Silencers            json bin/x64/plugins/cyber_engine_tweaks/mods/SilentSilencersAndKnives/settings.json / secondsToDetect 0
 Sit_Anywhere                json bin/x64/plugins/cyber_engine_tweaks/mods/sitAnywhere/config/config.json / hideUI false
+Ferrari_458_Spider_WBK      ini  red4ext/plugins/mod_settings/user.ini SDH0.Ferrari458WBKSettings activationKey IK_Home
 "
 # Files of a mod that are not installed, for its default configuration in co-op (or data for a mod the set does
-# not have: the Silvia's entry for Dedka Car Dealership, which would leave a Cyber Engine Tweaks folder without a mod):
+# not have, which would leave a Cyber Engine Tweaks folder without a mod: entries for Dedka Car Dealership and Nova
+# Traffic, and Appearance Menu Mod prop lists, whose AppearanceMenuMod folder NightCoop would report as AMM):
 #   component              file (relative to the game folder)
 ADDON_SKIP="
 FPP_Speedometer         r6/input/fpp_speedometer.xml
 Nissan_Silvia_S14       bin/x64/plugins/cyber_engine_tweaks/mods/Dedka Auto Shop/cars/ra5392.json
+Harley-Davidson_Thundergod bin/x64/plugins/cyber_engine_tweaks/mods/Dedka Auto Shop/cars/ra1605.json
+Quadra_Turbo_Z          bin/x64/plugins/cyber_engine_tweaks/mods/Dedka Auto Shop/cars/ra5393.json
+Quadra_Turbo_Z          bin/x64/plugins/cyber_engine_tweaks/mods/NovaTraffic/community/quadra_turbo_z.json
+Nissan_Skyline_R34_HYCADE bin/x64/plugins/cyber_engine_tweaks/mods/NovaTraffic/community/Hycade_r34.json
+Gambling_Props          bin/x64/plugins/cyber_engine_tweaks/mods/AppearanceMenuMod/Collabs/Custom Props/boe6_poker_chip.lua
+The_Division_Hunter_Outfit bin/x64/plugins/cyber_engine_tweaks/mods/AppearanceMenuMod/Collabs/Custom Props/hunter_outfit/hunter_props.lua
+Porsche_911_Dakar       r6/scripts/VehicleManufacturerFix.reds
 "
 DATA_DIR="${XDG_DATA_HOME:-$HOME/.local/share}/nightcoop-linux"
 CONFIG_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/nightcoop-linux"   # the Nexus Mods API key (nexus-api-key)
 CACHE_DIR="${XDG_CACHE_HOME:-$HOME/.cache}/nightcoop-linux"
-# The working folder: the mods unpacked and staged, about 3 GB with both sets while the script runs. On
+# The working folder: the mods unpacked and staged, about 5 GB with both sets while the script runs. On
 # disk beside the downloads: /tmp is a RAM disk on SteamOS, CachyOS and Arch, often smaller than that.
 WORK_ROOT="${NIGHTCOOP_TMPDIR:-$CACHE_DIR/tmp}"
 WORK_NEW=()   # the folders made for it (outermost first): removed again at the end when empty
@@ -2029,7 +2150,8 @@ def cmd_nexus_find(mod_id, prefer, avoid, minver, *dirs):
 NEXUS_GAME = 'cyberpunk2077'
 NEXUS_CURRENT = ('MAIN', 'UPDATE', 'OPTIONAL', 'MISCELLANEOUS')   # not OLD_VERSION, ARCHIVED or DELETED
 NEXUS_HOSTS = ('.nexusmods.com', '.nexus-cdn.com')   # where its download links point
-NEXUS_KEEP = ('file_id', 'name', 'file_name', 'version', 'category_name', 'size_in_bytes', 'uploaded_timestamp')
+NEXUS_KEEP = ('file_id', 'name', 'file_name', 'version', 'category_name', 'size_in_bytes', 'uploaded_timestamp',
+              'external_virus_scan_url')   # its address holds the upload's SHA-256, for files md5_search does not know
 
 
 class NexusError(Exception):
@@ -2186,7 +2308,8 @@ def cmd_nexus_pick(cache, work, mod_id, prefer, avoid, minver, *dirs):
     if here and here[0][3] >= rank:
         out('have', here[0][0])
         return
-    out('get', fid, files[fid]['file_name'], int(files[fid].get('size_in_bytes') or 0), ver, which)
+    scan = re.search(r'/file/([0-9a-f]{64})', str(files[fid].get('external_virus_scan_url') or ''))
+    out('get', fid, files[fid]['file_name'], int(files[fid].get('size_in_bytes') or 0), ver, which, scan.group(1) if scan else '')
 
 
 def cmd_nexus_link(base, appver, mod_id, file_id):
@@ -2210,9 +2333,11 @@ def cmd_nexus_link(base, appver, mod_id, file_id):
     out('error', 'Nexus Mods gave no download link on its own servers')
 
 
-def cmd_nexus_verify(base, appver, mod_id, file_id, path, size):
+def cmd_nexus_verify(base, appver, mod_id, file_id, path, size, sha256=''):
     """Whether a download is the file Nexus Mods lists: its size, and its MD5 looked up on Nexus
-    Mods (md5_search), which must name this mod and file. "ok", or "bad" (or "error") and why."""
+    Mods (md5_search), which must name this mod and file. Nexus Mods' MD5 index lacks some files: then
+    the SHA-256 that Nexus Mods recorded for the upload (its VirusTotal scan, sha256) must match.
+    "ok", or "bad" (or "error") and why."""
     got = os.path.getsize(path)
     if int(size or 0) and got != int(size):
         out('bad', 'it is %d bytes, and Nexus Mods lists %s' % (got, size))
@@ -2221,14 +2346,17 @@ def cmd_nexus_verify(base, appver, mod_id, file_id, path, size):
         h = hashlib.md5(usedforsecurity=False)
     except TypeError:
         h = hashlib.md5()
+    h2 = hashlib.sha256()
     with open(path, 'rb') as fh:
         for block in iter(lambda: fh.read(1 << 20), b''):
             h.update(block)
+            h2.update(block)
+    upload = bool(re.fullmatch(r'[0-9a-f]{64}', sha256 or '')) and h2.hexdigest() == sha256
     try:
         hits = nexus_get(base, appver, 'games/%s/mods/md5_search/%s.json' % (NEXUS_GAME, h.hexdigest()))
     except NexusError as e:
         if e.code == 404:
-            out('bad', 'no file on Nexus Mods has its MD5')
+            out('ok') if upload else out('bad', 'no file on Nexus Mods has its MD5')
         else:
             out('stop' if e.stop else 'error', 'it could not be checked: %s' % e)
         return
@@ -2237,7 +2365,7 @@ def cmd_nexus_verify(base, appver, mod_id, file_id, path, size):
         if str(m.get('mod_id')) == str(mod_id) and str(f.get('file_id')) == str(file_id):
             out('ok')
             return
-    out('bad', 'its MD5 is that of another file on Nexus Mods')
+    out('ok') if upload else out('bad', 'its MD5 is that of another file on Nexus Mods')
 
 
 def sha256_of(path):
@@ -3343,6 +3471,40 @@ nexus_file() {   # nexus_file <component>: which file to download, of a mod with
         Makeup_Enhancer) echo "MAKE UP - ENHANCER - 256x256 pixels, not the 64x64 file" ;;
         Beautiful_Makeup) echo "Beautiful MAKEUP - BASE of 2 May 2026 (38.6 MB), for the basegame head, not the 5 MB file of the same name" ;;
         Beautiful_Makeup_II) echo "the main file for the basegame head, Beautiful MAKEUP II - BASE - Basegame Head, not EKT and Custom Head" ;;
+        Beautiful_Eyebrows) echo "Beautiful Eyebrows - 01 - Default - CCXL, not the Fuller file" ;;
+        Beautiful_Eyebrows_II) echo "Beautiful Eyebrows - 02 - Default - CCXL, not the Fuller file" ;;
+        Eyelashes_CCXL) echo "Sedth_CCXL_eyelashes_FEM_V1, not V2 to V4 or the EKT Asian files" ;;
+        Eyelashes_CCXL_Male) echo "SEDTH_ccxl eyelashes(MALE), among the update files" ;;
+        Preem_Mirrors) echo "Preem Mirrors (Lite), among the main files, not the Full file or the Player Reflection INI" ;;
+        Playable_Roulette) echo "the main file Gambling System - Roulette, not the Roulette Props or example addon files" ;;
+        Ferrari_458_Spider_WBK) echo "the main file 458spiderWBK MainFile, not the SDH0's Vehicle Audio Ver file, which needs AudioXL" ;;
+        VW_Super_Beetle) echo "the main file VW Super Beetle, not the Livery Template" ;;
+        Nissan_GTR_Lone_Wanderer) echo "the main file 1. R35 nomad main, not the livery, neon, rims or exhaust options" ;;
+        Nissan_GTR_Lone_Wanderer_Sound) echo "2. R35 nomad shion nomad engine sounds, among the optional files: the game's engine sound in place of SDH0's Vehicle Audio, which needs AudioXL" ;;
+        Quadra_Turbo_Z) echo "the main file Quadra Turbo-Z, not the rim, neon, grip or colour options" ;;
+        Quadra_Turbo_Z_Hotfix) echo "Turbo Z update 2.5 hotfix, among the update files (it goes over the main file)" ;;
+        Quadra_Turbo_Z_Tuning) echo "Quadra Turbo-Z - Garage Tuning Scripts, among the main files" ;;
+        Bugatti_Tourbillon) echo "the main file Bugatti Tourbillon - Main, not the Extras" ;;
+        Lamborghini_Diablo_VT) echo "the main file Diablo_MainFile, not the ColorPack or Tuning Parts" ;;
+        Lexus_LC500_Liberty_Walk) echo "the main file Lexus LC 500 All in One, not LC 500 Modifications, the Dedka support or the paintjob files" ;;
+        Nissan_Skyline_R34_HYCADE) echo "the main file hycade r34, not the liveries, the infinity rims or the UV template" ;;
+        Countach_KS_Edition) echo "the main file Countach (without Neon), not the With Neon, No Spoiler, wheel or neon colour files" ;;
+        Countach_KS_Edition_update) echo "Countach tweaks 2.1 update, among the update files" ;;
+        Audi_R8_Liberty_Walk) echo "the main file KRNLNIK Audi R8 LBW, not its SPOILERS STICKERS AND AERODISC file" ;;
+        Militech_WDG3) echo "the main file CORNMILF X RadekStepan WDG3, not WDG3 Alt Front RIms" ;;
+        Harley-Davidson_Thundergod) echo "the main file Harley-Davidson Thundergod, not the PROP or the pose template" ;;
+        Lamborghini_Huracan_EVO) echo "the main file Lamborghini Huracan EVO, not Disable Mirrors or Custom Audio, which needs AudioXL" ;;
+        Comfy_Boots_Texture_Fix) echo "Patch for Comfy Boots, among the main files of the Zenitex clothing patch, not The patch file" ;;
+        Finisher_Grace_Fix) echo "Finisher Grace Fix - Fixed Version, not the Removed Version" ;;
+        Disappearing_Enemy_Health_Bar_Fix) echo "1. Better Enemy Health Bar, not the LHUD files or Show Player Health Bar When Scanning" ;;
+        Impact_Kill_Looting_Fix) echo "the main file Impact Kill Looting Fix, not the Experimental (Driver loot) one" ;;
+        Leaky_Interiors_Fixed) echo "LeakyInteriorsFixed - AIO, among the main files" ;;
+        Leaky_Interiors_Voodoo_Crypt) echo "Voodoo Boys cript fixed, among the main files (a rar archive)" ;;
+        Stash_Search) echo "Stash Search, among the main files" ;;
+        Backpack_Search) echo "Backpack Search, among the main files" ;;
+        Ringbrothers_Camaro_Valkyrja) echo "RB Camaro Valkyrja - Main, not the Extras" ;;
+        Stamina_Regen_Fixes) echo "Stamina Regen Fixes No CET, not the file for Cyber Engine Tweaks" ;;
+        Sandevistan_Preemptive_End_Fix) echo "Sandevistan Preemptive End Fix, not QuickMelee Sandevistan Fix or Sandevistan Aiming Blocked Fix" ;;
         Apex_Grapple) echo "the main file ApexGrapple, not the one For v2.31 Kobat" ;;
         No_Crowd_Panic_From_Devices) echo "the redscript file, not the CET one" ;;
         Parking_Spots_Enhanced) echo "the main file, not Parking Spots Enhanced (alt), a build for patch 2.21" ;;
@@ -3366,6 +3528,18 @@ nexus_avoided() {   # nexus_avoided <component>: what a file of it that is never
         Aerial_Takedowns_Fix_Mantis_Blades) echo "Mantis Blades Aerial Takedown Fix - Non Lethal, which replaces the Lethal file's script (take Mantis Blades Aerial Takedown Fix - Lethal)" ;;
         Apartment_Cats_Corpo_Plaza) echo "the Colour Variants file of Apartment Cats - Corpo Plaza: loose TweakXL files to swap in by hand, which beside the main file would define Leia twice (take the main file)" ;;
         Apartment_Cats_Custom_Cats) echo "the 4k replacer of Apartment Cats - Custom Cats, which replaces its base archive and can crash the game, its author says (take the Base files file)" ;;
+        Countach_KS_Edition) echo "Countach (without Neon) (No Spoiler), another build of the main file's archive (take Countach (without Neon))" ;;
+        Audi_R8_Liberty_Walk) echo "the R8's Spoilers, Stickers and Aerodisc file: loose archives to pick by hand, which change the car only on your screen (take KRNLNIK Audi R8 LBW)" ;;
+        Militech_WDG3) echo "WDG3 Alt Front RIms, which changes the WDG3's wheels only on your screen (take the main file)" ;;
+        Harley-Davidson_Thundergod) echo "the Thundergod's PROP and pose-template files, for Appearance Menu Mod, World Builder and pose making, which the set does not have (take the main file)" ;;
+        Ferrari_458_Spider_WBK) echo "the Ferrari 458 Spider WBK's SDH0's Vehicle Audio Ver file, which needs AudioXL, left out of the set (take 458spiderWBK MainFile)" ;;
+        Lamborghini_Huracan_EVO) echo "the Huracan EVO's Disable Mirrors file, a personal choice, or its Custom Audio file, which needs AudioXL, left out of the set (take Lamborghini Huracan EVO)" ;;
+        Comfy_Boots_Texture_Fix) echo "The patch file of the Zenitex clothing patch: an untested stats add-on (Zenitex Core 5 classes) for nine older Zenitex packs, most of whose edits are for item rarities the set's packs do not have (take Patch for Comfy Boots)" ;;
+        Finisher_Grace_Fix) echo "Finisher Grace Fix - Removed Version, which takes the finisher grace away altogether (take the Fixed Version)" ;;
+        Disappearing_Enemy_Health_Bar_Fix) echo "the Limited HUD files of Disappearing Enemy Health Bar Fix, for a HUD mod the set does not have, or its scanning add-on (take 1. Better Enemy Health Bar)" ;;
+        Impact_Kill_Looting_Fix) echo "Impact Kill Looting Fix Experimental (Driver loot), which also lets V loot and carry bodies seated in cars (take the main file)" ;;
+        Ringbrothers_Camaro_Valkyrja) echo "RB Camaro Valkyrja - Extras: patches that take off the wing or the wipers, a personal look (take the Main file)" ;;
+        Sandevistan_Preemptive_End_Fix) echo "QuickMelee Sandevistan Fix and Sandevistan Aiming Blocked Fix, which call a function that no script of the game or the set declares: one script that fails to compile stops every mod's scripts, NightCoop's included (take Sandevistan Preemptive End Fix)" ;;
         *) h="$(nexus_file "$1")"; echo "another file of $(name_of "$1") than the one this script takes${h:+ ($h)}" ;;
     esac
 }
@@ -3454,10 +3628,10 @@ nexus_api_start() {   # nexus_api_start <table lines>: check the key, and bring 
 nexus_api_get() {   # nexus_api_get <component> <mod id> <prefer> <avoid> <minver>: unless a download as good is
     # here, its file on Nexus Mods, downloaded (Premium) into NEXUS_DL; NEXUS_FID: that file's id;
     # NEXUS_LATER=1: a dry run, which lists it instead
-    local st a b c d e url part r
+    local st a b c d e f url part r
     NEXUS_FID="" NEXUS_LATER=0
     [ "$NEXUS_STATE" = premium ] || [ "$NEXUS_STATE" = free ] || return 0
-    IFS=$'\x1f' read -r st a b c d e < <(py nexus-pick "$CACHE_DIR/nexus-api" "$NEXUS_WORK" "$2" "$3" "$4" "$5" \
+    IFS=$'\x1f' read -r st a b c d e f < <(py nexus-pick "$CACHE_DIR/nexus-api" "$NEXUS_WORK" "$2" "$3" "$4" "$5" \
         "${NEXUS_DIRS[@]}" "$CACHE_DIR/mods" ${NEXUS_DL:+"$NEXUS_DL"}) || true
     case "$st" in
         get) NEXUS_FID="$a" ;;
@@ -3484,7 +3658,7 @@ nexus_api_get() {   # nexus_api_get <component> <mod id> <prefer> <avoid> <minve
     if ! download "$url" "$part" "$b$([ "${c:-0}" = 0 ] || echo " ($(human "$c"))") from Nexus Mods"; then
         rm -f "$part"; warn "the download of $b from Nexus Mods failed"; return 0
     fi
-    IFS=$'\x1f' read -r st r < <(napi verify "$2" "$a" "$part" "$c") || true
+    IFS=$'\x1f' read -r st r < <(napi verify "$2" "$a" "$part" "$c" "$f") || true
     case "$st" in
         ok) mv -f "$part" "$NEXUS_DL/$b" ;;
         stop) rm -f "$part"; NEXUS_STATE=stopped; warn "Nexus Mods API: $r; what is left is listed below, to download by hand" ;;
@@ -3540,7 +3714,7 @@ room_for() {   # room_for <archive>: the working folder has room to unpack it, o
     need=$(( ${need:-0} + 64 * 1024 * 1024 ))
     avail="$(df -B1 --output=avail -- "$TMP" 2>/dev/null | tail -n1 | tr -d ' ')"
     case "$avail" in ''|*[!0-9]*) return 0 ;; esac
-    [ "$need" -le "$avail" ] || fail "not enough space to unpack $(basename "$1"): it needs $(human "$need") in $WORK_ROOT, which has $(human "$avail") free (all the mods together need about 3 GB there while the script runs). Free some space on that drive, or run again with NIGHTCOOP_TMPDIR set to a folder on a drive with more room"
+    [ "$need" -le "$avail" ] || fail "not enough space to unpack $(basename "$1"): it needs $(human "$need") in $WORK_ROOT, which has $(human "$avail") free (all the mods together need about 5 GB there while the script runs). Free some space on that drive, or run again with NIGHTCOOP_TMPDIR set to a folder on a drive with more room"
 }
 newer_same_line() {   # newer_same_line <installed DLL> <our DLL> <rule>: the installed copy is newer and for this patch
     local a b
@@ -3702,14 +3876,6 @@ step_addons() {   # the add-on sets (--with-flight, --with-mods), matched to the
         info "Cars and AVs in co-op: partners see a car of a mod (one Virtual Car Dealer sells, an AV of Drive an"
         info "Aerial Vehicle) only when they have that mod too; otherwise NightCoop shows a game car with as many seats."
     fi
-    local tweakcars=()   # cars NightCoop's garage cannot find: it reads a mod's car names from its .yaml files only
-    for o in Bikes_of_the_Dark_Future Toyota_Supra_HKS Toyota_Supra_Mk3; do
-        if [[ "$ADDON_HAVE" == *" $o "* ]]; then tweakcars+=("$(name_of "$o")"); fi
-    done
-    if [ "${#tweakcars[@]}" -gt 0 ]; then
-        info "$(listing_and "${tweakcars[@]}") in co-op: a guest's vehicle of these mods is not in their garage in the host's"
-        info "world, as NightCoop finds a mod's cars by their names in its TweakXL .yaml files, and these mods use .tweak files."
-    fi
     if [[ "$ADDON_HAVE" == *" Katana_Pack_2 "* ]]; then
         info "Katana Pack 2 in co-op: a partner without it sees a game blade of the same kind in your hands, and the"
         info "blades' charge effects show only on your screen; their hits count for everyone."
@@ -3738,8 +3904,50 @@ step_addons() {   # the add-on sets (--with-flight, --with-mods), matched to the
         info "(Game.AddToInventory), with the codes listed on its Nexus Mods page."
     fi
     if [[ "$ADDON_HAVE" == *" Equipment_EX "* ]]; then
-        info "Equipment-EX in co-op: every partner needs it too. NightCoop sends looks by its slots, so a partner"
-        info "without it sees other slots; NightCoop also notes that it overrides photo-mode functions."
+        info "Equipment-EX in co-op: NightCoop shows partners one piece per game slot of your outfit, the outer one,"
+        info "with Equipment-EX or without: the layers under it are not seen, and a bracelet, watch or ring takes"
+        info "your shirt's place. For a session, wear one piece per game slot, or choose No outfit in its wardrobe."
+    fi
+    if [[ "$ADDON_HAVE" == *" Traffic_Lights_Resolved "* ]]; then
+        info "Traffic Lights Resolved shows lights, lamps and signs from further away, on your own screen; in a session it calms"
+        info "the car behind a stopped V only for the host, whose game leads the traffic."
+    fi
+    if [[ "$ADDON_HAVE" == *" Perks_And_Skills_Fixes "* ]]; then
+        info "Perks And Skills Fixes in co-op: your perks act in your own game, and its fixes to effects on enemies (Spatial"
+        info "Mapping's cripple, Dread's spread) in the game that leads the enemy, so every partner needs it too. High Noon's"
+        info "slow motion stays off in a session, like all world slow motion."
+    fi
+    if [[ "$ADDON_HAVE" == *" Playable_Roulette "* ]]; then
+        info "Playable Roulette in co-op: its tables (the Ho-Oh, the Tyger Claws casino) are world edits every partner needs; the"
+        info "wheel, ball and chips are your own game's, so partners see you at the table but not your spins. Chips are your"
+        info "eddies and are not saved: cash out before a save or a load."
+    fi
+    if [[ "$ADDON_HAVE" == *" Ferrari_458_Spider_WBK "* ]]; then
+        info "Ferrari 458 Spider WBK: its roof opens with Home (Mod Settings, SDH0), moved off O, which Let There Be Flight"
+        info "uses; the roof moves on your screen only."
+    fi
+    if [[ "$ADDON_HAVE" == *" Vehicle_Core "* ]]; then
+        info "SDH0's cars and the Quadra Turbo-Z's tuneable versions keep their default parts: the set has no tuning garage, as"
+        info "each player's game would show its own tuning on every copy of a car."
+    fi
+    if [[ "$ADDON_HAVE" == *" Machete_Finisher_Kill_Fix "* ]]; then
+        info "Machete Finisher Kill Fix in co-op: a machete finisher kills its target. The game of the V who finishes decides"
+        info "and NightCoop passes the kill on, so every partner needs the mod too; its wound shows only on that player's screen."
+    fi
+    if [[ "$ADDON_HAVE" == *" Melee_Attacks_Fixes_And_Enhancements "* ]]; then
+        info "Melee Attacks Fixes And Enhancements in co-op: your swings are your own game's, and enemies react to them in the"
+        info "game that leads them, so every partner needs it too."
+    fi
+    if [[ "$ADDON_HAVE" == *" Sandevistan_Activation_Fix "* ]]; then
+        info "Sandevistan Activation Fix in co-op: a Sandevistan you press while other slow motion runs (a partner's Sandevistan"
+        info "near you included) waits without spending its charge, and starts when that ends."
+    fi
+    if [[ "$ADDON_HAVE" == *" Impact_Kill_Looting_Fix "* ]]; then
+        info "Impact Kill Looting Fix in co-op: only a player who has it can loot or carry a body that a car killed."
+    fi
+    if [[ "$ADDON_HAVE" == *" GEAR "* ]]; then
+        info "GEAR shows the weapons you carry on your V on your own screen, photo mode included: NightCoop does not share a"
+        info "mod's props, so partners do not see them, with GEAR or without."
     fi
     if [[ "$ADDON_HAVE" == *" VendorsXL "* ]]; then
         info "VendorsXL changes how every vendor restocks (larger stock limits). The RVC00N Dumpster 3's shop is"
@@ -3753,17 +3961,28 @@ step_addons() {   # the add-on sets (--with-flight, --with-mods), matched to the
     if [[ "$ADDON_HAVE" == *" Vehicle_Customizer "* ]]; then
         info "Vehicle Customizer works only with the game's language set to English."
     fi
-    local world=0 eyes=0 makeup=0 npcs=() scenes=()
+    local world=0 eyes=0 makeup=0 brows=0 colours=0 npcs=() scenes=() layered=()
     for o in $ADDON_HAVE; do
-        if [[ " $WORLD " == *" $o "* ]]; then world=1; fi
-        if [[ " $NPC_MODS " == *" $o "* ]]; then npcs+=("$(name_of "$o")"); fi
+        if [[ " ${WORLD//$'\n'/ } " == *" $o "* ]]; then world=1; fi
+        if [[ " ${NPC_MODS//$'\n'/ } " == *" $o "* ]]; then npcs+=("$(name_of "$o")"); fi
         case "$o" in Immersive_Rippers|Immersive_Bartenders) scenes+=("$(name_of "$o")") ;; esac
-        if [[ " $EYES " == *" $o "* ]]; then eyes=1; fi
-        if [[ " $MAKEUP " == *" $o "* ]]; then makeup=1; fi
+        if [[ " ${EYES//$'\n'/ } " == *" $o "* ]]; then eyes=1; fi
+        if [[ " ${MAKEUP//$'\n'/ } " == *" $o "* ]]; then makeup=1; fi
+        if [[ " ${BROWS//$'\n'/ } " == *" $o "* ]]; then brows=1; fi
+        if [[ " ${HAIR_COLOURS//$'\n'/ } " == *" $o "* ]]; then colours=1; fi
+        case "$o" in MaxTac_Suit|The_Division_Hunter_Outfit) layered+=("$(name_of "$o")") ;; esac
     done
     if [ "$makeup" = 1 ]; then
         info "Eye makeup of mods in co-op: choose it in the character creator, at a mirror or at a ripperdoc. A partner"
         info "without the same makeup mod sees your V without that makeup."
+    fi
+    if [ "$brows" = 1 ]; then
+        info "Eyebrows and eyelashes of mods in co-op: choose them in the character creator, at a mirror or at a ripperdoc. A"
+        info "partner without the same mod sees your V without them."
+    fi
+    if [ "$colours" = 1 ]; then
+        info "Hair Color Profiles in co-op: its colours for hair, brows, lashes and beard show for a partner only with the mod"
+        info "too, otherwise one of the game's. Pick a game colour before you remove the set: hair whose colour is gone can vanish."
     fi
     if [[ "$ADDON_HAVE" == *" Himiko_Buns_Hair "* ]] && [[ "$ADDON_HAVE" != *" Equipment_EX "* ]]; then
         info "Himiko Buns Hair's bangs are items for the face slot without Equipment-EX (--with-equipment-ex): not with"
@@ -3772,7 +3991,7 @@ step_addons() {   # the add-on sets (--with-flight, --with-mods), matched to the
     if [ "$world" = 1 ]; then
         info "Places, scenes and quests of mods in co-op (the clubs and the Afterlife opened, Brendan's quest, the ripperdocs'"
         info "and bars' scenes, the parking spots, Deceptious Bug Fixes, the apartment cats, the Immersion Patch quest fixes, the"
-        info "air traffic fix): every partner needs the same files;"
+        info "air traffic fix, the roulette tables, the canyon's fixes and the Epistrophy cab fix): every partner needs the same files;"
         info "a partner without them sees locked doors and walls where you walk, or other scenes and vote choices. Quests and"
         info "their progress are the host's."
     fi
@@ -3866,9 +4085,9 @@ step_addons() {   # the add-on sets (--with-flight, --with-mods), matched to the
         info "No store of the set sells $(listing "${console[@]}" | sed 's/, \([^,]*\)$/ or \1/'): add them in Cyber Engine Tweaks' console"
         info "(Game.AddToInventory), with the codes listed on their Nexus Mods pages."
     fi
-    if [[ "$ADDON_HAVE" == *" MaxTac_Suit "* ]] && [[ "$ADDON_HAVE" != *" Equipment_EX "* ]]; then
-        info "The MaxTac Suit's pieces are worn together with Equipment-EX (--with-equipment-ex); without it, each piece"
-        info "takes its game slot on its own."
+    if [ "${#layered[@]}" -gt 0 ] && [[ "$ADDON_HAVE" != *" Equipment_EX "* ]]; then
+        info "The pieces of $(listing_and "${layered[@]}") are worn together with Equipment-EX (--with-equipment-ex);"
+        info "without it, each piece takes its game slot on its own."
     fi
     if [ "${#ADDON_FAILED[@]}" -gt 0 ]; then   # GitHub answers 504 for some releases at times, a browser does not
         if [ "$NO_GITHUB" = 1 ]; then warn "not found in $(listing "${NEXUS_DIRS[@]}") (--no-github-downloads): download each in a browser there,"
