@@ -92,6 +92,7 @@ newworld() {   # newworld <name> <layout> [options for mkfixtures.py world]
     LC="$STEAM/userdata/12345/config/localconfig.vdf"
 }
 snapshot() { (cd "$1" && find . -print | sort && find . -type f -print0 | sort -z | xargs -0 sha256sum); }
+ini() { awk -v s="[$2]" -v k="$3" '$0 == s { on = 1; next } /^\[/ { on = 0 } on && $1 == k { print $3 }' "$1"; }   # ini <file> <section> <key>
 launch_opts() { sed -n 's/.*"LaunchOptions"[[:space:]]*"\(.*\)"$/\1/p' "$LC"; }
 set_lo() { sed -i "s|\"LaunchOptions\"\([[:space:]]*\)\".*\"\$|\"LaunchOptions\"\1\"$1\"|" "$LC"; }   # a value without quotes
 REG_KEY='Software\Wine\AppDefaults\Cyberpunk2077.exe\DllOverrides'
@@ -161,6 +162,11 @@ printf '[S]\nk = 1\n' > "$T/mg/mod.ini"; ln "$T/mg/mod.ini" "$T/mg/staged.ini"
 hp cfg ini "$T/mg/staged.ini" "$T/mg/staged.ini" "S"$'\x1f'"k"$'\x1f'"2" >/dev/null
 expect "a co-op setting written into a staged file replaces the file, and the mod's own copy it was linked to stays as it was" 'grep -qx "k = 2" "$T/mg/staged.ini" && grep -qx "k = 1" "$T/mg/mod.ini"'
 expect "the size a zip unpacks to is read from its index; an unreadable one counts 0" '[ "$(hp zipsize "$FIX/nexus/No Intro Videos-533-0-5-1721546294.zip")" = 4 ] && [ "$(hp zipsize /dev/null)" = 0 ]'
+R34Z="$FIX/round12/hycade r34-16570-1-12-1734939448.zip"; cp "$R34Z" "$T/r34-changed.zip"
+printf '\xff' | dd of="$T/r34-changed.zip" bs=1 seek=100 conv=notrunc 2>/dev/null   # the same size, one byte changed
+nverify() { NIGHTCOOP_NEXUS_KEY=x hp nexus-verify "file://$FIX/nexusapi" 3.7.0 16570 "$(cat "$FIX/nexusapi/no-md5-fid")" "$1" "$(stat -c %s "$1")" "$2" | tr '\037' '|'; }
+R34SHA="$(sha256sum "$R34Z" | cut -c1-64)"
+expect "a download Nexus Mods' MD5 index lacks is taken when its SHA-256 is the one Nexus Mods recorded for the upload; refused with another, none, or one byte changed" '[ "$(nverify "$R34Z" "$R34SHA")" = ok ] && [ "$(nverify "$R34Z" "$(printf "%064d" 0)")" = "bad|no file on Nexus Mods has its MD5" ] && [ "$(nverify "$R34Z" "")" = "bad|no file on Nexus Mods has its MD5" ] && [ "$(nverify "$T/r34-changed.zip" "$R34SHA")" = "bad|no file on Nexus Mods has its MD5" ]' "$(nverify "$R34Z" "$R34SHA")"
 
 if [ "$QUICK" = 1 ]; then   # --quick: the helpers alone; the installs into stand-in Steam folders take most of an hour
     printf '\n%d passed, %d failed (--quick: the installs are left out)\n' "$PASS" "$FAILED"
@@ -575,7 +581,7 @@ expect "the clothing stores, and the Zenitex outfits by their main files only (n
 expect "both car packs of one Nexus mod, the bikes' main file only, the Supra and the Porsche with what they need" '[ -f "$G/r6/tweaks/VirtualCarDealer/car_pack_1.yaml" ] && [ -f "$G/r6/tweaks/VirtualCarDealer/car_pack_2.yaml" ] && [ -f "$G/r6/tweaks/Methodd/Methodd_Edge/mthdd_Methodd_Edge.yaml" ] && [ -f "$G/archive/pc/mod/BDF_DRe_ArchV4.archive" ] && [ ! -e "$G/archive/pc/mod/BDF_DRe_ArchV4_Mirrors.archive" ] && [ ! -e "$G/archive/pc/mod/dre_cyberhelmets.archive" ] && [ -f "$G/r6/tweaks/VehicleExitFix/exit.yaml" ] && [ -f "$G/r6/tweaks/krnlnik/supra.yaml" ] && [ ! -e "$G/r6/tweaks/krnlnik/supra_colors.yaml" ] && [ -f "$G/r6/scripts/VMF/vmf.reds" ] && [ -f "$G/archive/pc/mod/porsche_gt3rs.archive" ] && [ ! -e "$G/archive/pc/mod/porsche_gt3rs_grey_red.archive" ] && [ -f "$G/archive/pc/mod/MaterialTextureOverride.archive" ] && [ ! -e "$G/mods/MaterialTextureOverride" ]' "$OUT"
 expect "Vehicle Customizer: its 3.1 update on top of 3.0" '[ "$(cat "$VC/init.lua")" = "-- vehicle customizer 3.1" ] && [ -f "$VC/data/appearances.json" ]' "$OUT"
 expect "co-op notes: outfits of mods, and Vehicle Customizer's language" '[[ "$OUT" == *"a partner without the same outfit mod sees a plain game piece"* ]] && [[ "$OUT" == *"Vehicle Customizer works only with the game'"'"'s language set to English"* ]]' "$OUT"
-expect "co-op note: a guest's vehicles of the mods that define them in .tweak files are not in their garage in the host's world" '[[ "$OUT" == *"Bikes of the Dark Future and Toyota Supra HKS in co-op: a guest"* ]] && [[ "$OUT" == *"these mods use .tweak files"* ]]' "$OUT"
+expect "no garage note for the cars defined in .tweak files: NightCoop 0.2.1 opens a guest's cars of any mod" '[[ "$OUT" != *"these mods use .tweak files"* ]]' "$OUT"
 printf '{"Quadra": "b"}\n' > "$VC/saved.json"   # customisations saved while playing, one in a file no archive ships
 printf '{"Quadra": "Mizutani"}\n' > "$VC/replacements.json"
 run update --yes
@@ -611,7 +617,7 @@ expect "Equipment-EX only when asked; co-op notes on outfits, layers and Vendors
 run update --yes
 expect "a rerun changes nothing, and names nothing as gone from the set" '[ $RC = 0 ] && [[ "$OUT" == *"everything is up to date; nothing to do"* ]] && [[ "$OUT" != *"no longer part of the set"* ]]' "$OUT"
 run update --yes --with-equipment-ex
-expect "--with-equipment-ex adds its main file, not the Hide Hub Buttons patch, and says partners need it too" '[ $RC = 0 ] && [ -f "$G/r6/scripts/EquipmentEx/EquipmentEx.reds" ] && [ ! -e "$G/r6/scripts/EquipmentEx/EquipmentEx.HideHubButtons.reds" ] && [[ "$OUT" == *"Equipment-EX in co-op: every partner needs it too"* ]] && [[ "$OUT" != *"worn together with Equipment-EX"* ]]' "$OUT"
+expect "--with-equipment-ex adds its main file, not the Hide Hub Buttons patch, and says what partners see of its outfits" '[ $RC = 0 ] && [ -f "$G/r6/scripts/EquipmentEx/EquipmentEx.reds" ] && [ ! -e "$G/r6/scripts/EquipmentEx/EquipmentEx.HideHubButtons.reds" ] && [[ "$OUT" == *"Equipment-EX in co-op: NightCoop shows partners one piece per game slot of your outfit"* ]] && [[ "$OUT" != *"worn together with Equipment-EX"* ]]' "$OUT"
 run check
 expect "check: Equipment-EX is kept up to date, with its frameworks" '[[ "$OUT" == *"Equipment-EX:"*"Equipment EX 1.2.10, with redscript 0.5.32, ArchiveXL 1.28.6, TweakXL 1.12.0, Codeware 1.21.2 (kept up to date by this script)"* ]]' "$OUT"
 run update --yes --without-equipment-ex
@@ -745,7 +751,6 @@ PRISTINE_CFG="$(snapshot "$G")"
 cp "$FIX/nexus/Native Settings UI 1.97 3518 1.97 2026-10-22T15-26Z cB3xB00Va.zip" "$FIX/nexus/Drive an Aerial Vehicle 13842 3.5.0 2026-10-26T16-09Z mPgaPVV1e.zip" \
    "$FIX/round3/Immersive Voice Distance (2.5) 36809 1.2.0 2026-11-07T13-09Z NEnvE30eR.zip" "$FIX/round7/Loot Icons Extension Light 16386 1.60 2026-10-27T06-36Z D2ZS2nnCn.zip" \
    "$FIX/round7/NightCityTrafficOverhaul v2.51 (2.31 and 2.5) 25552 2.51 2026-10-27T00-16Z IieOigg7C.zip" "$D/"
-ini() { awk -v s="[$2]" -v k="$3" '$0 == s { on = 1; next } /^\[/ { on = 0 } on && $1 == k { print $3 }' "$1"; }   # ini <file> <section> <key>
 run install --yes --with-mods
 expect "Mod Settings' file gets the co-op values: loot icons kept while aiming and scanning, story lines carrying further, traffic's safe defaults pinned (HARD put back to VANILLA)" '[ $RC = 0 ] && [ "$(ini "$MS" LootIconsExtension.LootIconsExtensionSSX fMS_ADSOpacity)" = 100.0 ] && [ "$(ini "$MS" LootIconsExtension.LootIconsExtensionSSX fMS_ScannerOpacity)" = 100.0 ] && [ "$(ini "$MS" ImmersiveAudioDistance.IAD_Settings quest)" = 200.0 ] && [ "$(ini "$MS" NightCityTrafficOverhaul.Settings.NCTOSettings trafficHijackDifficulty)" = VANILLA ] && [ "$(ini "$MS" NightCityTrafficOverhaul.Settings.NCTOSettings autoDistributeModdedVehicles)" = false ] && [ "$(grep -c -i "^trafficHijackDifficulty" "$MS")" = 1 ] && [ "$(ini "$MS" Other.Mod mine)" = 7 ] && [[ "$OUT" == *"settings for co-op:"* ]]' "$(cat "$MS"; echo; echo "$OUT" | grep -i setting)"
 expect "Cyber Engine Tweaks gets an overlay key that clashes with nothing, the player's other bindings kept; Drive an Aerial Vehicle's 5 moves to 9" '[ "$(python3 -I -c "import json,sys; d=json.load(open(sys.argv[1])); print(d[\"cet\"][\"overlay_key\"], d[\"SomeMod\"][\"go\"])" "$CB")" = "54043195528445952 12666373951979520" ] && [ "$(python3 -I -c "import json,sys; print([e[\"key\"] for e in json.load(open(sys.argv[1]))[\"common_keybind_table\"] if e[\"name\"] == \"toggle_appearance\"][0])" "$DAVS")" = IK_9 ]' "$(cat "$CB" "$DAVS")"
@@ -825,6 +830,64 @@ newworld round11old native; OSR="$T/os-arch"; D="$H/Downloads"; mkdir -p "$D"   
 cp "${R7_DL[@]}" "$FIX/round11/Easier Controller Sprint-26610-1-1-0-1767608356.zip" "$FIX/round11/Dash Fix-16272-1-0-0-1723844109.zip" "$D/"
 run install --yes --with-mods
 expect "Easier Controller Sprint 1.1.0 and Dash Fix 1.0.0 alone are not installed: patch 2.5 needs 1.1.1 and 1.0.1" '[ $RC = 0 ] && [ ! -e "$G/r6/scripts/EasierControllerSprint.reds" ] && [ ! -e "$G/r6/scripts/DashFix" ] && [[ "$OUT" == *"Easier Controller Sprint-26610-1-1-0-1767608356.zip is Easier Controller Sprint 1.1.0; game 2.5 needs 1.1.1 or newer"* ]] && [[ "$OUT" == *"Dash Fix-16272-1-0-0-1723844109.zip is Dash Fix 1.0.0; game 2.5 needs 1.0.1 or newer"* ]]' "$OUT"
+
+section "Mods (--with-mods): round 12: cars, character-creator options, an outfit, gameplay fixes and a roulette"
+newworld round12 native; OSR="$T/os-arch"; D="$H/Downloads"; mkdir -p "$D" "$G/archive/pc/ep1"
+PRISTINE_R12="$(snapshot "$G")"; CETM="$G/bin/x64/plugins/cyber_engine_tweaks/mods"
+R12_DL=("$FIX/nexus/Virtual Atelier 2987 1.6.4 2026-10-25T17-42Z HncQn22j7.zip" "$FIX/nexus/Virtual Car Dealer 4454 2.3.0 2026-10-25T11-18Z lcXrcZZMt.zip"
+        "$FIX/style/VMF-28744-1-0-1775609654.zip" "$FIX/style/Material and Texture Override-5266-1-2-1695907754.zip"
+        "$FIX/round3/manufacturers 7855 1.1 2026-10-31T22-56Z rxs7xRes9.zip")   # the frameworks they need, from Nexus Mods
+cp "${R12_DL[@]}" "$FIX"/round12/* "$D/"
+R12_PICKS="$(cat <<'EOF'
+Traffic_Lights_Resolved|engine/config/platform/pc/TrafficLightsResolved.ini|1773620044
+Perks_And_Skills_Fixes|r6/scripts/PerksAndSkillsFixes/PerksAndSkillsFixes.reds|YfTif74jt
+Black_Lace_Load_Fix|red4ext/plugins/BlackLaceLoadFix/BlackLaceLoadFix.dll|9ka2kyC8C
+Gambling_Props|archive/pc/mod/Gambling Props.archive|1719189892
+Playable_Roulette|archive/pc/mod/Gambling System - Roulette.archive|tvQTvsRxv
+Preem_Mirrors|archive/pc/mod/###-PreemMirrors.archive|1763951538
+Vehicle_Core|bin/x64/plugins/cyber_engine_tweaks/mods/VehicleCore/init.lua|Q6xF6lxoS
+SDH0_Vehicle_Resources|archive/pc/mod/colorpack.archive|FKtYKryyX
+Ferrari_458_Spider_WBK|archive/pc/mod/sdh0_ferrari458spwbk.archive|sHlUHDiiZ
+VW_Super_Beetle|archive/pc/mod/sdh0_vwsuperbeetle.archive|2w0lw11gD
+Nissan_GTR_Lone_Wanderer|archive/pc/mod/ctrlsec_R35unb_nomad.archive|Z0ER0Bjz2
+Nissan_GTR_Lone_Wanderer_Sound|r6/tweaks/ctrlsec/ctrlsec_UnboundR35_Nomad.yaml|KRvfRxoym
+Quadra_Turbo_Z|archive/pc/mod/ctrlsec_quadra_turbo_z.xl|UQrhQSCyE
+Quadra_Turbo_Z_Hotfix|archive/pc/mod/ctrlsec_0_quadra_turbo_z_liveries.archive|cB3xB0Tbt
+Quadra_Turbo_Z_Tuning|bin/x64/plugins/cyber_engine_tweaks/mods/ctrlsec_quadra_turbo_z/data/pointCloud.json|ymA1m8sQ3
+Bugatti_Tourbillon|archive/pc/mod/MAXSA5 --- Bugatti_Tourbillon.archive|1749928023
+Lamborghini_Diablo_VT|archive/pc/mod/diablo.archive|1737313361
+Lexus_LC500_Liberty_Walk|archive/pc/mod/grldy_Lexus_LC500_LBWK.archive.xl|1733366472
+Nissan_Skyline_R34_HYCADE|archive/pc/mod/ctrlsec_Hycade_R34.archive|1734939448
+Countach_KS_Edition|archive/pc/mod/ctrlsec_CountachUnbound.archive|1700485296
+Countach_KS_Edition_update|r6/tweaks/ctrlsec_CountachUnbound.yaml|1701907009
+Ford_Mustang_RTR_Spec_5|archive/pc/mod/KRNLNIK_RTR_Spec_5.archive|1775612450
+Audi_R8_Liberty_Walk|archive/pc/mod/KRNLNIK_Audi_R8_LBW.archive|1775612458
+Militech_WDG3|archive/pc/mod/CORNMILF_x_RadekStepan_WDG3.archive|mPgaPVXaX
+Harley-Davidson_Thundergod|archive/pc/mod/PinkyDude_MitchsGarage_HarleyDavidsonThundergod.archive|1760701549
+The_Division_Hunter_Outfit|archive/pc/mod/hunter_outfit.archive|1760199724
+Hair_Color_Profiles|archive/pc/mod/id_hair_profiles_ccxl.archive|1737536097
+Beautiful_Eyebrows|archive/pc/mod/Arkhe_Beautiful_Eyebrows_01_DEFAULT_CCXL.archive|1765149346
+Beautiful_Eyebrows_II|archive/pc/mod/Arkhe_Beautiful_Eyebrows_02_DEFAULT_CCXL.archive|1765398330
+Eyelashes_CCXL|archive/pc/mod/!!!!!!_SEDTH_ccxl eyelashes(FEM).archive|1760658021
+Eyelashes_CCXL_Male|archive/pc/mod/!!!_SEDTH_ccxl eyelashes(MALE).archive|1760658169
+EOF
+)"   # component|a file of its own|the part of its download's name that file came from
+camei() { local f; f="$(hp findci "$G" "$1" 2>/dev/null)" && grep -q -a -F -- "$2" "$f"; }   # came, the path without case
+r12own() { local c p t; while IFS='|' read -r c p t; do camei "$p" "$t" || echo "$c: $p is not from its download ($t)"; done <<<"$R12_PICKS"; }
+r12from() { grep -r -h -o -a ' from [^"]*\.zip' "$G" 2>/dev/null | sed 's/^ from //' | sort -u; }   # the downloads files came from
+r12decoy() { local s; while IFS= read -r s; do [ -e "$FIX/round12/$s" ] || continue; grep -q -F -f <(cut -d'|' -f3 <<<"$R12_PICKS") <<<"$s" || echo "$s"; done < <(r12from); }
+run install --yes --with-mods
+expect "each of the 31 components by its own file: the cars, frameworks, character-creator options, the outfit, the fixes and the roulette" '[ $RC = 0 ] && [ -z "$(r12own)" ]' "$(r12own; echo "$OUT" | grep -i -E "left out|not installed|needs ")"
+expect "no other file of these mods (the Full mirrors, the Fuller eyebrows, liveries, rims, props, tuning parts, the AudioXL sound files)" '[ -z "$(r12decoy)" ]' "$(r12decoy)"
+expect "the overlays win: the GT-R's game engine sounds, the Quadra's 2.5 hotfix, the Countach's 2.1 tweaks" 'camei r6/tweaks/ctrlsec/ctrlsec_UnboundR35_Nomad.yaml KRvfRxoym && camei archive/pc/mod/ctrlsec_quadra_turbo_z.archive cB3xB0Tbt && camei r6/tweaks/ctrlsec_CountachUnbound.yaml 1701907009' "$OUT"
+expect "left out: the entries for Dedka Car Dealership and Nova Traffic, and the Appearance Menu Mod prop lists" '[ ! -e "$CETM/Dedka Auto Shop" ] && [ ! -e "$CETM/NovaTraffic" ] && [ ! -e "$CETM/AppearanceMenuMod" ] && [ -f "$CETM/Gambling System - Roulette/init.lua" ] && [ -f "$CETM/SDH0_Ferrari458SpiderWBK/init.lua" ]' "$(ls "$CETM")"
+MS12="$(hp findci "$G" red4ext/plugins/mod_settings/user.ini 2>/dev/null)"
+expect "the Ferrari's roof key moves off O, Let There Be Flight's, to Home" '[ "$(ini "$MS12" SDH0.Ferrari458WBKSettings activationKey)" = IK_Home ]' "$(cat "$MS12" 2>/dev/null)"
+expect "the co-op notes: the traffic lights among the NPC mods, the roulette among the places, the new notes, the eyebrows and hair colours, the outfit's layers" '[[ "$OUT" == *"Mods that change how NPCs act (Traffic Lights Resolved)"* ]] && [[ "$OUT" == *"air traffic fix, the roulette tables): every partner needs the same files"* ]] && [[ "$OUT" == *"Traffic Lights Resolved shows lights, lamps and signs from further away"* ]] && [[ "$OUT" == *"Perks And Skills Fixes in co-op"* ]] && [[ "$OUT" == *"Playable Roulette in co-op: its tables"* ]] && [[ "$OUT" == *"Ferrari 458 Spider WBK: its roof opens with Home"* ]] && [[ "$OUT" == *"keep their default parts"* ]] && [[ "$OUT" == *"Eyebrows and eyelashes of mods in co-op"* ]] && [[ "$OUT" == *"Hair Color Profiles in co-op"* ]] && [[ "$OUT" == *"The pieces of The Division Hunter Outfit are worn together with Equipment-EX"* ]] && [[ "$OUT" != *"these mods use .tweak files"* ]]' "$(echo "$OUT" | grep -E 'in co-op|NPCs act|roulette tables|lights, lamps|roof opens|default parts|pieces of')"
+run update --yes
+expect "a rerun changes nothing" '[ $RC = 0 ] && [[ "$OUT" == *"everything is up to date; nothing to do"* ]]' "$OUT"
+run uninstall --yes
+expect "uninstall puts the game folder back exactly" '[ $RC = 0 ] && [ "$PRISTINE_R12" = "$(snapshot "$G")" ]' "$(diff <(echo "$PRISTINE_R12") <(snapshot "$G"))"
 
 # ------------------------------------------------------ Nexus Mods API ----
 section "Nexus Mods API: with a Premium account's key, the script downloads the Nexus mods itself"

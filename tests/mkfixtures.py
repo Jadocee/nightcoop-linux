@@ -404,6 +404,104 @@ ROUND11 = {   # round 11: gameplay fixes and quest fixes; the chosen files and t
     'Fix Advert Animations-17726-1-1-1745805020.zip': ['archive/pc/mod/!Fix_Advert_Animations.archive'],
     'AirTrafficDupeFix 31304 1.0.0 2026-07-08T02-36Z 5em9eoIRj.zip': ['archive/pc/mod/AirTrafficDupeFix.archive'],
 }
+ROUND12 = {   # round 12: cars, character-creator options, an outfit, gameplay fixes and a roulette; the chosen
+    # files (their real game folders, from the downloads) and the files their rules pass over
+    'KRNLNIK Audi R8 LBW SPOILERS STICKERS AND AERODISC-8827-1-0-1689974360.zip': ['R8 optional/spoiler lbw/KRNLNIK_R8_Optional_spoiler_lbw.archive', 'R8 optional/lbw stickers/KRNLNIK_R8_Optional_lbw_stickers.archive', 'R8 optional/front rotiform aerodisc/KRNLNIK_R8_Optional_rotiform_aerodisc.archive', 'R8 optional/ducktale/KRNLNIK_R8_Optional_ducktale.archive'],
+    'KRNLNIK Audi R8 LBW-8827-1-3-1775612458.zip': ['archive/pc/mod/KRNLNIK_Audi_R8_LBW.archive', 'archive/pc/mod/audi_r8_lbw.xl', 'r6/tweaks/krnlnik/audi_r8_lbw.tweak', 'r6/tweaks/krnlnik/audi_r8_lbw_ICONS.tweak'],
+    'KRNLNIK RTR Spec 5-8912-1-4-1775612450.zip': ['archive/pc/mod/KRNLNIK_RTR_Spec_5.archive', 'archive/pc/mod/rtr_spec5.xl', 'r6/tweaks/krnlnik/ford_rtr_spec5.tweak', 'r6/tweaks/krnlnik/ford_rtr_spec5_ICONS.tweak'],
+    'Countach (without Neon)-11110-1-0-1700485296.zip': ['archive/pc/mod/ctrlsec_CountachUnbound.archive', 'archive/pc/mod/ctrlsec_CountachUnbound.xl', 'r6/tweaks/ctrlsec_CountachUnbound.yaml'],
+    'Red neon-11110-1-0-1700485339.zip': ['archive/pc/mod/ctrlsec_CountachUnbound_Neon.archive'],
+    'blue neon-11110-1-0-1700485366.zip': ['archive/pc/mod/blue_neon.archive'],
+    'gren neon-11110-1-0-1700485385.zip': ['archive/pc/mod/gren_neon.archive'],
+    'orange neon-11110-1-0-1700485401.zip': ['archive/pc/mod/orange_neon.archive'],
+    'purple or pink neon-11110-1-0-1700485443.zip': ['archive/pc/mod/pink_neon.archive'],
+    'yellow-11110-1-0-1700485461.zip': ['archive/pc/mod/yellow.archive'],
+    'Countach (with Neon)-11110-1-0-1700489562.zip': ['archive/pc/mod/Countach_with_Neon.archive'],
+    'Countach (with Neon) (No Spoiler)-11110-1-0-1700551977.zip': ['archive/pc/mod/Countach_with_Neon_No_Spoiler.archive'],
+    'Countach (without Neon) (No Spoiler)-11110-1-0-1700552040.zip': ['archive/pc/mod/Countach_without_Neon_No_Spoiler.archive'],
+    'alternative wheels and tires-11110-1-0-1700889034.zip': ['archive/pc/mod/alternative_wheels_and_tires.archive'],
+    'Countach tweaks 2.1 update-11110-1-11-1701907009.zip': ['r6/tweaks/ctrlsec_CountachUnbound.yaml'],
+    'Gambling Props-15229-1-0-1-1719189892.zip': ['archive/pc/mod/Gambling Props.archive', 'bin/x64/plugins/cyber_engine_tweaks/mods/AppearanceMenuMod/Collabs/Custom Props/boe6_poker_chip.lua'],
+    'Gambling System - Roulette Props-15450-1-0-0-1748734679.zip': ['bin/x64/plugins/cyber_engine_tweaks/mods/AppearanceMenuMod/Collabs/Custom Props/boe6_gambling_system_roulette.lua'],
+    'gambling-system-roulette-exampleaddon-15450-1-0-0-1765334481.zip': ['archive/pc/mod/gambling_system_roulette_exampleaddon.archive'],
+    'Gambling System - Roulette 15450 1.1.4 2026-11-05T02-23Z tvQTvsRxv.zip': ['archive/pc/mod/Gambling System - Roulette.archive', 'archive/pc/mod/gambling_system_roulette.xl', 'archive/pc/mod/gambling_system_roulette_auto_generated.xl', 'bin/x64/plugins/cyber_engine_tweaks/mods/Gambling System - Roulette/EntityManager.lua', 'bin/x64/plugins/cyber_engine_tweaks/mods/Gambling System - Roulette/External/Cron.lua', 'bin/x64/plugins/cyber_engine_tweaks/mods/Gambling System - Roulette/External/GameLocale.lua', 'bin/x64/plugins/cyber_engine_tweaks/mods/Gambling System - Roulette/External/GameSession.lua', 'bin/x64/plugins/cyber_engine_tweaks/mods/Gambling System - Roulette/External/GameUI.lua', 'bin/x64/plugins/cyber_engine_tweaks/mods/Gambling System - Roulette/External/interactionUI.lua', 'bin/x64/plugins/cyber_engine_tweaks/mods/Gambling System - Roulette/HolographicValueDisplay.lua', 'bin/x64/plugins/cyber_engine_tweaks/mods/Gambling System - Roulette/JsonData.lua', 'bin/x64/plugins/cyber_engine_tweaks/mods/Gambling System - Roulette/README.md', 'bin/x64/plugins/cyber_engine_tweaks/mods/Gambling System - Roulette/RelativeCoordinateCalulator.lua', 'bin/x64/plugins/cyber_engine_tweaks/mods/Gambling System - Roulette/RouletteAnimations.lua', 'bin/x64/plugins/cyber_engine_tweaks/mods/Gambling System - Roulette/RouletteCoordinates.lua', 'bin/x64/plugins/cyber_engine_tweaks/mods/Gambling System - Roulette/RouletteMainMenu.lua', 'bin/x64/plugins/cyber_engine_tweaks/mods/Gambling System - Roulette/SpotManager.lua', 'bin/x64/plugins/cyber_engine_tweaks/mods/Gambling System - Roulette/TableManager.lua', 'bin/x64/plugins/cyber_engine_tweaks/mods/Gambling System - Roulette/addons/null.txt', 'bin/x64/plugins/cyber_engine_tweaks/mods/Gambling System - Roulette/chipBetPiles.lua', 'bin/x64/plugins/cyber_engine_tweaks/mods/Gambling System - Roulette/chipPlayerPile.lua', 'bin/x64/plugins/cyber_engine_tweaks/mods/Gambling System - Roulette/chipUtils.lua', 'bin/x64/plugins/cyber_engine_tweaks/mods/Gambling System - Roulette/init.lua', 'bin/x64/plugins/cyber_engine_tweaks/mods/Gambling System - Roulette/lang/en-us.lua'],
+    'plain black livery with white decals-16570-1-1725880133.zip': ['archive/pc/mod/ctrlsec_0_Hycade_R34_Livery.archive'],
+    'plain white livery with black decals-16570-1-1725880177.zip': ['archive/pc/mod/ctrlsec_0_Hycade_R34_Livery.archive'],
+    'uv template for livery creators-16570-1-1725884236.zip': ['archive/pc/mod/uv_template_for_livery_creators.archive'],
+    'infinity rims-16570-1-11-1728516252.zip': ['archive/pc/mod/ctrlsec_0_Hycade_R34_wheels.archive'],
+    'hycade r34-16570-1-12-1734939448.zip': ['archive/pc/mod/ctrlsec_Hycade_R34.archive', 'archive/pc/mod/ctrlsec_Hycade_R34.xl', 'bin/x64/plugins/cyber_engine_tweaks/mods/NovaTraffic/community/Hycade_r34.json', 'r6/tweaks/ctrlsec/ctrlsec_Hycade_R34.yaml'],
+    'LC 500 Paintjob Tutorial-16979-1-0-1728122765.zip': ['archive/pc/mod/LC_500_Paintjob_Tutorial.archive'],
+    'LC 500 Paintjob resource file-16979-1-1728122801.zip': ['grldy/lexus_lc500_lbwk/color/material_instance/lc500_user.mi'],
+    'LC 500 Modifications-16979-1-2-1728323916.zip': ['archive/pc/mod/LC_500_Modifications.archive'],
+    'Lexus LC 500 All in One-16979-1-4-1733366472.zip': ['Lexus LC 500 All in One/README!.txt', 'Lexus LC 500 All in One/archive/pc/mod/grldy_Lexus_LC500_LBWK.archive.xl', 'Lexus LC 500 All in One/archive/pc/mod/grldy_lexus_lc500_lbwk.archive', 'Lexus LC 500 All in One/lbwk remap.png', 'Lexus LC 500 All in One/r6/tweaks/GRLDYLEE/grldy_Lexus_LC500_LBWK.yaml'],
+    'Lexus LC 500 Dedka Car Dealership Support-16979-1-0-1761938730.zip': ['bin/x64/plugins/cyber_engine_tweaks/mods/Dedka Auto Shop/cars/ra5532.json', 'bin/x64/plugins/cyber_engine_tweaks/mods/Dedka Auto Shop/cars', 'bin/x64/plugins/cyber_engine_tweaks/mods/Dedka Auto Shop', 'bin/x64/plugins/cyber_engine_tweaks/mods', 'bin/x64/plugins/cyber_engine_tweaks', 'bin/x64/plugins', 'bin/x64', 'bin'],
+    'ColorPack-17998-1-1-1732861384.zip': ['archive/pc/mod/ColorPack.archive'],
+    'Diablo_MainFile-17998-0-9-4-5-1737313361.zip': ['archive/pc/mod/diablo.archive', 'archive/pc/mod/diablo.archive.xl', 'r6/scripts/diablo/diablo_popup.reds', 'r6/tweaks/diablo/diablo.yaml'],
+    'Tuning Parts-17998-0-9-4-1737450683.zip': ['archive/pc/mod/Tuning_Parts.archive'],
+    'Beautiful Eyebrows - 01 - Default - CCXL-18783-2-0-1765149346.zip': ['archive/pc/mod/Arkhe_Beautiful_Eyebrows_01_DEFAULT_CCXL.archive', 'archive/pc/mod/Arkhe_Beautiful_Eyebrows_01_DEFAULT_CCXL.xl'],
+    'Beautiful Eyebrows - 01 - Fuller - CCXL-18783-1-0-1765149390.zip': ['archive/pc/mod/Beautiful_Eyebrows_01_Fuller_CCXL.archive'],
+    'Hair Profiles CCXL 1.02-19115-1-02-1737536097.zip': ['archive/pc/mod/id_hair_profiles_ccxl.archive', 'archive/pc/mod/id_hair_profiles_ccxl.xl', 'r6/tweaks/id_hair_profiles_ccxl/id_hair_profiles_ccxl_OptionsIcons.yaml'],
+    'R35 nomad road tires and rims-20237-1-0-1741526632.zip': ['archive/pc/mod/R35_nomad_road_tires_and_rims.archive'],
+    'r35 nomad road tires and turbofan infinite-20237-1-0-1741526661.zip': ['archive/pc/mod/r35_nomad_road_tires_and_turbofan_infinite.archive'],
+    'UV for livery creators-20237-uv-1741533734.zip': ['archive/pc/mod/UV_for_livery_creators.archive'],
+    'R35 nomad silver exhaust-20237-1-0-1741544043.zip': ['archive/pc/mod/R35_nomad_silver_exhaust.archive'],
+    'R35 nomad disable neon trims-20237-1-03-1742304672.zip': ['archive/pc/mod/R35_nomad_disable_neon_trims.archive'],
+    'r35 nomad enable neon-20237-1-05-1753032683.zip': ['archive/pc/mod/r35_nomad_enable_neon.archive'],
+    'r35 nomad livery 2 20237 1.1 2026-10-31T09-20Z tvQTvs8LU.zip': ['archive/pc/mod/r35_nomad_livery_2.archive'],
+    'r35 nomad clean crystalcoat 20237 1.1 2026-10-31T09-20Z NEnvE3WVV.zip': ['archive/pc/mod/r35_nomad_clean_crystalcoat.archive'],
+    'r35 nomad livery 1 20237 1.1 2026-10-31T09-20Z X32s3EhPN.zip': ['archive/pc/mod/r35_nomad_livery_1.archive'],
+    '1. R35 nomad main 20237 1.1 2026-10-31T09-26Z Z0ER0Bjz2.zip': ['archive/pc/mod/ctrlsec_R35unb_nomad.archive', 'archive/pc/mod/ctrlsec_R35unb_nomad.xl', 'r6/tweaks/ctrlsec/ctrlsec_UnboundR35_Nomad.yaml'],
+    '2. R35 nomad hozuki sti engine sounds 20237 1.1 2026-10-31T09-31Z LACBAIvJC.zip': ['archive/pc/mod/2_R35_nomad_hozuki_sti_engine_sounds.archive'],
+    '2. R35 nomad shion nomad engine sounds 20237 1.1 2026-10-31T09-32Z KRvfRxoym.zip': ['r6/tweaks/ctrlsec/ctrlsec_UnboundR35_Nomad.yaml'],
+    'Vw Beetle Livery Template 20785 1.0 2026-09-29T18-16Z ozVyzbX9j.zip': ['archive/pc/mod/Vw_Beetle_Livery_Template.archive'],
+    'VW Super Beetle 20785 2.0.2 2026-10-21T09-30Z 2w0lw11gD.zip': ['archive/pc/mod/sdh0_vwsuperbeetle.archive', 'archive/pc/mod/sdh0_vwsuperbeetle.xl', 'bin/x64/plugins/cyber_engine_tweaks/mods/SDH0_VWSuperBeetle/data/idlePaths.json', 'bin/x64/plugins/cyber_engine_tweaks/mods/SDH0_VWSuperBeetle/data/pointCloud.json', 'bin/x64/plugins/cyber_engine_tweaks/mods/SDH0_VWSuperBeetle/init.lua', 'r6/scripts/SDH0_VWSuperBeetle/sdh0_vwsuperbeetle_audio.reds', 'r6/scripts/SDH0_VWSuperBeetle/sdh0_vwsuperbeetle_meshconfig.reds', 'r6/tweaks/SDH0_VWSuperBeetle/sdh0_vwsuperbeetle.yaml'],
+    'SDH0 Vehicle Resources 20956 2.0.1 2026-10-06T02-03Z FKtYKryyX.zip': ['archive/pc/mod/colorpack.archive', 'archive/pc/mod/sdh0_colorpack.xl', 'r6/tweaks/SDH0_ColorPack/sdh0_colorpack.yaml'],
+    'PROP - Harley-Davidson Thundergod-21522-1-0-0-1747404800.zip': ['archive/pc/mod/PinkyDude_MitchsGarage_HarleyDavidsonThundergod_PROP.archive', 'bin/x64/plugins/cyber_engine_tweaks/mods/AppearanceMenuMod/Collabs/Custom Props/PinkyDude_MitchsGarage_HarleyDavidsonThundergod_PROP.lua', 'bin/x64/plugins/cyber_engine_tweaks/mods/entSpawner/data/favorite/Motorbike_1747313698.json'],
+    'Thundergod Template for Pose Making-21522-1-0-0-1747404882.zip': ['archive/pc/mod/Thundergod_Template_for_Pose_Making.archive'],
+    'Harley-Davidson Thundergod-21522-1-1-0-1760701549.zip': ['archive/pc/mod/PinkyDude_MitchsGarage_HarleyDavidsonThundergod.archive', 'archive/pc/mod/PinkyDude_MitchsGarage_HarleyDavidsonThundergod.xl', 'bin/x64/plugins/cyber_engine_tweaks/mods/Dedka Auto Shop/cars/ra1605.json', 'r6/tweaks/PinkyDude_MitchsGarage/pkd_hdthundergod.yaml'],
+    'Bugatti Tourbillon - Main-22107-1-0-0-1749928023.zip': ['archive/pc/mod/MAXSA5 --- Bugatti_Tourbillon.archive', 'archive/pc/mod/MAXSA5 --- Bugatti_Tourbillon.xl', 'r6/scripts/bugatti_v16_tourbillon/bugatti_v16_tourbillon_mediaplayer.reds', 'r6/tweaks/bugatti_v16_tourbillon/bugatti_v16_tourbillon.tweak', 'r6/tweaks/bugatti_v16_tourbillon/bugatti_v16_tourbillon_ICONS.tweak'],
+    'Bugatti Tourbillon - Extras-22107-1-0-5-1750141617.zip': ['archive/pc/mod/Bugatti_Tourbillon_Extras.archive'],
+    'The Division Hunter Outfit-24902-1-1-1760199724.zip': ['archive/pc/mod/hunter_outfit.archive', 'archive/pc/mod/hunter_outfit.xl', 'bin/x64/plugins/cyber_engine_tweaks/mods/AppearanceMenuMod/Collabs/Custom Props/hunter_outfit/hunter_props.lua', 'r6/scripts/Hunter Outfit/shd_armory_store.reds', 'r6/scripts/Hunter Outfit/shd_patches_store.reds', 'r6/tweaks/hunter_outfit/hunter_outfit.yaml'],
+    'Livery Template-24910-1-0-1760549637.zip': ['archive/pc/mod/Livery_Template.archive'],
+    '458spiderWBK MainFile 24910 2.0.0 2026-10-06T00-52Z sHlUHDiiZ.zip': ['archive/pc/mod/sdh0_ferrari458spwbk.archive', 'archive/pc/mod/sdh0_ferrari458spwbk.xl', 'bin/x64/plugins/cyber_engine_tweaks/mods/SDH0_Ferrari458SpiderWBK/data/pointCloud.json', 'bin/x64/plugins/cyber_engine_tweaks/mods/SDH0_Ferrari458SpiderWBK/init.lua', 'r6/scripts/SDH0_Ferrari458SpiderWBK/sdh0_ferrari458spwbk_audio.reds', 'r6/scripts/SDH0_Ferrari458SpiderWBK/sdh0_ferrari458spwbk_meshconfig.reds', 'r6/scripts/SDH0_Ferrari458SpiderWBK/sdh0_ferrari458spwbk_roof.reds', 'r6/tweaks/SDH0_Ferrari458SpiderWBK/sdh0_ferrari458spwbk.yaml'],
+    "Ferrari458SpiderWBK SDH0's Vehicle Audio Ver 24910 1.0 2026-10-09T07-17Z D2ZS2nM76.zip": ['archive/pc/mod/Ferrari458SpiderWBK_SDH0_s_Vehicle_Audio_Ver.archive'],
+    'Sedth_CCXL_eyelashes_FEM_V1-25068-2-1760658021.zip': ['archive/pc/mod/!!!!!!_SEDTH_ccxl eyelashes(FEM).archive', 'archive/pc/mod/!!!!!!_SEDTH_ccxl eyelashes(FEM).xl'],
+    'Sedth_CCXL_eyelashes_FEM_V2-25068-2-1760658036.zip': ['archive/pc/mod/Sedth_CCXL_eyelashes_FEM_V2.archive'],
+    'Sedth_CCXL_eyelashes_FEM_V3-25068-2-1760658051.zip': ['archive/pc/mod/Sedth_CCXL_eyelashes_FEM_V3.archive'],
+    'Sedth_CCXL_eyelashes_FEM_V4-25068-2-1760658064.zip': ['archive/pc/mod/Sedth_CCXL_eyelashes_FEM_V4.archive'],
+    'Sedth_CCXL_eyelashes_FEM_V1_EKT_Asian-25068-2-1760658112.zip': ['archive/pc/mod/Sedth_CCXL_eyelashes_FEM_V1_EKT_Asian.archive'],
+    'Sedth_CCXL_eyelashes_FEM_V2_EKT_Asian-25068-2-1760658135.zip': ['archive/pc/mod/Sedth_CCXL_eyelashes_FEM_V2_EKT_Asian.archive'],
+    'SEDTH_ccxl eyelashes(MALE)-25068-1-1760658169.zip': ['archive/pc/mod/!!!_SEDTH_ccxl eyelashes(MALE).archive', 'archive/pc/mod/!!!_SEDTH_ccxl eyelashes(MALE).xl'],
+    'Preem Mirrors (Full)-25633-1-3-1b-1763678395.zip': ['archive/pc/mod/Preem_Mirrors_Full.archive'],
+    'Preem Mirrors - Enable Player Reflection - INI-25633-1-0-0c-1763947413.zip': ['engine/config/platform/pc/!-enableplayeravatar.ini'],
+    'Preem Mirrors (Lite)-25633-1-3-1-1763951538.zip': ['archive/pc/mod/###-PreemMirrors.archive'],
+    'Beautiful Eyebrows - 02 - Default - CCXL-26168-1-0-1765398330.zip': ['archive/pc/mod/Arkhe_Beautiful_Eyebrows_02_DEFAULT_CCXL.archive', 'archive/pc/mod/Arkhe_Beautiful_Eyebrows_02_DEFAULT_CCXL.xl'],
+    'Beautiful Eyebrows - 02 - Fuller - CCXL-26168-1-0-1765398379.zip': ['archive/pc/mod/Beautiful_Eyebrows_02_Fuller_CCXL.archive'],
+    '404NotFound Traffic Lights Resolved-27956-1-8-4-1773620044.zip': ['engine/config/platform/pc/TrafficLightsResolved.ini', 'r6/scripts/TrafficLightsResolved/Init.reds'],
+    'Disable Crystalcoat On Rims-29122-1-0-1778955915.zip': ['archive/pc/mod/Disable_Crystalcoat_On_Rims.archive'],
+    'Swap Rims With Turbofan-29122-1-1778955992.zip': ['archive/pc/mod/Swap_Rims_With_Turbofan.archive'],
+    'Blue turbofan color-29122-1-1778956180.zip': ['archive/pc/mod/Blue_turbofan_color.archive'],
+    'Darkblue turbofan color-29122-1-1778956198.zip': ['archive/pc/mod/Dark_blue_turbofan_color.archive'],
+    'Green turbofan color-29122-1-1778956208.zip': ['archive/pc/mod/Green_turbofan_color.archive'],
+    'Limegreen turbofan color-29122-1-1778956218.zip': ['archive/pc/mod/Lime_green_turbofan_color.archive'],
+    'Orange turbofan color-29122-1-1778956228.zip': ['archive/pc/mod/Orange_turbofan_color.archive'],
+    'Pink turbofan color-29122-1-1778956238.zip': ['archive/pc/mod/Pink_turbofan_color.archive'],
+    'Purple turbofan color-29122-1-1778956268.zip': ['archive/pc/mod/Purple_turbofan_color.archive'],
+    'Red turbofan color-29122-1-1778956284.zip': ['archive/pc/mod/Red_turbofan_color.archive'],
+    'White turbofan color-29122-1-1778956293.zip': ['archive/pc/mod/White_turbofan_color.archive'],
+    'Yellow turbofan color-29122-1-1778956301.zip': ['archive/pc/mod/Yellow_turbofan_color.archive'],
+    'uv maps for livery creators-29122-uv-1778960410.zip': ['archive/pc/mod/uv_maps_for_livery_creators.archive'],
+    'Neon Enabler 29122 2.0 2026-10-03T13-44Z PYMIYqn6Y.zip': ['archive/pc/mod/Neon_Enabler.archive'],
+    'More Grip 29122 2.1 2026-10-04T21-19Z NEnvE3qbM.zip': ['archive/pc/mod/More_Grip.archive'],
+    'Quadra Turbo-Z - Garage Tuning Scripts 29122 2.11 2026-10-05T15-53Z ymA1m8sQ3.zip': ['bin/x64/plugins/cyber_engine_tweaks/mods/ctrlsec_quadra_turbo_z/data/pointCloud.json', 'bin/x64/plugins/cyber_engine_tweaks/mods/ctrlsec_quadra_turbo_z/init.lua', 'bin/x64/plugins/cyber_engine_tweaks/mods/ctrlsec_quadra_turbo_z_vtech/data/pointCloud.json', 'bin/x64/plugins/cyber_engine_tweaks/mods/ctrlsec_quadra_turbo_z_vtech/init.lua', 'r6/scripts/ctrlsec/Quadra Turbo Z/ctrlsec_quadra_turbo_z_meshconfig.reds', 'r6/scripts/ctrlsec/Quadra Turbo Z/ctrlsec_quadra_turbo_z_vtech_meshconfig.reds'],
+    'Quadra Turbo-Z 29122 2.11 2026-10-05T15-55Z UQrhQSCyE.zip': ['archive/pc/mod/ctrlsec_0_quadra_turbo_z_liveries.archive', 'archive/pc/mod/ctrlsec_quadra_turbo_z.archive', 'archive/pc/mod/ctrlsec_quadra_turbo_z.xl', 'bin/x64/plugins/cyber_engine_tweaks/mods/Dedka Auto Shop/cars/ra5393.json', 'bin/x64/plugins/cyber_engine_tweaks/mods/NovaTraffic/community/quadra_turbo_z.json', 'r6/tweaks/ctrlsec/ctrlsec_Quadra_Turbo_Z.yaml'],
+    'Turbo Z update 2.5 hotfix 29122 2.11.1 2026-10-31T10-24Z cB3xB0Tbt.zip': ['archive/pc/mod/ctrlsec_0_quadra_turbo_z_liveries.archive', 'archive/pc/mod/ctrlsec_quadra_turbo_z.archive'],
+    'Vehicle Core 31684 1.0.0 2026-09-13T21-12Z Q6xF6lxoS.zip': ['bin/x64/plugins/cyber_engine_tweaks/mods/VehicleCore/init.lua', 'bin/x64/plugins/cyber_engine_tweaks/mods/VehicleCore/lang/de_de.json', 'bin/x64/plugins/cyber_engine_tweaks/mods/VehicleCore/lang/en_us.json', 'bin/x64/plugins/cyber_engine_tweaks/mods/VehicleCore/lang/ko_kr.json', 'bin/x64/plugins/cyber_engine_tweaks/mods/VehicleCore/modules/GameUI.lua', 'bin/x64/plugins/cyber_engine_tweaks/mods/VehicleCore/modules/Helpers.lua', 'bin/x64/plugins/cyber_engine_tweaks/mods/VehicleCore/modules/Localization.lua', 'bin/x64/plugins/cyber_engine_tweaks/mods/VehicleCore/modules/Palettes.lua', 'bin/x64/plugins/cyber_engine_tweaks/mods/VehicleCore/modules/Utils.lua', 'r6/scripts/VehicleCore/VehicleBase.reds', 'r6/scripts/VehicleCore/VehicleCoreBridge.reds', 'r6/scripts/VehicleCore/VehicleEntityWatcher.reds', 'r6/scripts/VehicleCore/VehicleMeshMapping.reds', 'r6/scripts/VehicleCore/VehicleSystem.reds'],
+    'CORNMILF X RadekStepan WDG3 37099 1 2026-11-03T04-00Z mPgaPVXaX.zip': ['archive/pc/mod/CORNMILF_x_RadekStepan_WDG3.archive', 'archive/pc/mod/crs_wedge_3.xl', 'r6/scripts/cornmilf_cars/wdg3_headlight_block.reds', 'r6/tweaks/cornmilf/crs_wedge_3.tweak', 'r6/tweaks/cornmilf/crs_wedge_3_ICONS.tweak'],
+    'WDG3 Alt Front RIms 37099 1 2026-11-03T04-06Z 5em9eol9i.zip': ['archive/pc/mod/###WDG3_Alt_Front_Rims.archive'],
+    'Perks And Skills Fixes 1.0.0 37252 1.0.0 2026-11-04T16-24Z YfTif74jt.zip': ['r6/scripts/PerksAndSkillsFixes/PerksAndSkillsFixes.reds', 'r6/scripts/PerksAndSkillsFixes/Texts.en-us.reds', 'r6/scripts/PerksAndSkillsFixes/Texts.reds', 'r6/tweaks/PerksAndSkillsFixes.yaml'],
+    'Black Lace Load Fix 1.0 37404 1 2026-11-05T19-15Z 9ka2kyC8C.zip': ['LICENSE', 'red4ext/plugins/BlackLaceLoadFix/BlackLaceLoadFix.dll', 'red4ext/plugins/BlackLaceLoadFix/BlackLaceLoadFix.ini', 'red4ext/plugins/BlackLaceLoadFix/BlackLaceLoadFix.pdb', 'red4ext/plugins/BlackLaceLoadFix/LICENSE', 'red4ext/plugins/BlackLaceLoadFix/RED4ext.SDK.LICENSE.txt', 'red4ext/plugins/BlackLaceLoadFix/RED4ext.SDK.THIRD_PARTY_LICENSES.txt'],
+}
 ROUND9_FILES = {   # real contents, where the tests read a file: a key binding to move, settings to keep
     ('Always First Equip 2557 2.2.0 2026-10-24T19-15Z mPgaPVVHG.zip', 'r6/input/AlwaysFirstEquip.xml'): b'<?xml version="1.0"?>\r\n<bindings>\r\n    <!-- inputContexts -->\r\n    <context name="AlwaysFirstEquip" >\r\n        <action name="AlwaysFirstEquip" map="AlwaysFirstEquip_Button" />\r\n        <action name="SafeWeapon" map="SafeWeapon_Button" />\r\n    </context>\r\n\r\n    <context name="Items" append="true">\r\n        <include name="AlwaysFirstEquip" />\r\n    </context>\r\n\t\r\n\t<hold action="AlwaysFirstEquip" timeout="0.4" />\r\n\r\n    <!-- inputUserMapping -->\r\n\t<mapping name="AlwaysFirstEquip_Button" type="Button" >\r\n        <button id="IK_F2" overridableUI="afeMainHotkey" />\r\n    </mapping>\r\n\t<mapping name="SafeWeapon_Button" type="Button" >\r\n        <button id="IK_F3" overridableUI="afeAdditionalHotkey" />\r\n    </mapping>\r\n</bindings>\r\n',
     ('Sit Anywhere 1.4-7299-1-4-1762025971.zip', 'bin/x64/plugins/cyber_engine_tweaks/mods/sitAnywhere/config/config.json'):
@@ -693,6 +791,9 @@ def archives(fix):
     for name, paths in ROUND11.items():
         zname = re.sub(r'\.(rar|7z)$', '.zip', name)
         zipdir(f'{fix}/round11/{zname}', {p: placeholder(p, name) for p in paths})
+    for name, paths in ROUND12.items():
+        zname = re.sub(r'\.(rar|7z)$', '.zip', name)
+        zipdir(f'{fix}/round12/{zname}', {p: placeholder(p, name) for p in paths})
     eqex = 'Equipment-EX 6945 1.2.11 2026-11-06T10-00Z Lt7Qw2zXa.zip'   # a later release, only on Nexus Mods
     zipdir(f'{fix}/nexus-later/{eqex}', {p: placeholder(p, eqex) for p in ROUND3['Equipment-EX 6945 1.2.10 2026-10-25T21-07Z k8Iw8mmPd.zip']})
     nexus_api(fix, sorted({r.split()[7].split(':')[1] for r in table if r.split()[7].startswith('nexus:')}, key=int))
@@ -706,9 +807,70 @@ NEXUS_CATEGORY = {   # what is not a main file
     'No Intro Videos-533-0-6-1730000000.zip': 'ARCHIVED',   # newer than 0.5, and no game folders: never taken
     'Virtual Atelier - Basic-2987-1-2-4-1706771312.zip': 'OLD_VERSION',
     'Vehicle Customizer SVE 3dot1 9034 3.1 2026-09-21T11-33Z tvQTvsQ74.zip': 'UPDATE',
+    'Red neon-11110-1-0-1700485339.zip': 'MISCELLANEOUS',
+    'blue neon-11110-1-0-1700485366.zip': 'MISCELLANEOUS',
+    'gren neon-11110-1-0-1700485385.zip': 'MISCELLANEOUS',
+    'orange neon-11110-1-0-1700485401.zip': 'MISCELLANEOUS',
+    'purple or pink neon-11110-1-0-1700485443.zip': 'MISCELLANEOUS',
+    'yellow-11110-1-0-1700485461.zip': 'MISCELLANEOUS',
+    'Countach (with Neon) (No Spoiler)-11110-1-0-1700551977.zip': 'OPTIONAL',
+    'Countach (without Neon) (No Spoiler)-11110-1-0-1700552040.zip': 'OPTIONAL',
+    'alternative wheels and tires-11110-1-0-1700889034.zip': 'OPTIONAL',
+    'Countach tweaks 2.1 update-11110-1-11-1701907009.zip': 'UPDATE',
+    'Gambling System - Roulette Props-15450-1-0-0-1748734679.zip': 'OPTIONAL',
+    'gambling-system-roulette-exampleaddon-15450-1-0-0-1765334481.zip': 'OPTIONAL',
+    'plain black livery with white decals-16570-1-1725880133.zip': 'OPTIONAL',
+    'plain white livery with black decals-16570-1-1725880177.zip': 'OPTIONAL',
+    'uv template for livery creators-16570-1-1725884236.zip': 'MISCELLANEOUS',
+    'infinity rims-16570-1-11-1728516252.zip': 'OPTIONAL',
+    'LC 500 Paintjob Tutorial-16979-1-0-1728122765.zip': 'MISCELLANEOUS',
+    'LC 500 Paintjob resource file-16979-1-1728122801.zip': 'MISCELLANEOUS',
+    'LC 500 Modifications-16979-1-2-1728323916.zip': 'OPTIONAL',
+    'Lexus LC 500 Dedka Car Dealership Support-16979-1-0-1761938730.zip': 'OPTIONAL',
+    'ColorPack-17998-1-1-1732861384.zip': 'OPTIONAL',
+    'Tuning Parts-17998-0-9-4-1737450683.zip': 'OPTIONAL',
+    'R35 nomad road tires and rims-20237-1-0-1741526632.zip': 'MISCELLANEOUS',
+    'r35 nomad road tires and turbofan infinite-20237-1-0-1741526661.zip': 'MISCELLANEOUS',
+    'UV for livery creators-20237-uv-1741533734.zip': 'MISCELLANEOUS',
+    'R35 nomad silver exhaust-20237-1-0-1741544043.zip': 'MISCELLANEOUS',
+    'R35 nomad disable neon trims-20237-1-03-1742304672.zip': 'MISCELLANEOUS',
+    'r35 nomad enable neon-20237-1-05-1753032683.zip': 'MISCELLANEOUS',
+    'r35 nomad livery 2 20237 1.1 2026-10-31T09-20Z tvQTvs8LU.zip': 'MISCELLANEOUS',
+    'r35 nomad clean crystalcoat 20237 1.1 2026-10-31T09-20Z NEnvE3WVV.zip': 'MISCELLANEOUS',
+    'r35 nomad livery 1 20237 1.1 2026-10-31T09-20Z X32s3EhPN.zip': 'MISCELLANEOUS',
+    '2. R35 nomad hozuki sti engine sounds 20237 1.1 2026-10-31T09-31Z LACBAIvJC.zip': 'OPTIONAL',
+    '2. R35 nomad shion nomad engine sounds 20237 1.1 2026-10-31T09-32Z KRvfRxoym.zip': 'OPTIONAL',
+    'Vw Beetle Livery Template 20785 1.0 2026-09-29T18-16Z ozVyzbX9j.zip': 'MISCELLANEOUS',
+    'PROP - Harley-Davidson Thundergod-21522-1-0-0-1747404800.zip': 'OPTIONAL',
+    'Thundergod Template for Pose Making-21522-1-0-0-1747404882.zip': 'MISCELLANEOUS',
+    'Bugatti Tourbillon - Extras-22107-1-0-5-1750141617.zip': 'OPTIONAL',
+    'Livery Template-24910-1-0-1760549637.zip': 'MISCELLANEOUS',
+    "Ferrari458SpiderWBK SDH0's Vehicle Audio Ver 24910 1.0 2026-10-09T07-17Z D2ZS2nM76.zip": 'OPTIONAL',
+    'Sedth_CCXL_eyelashes_FEM_V1_EKT_Asian-25068-2-1760658112.zip': 'OPTIONAL',
+    'Sedth_CCXL_eyelashes_FEM_V2_EKT_Asian-25068-2-1760658135.zip': 'OPTIONAL',
+    'SEDTH_ccxl eyelashes(MALE)-25068-1-1760658169.zip': 'UPDATE',
+    'Preem Mirrors - Enable Player Reflection - INI-25633-1-0-0c-1763947413.zip': 'OPTIONAL',
+    'Disable Crystalcoat On Rims-29122-1-0-1778955915.zip': 'OPTIONAL',
+    'Swap Rims With Turbofan-29122-1-1778955992.zip': 'OPTIONAL',
+    'Blue turbofan color-29122-1-1778956180.zip': 'MISCELLANEOUS',
+    'Darkblue turbofan color-29122-1-1778956198.zip': 'MISCELLANEOUS',
+    'Green turbofan color-29122-1-1778956208.zip': 'MISCELLANEOUS',
+    'Limegreen turbofan color-29122-1-1778956218.zip': 'MISCELLANEOUS',
+    'Orange turbofan color-29122-1-1778956228.zip': 'MISCELLANEOUS',
+    'Pink turbofan color-29122-1-1778956238.zip': 'MISCELLANEOUS',
+    'Purple turbofan color-29122-1-1778956268.zip': 'MISCELLANEOUS',
+    'Red turbofan color-29122-1-1778956284.zip': 'MISCELLANEOUS',
+    'White turbofan color-29122-1-1778956293.zip': 'MISCELLANEOUS',
+    'Yellow turbofan color-29122-1-1778956301.zip': 'MISCELLANEOUS',
+    'uv maps for livery creators-29122-uv-1778960410.zip': 'MISCELLANEOUS',
+    'Neon Enabler 29122 2.0 2026-10-03T13-44Z PYMIYqn6Y.zip': 'OPTIONAL',
+    'More Grip 29122 2.1 2026-10-04T21-19Z NEnvE3qbM.zip': 'OPTIONAL',
+    'Turbo Z update 2.5 hotfix 29122 2.11.1 2026-10-31T10-24Z cB3xB0Tbt.zip': 'UPDATE',
+    'WDG3 Alt Front RIms 37099 1 2026-11-03T04-06Z 5em9eol9i.zip': 'OPTIONAL',
 }
 NEXUS_LATER = ('Drive an Aerial Vehicle 13842 3.5.1 2026-11-02T09-30Z Zx81kQp0a.zip',   # listed in nexusapi/later only
                'Equipment-EX 6945 1.2.11 2026-11-06T10-00Z Lt7Qw2zXa.zip')
+NEXUS_NO_MD5 = ('hycade r34-16570-1-12-1734939448.zip',)   # Nexus Mods' MD5 index lacks it (November 2026)
 NEXUS_NO_SIZE = ('CyberDrift 2.0 Light for game ver. 2.31 8306 2.31 2026-08-03T18-29Z 4rpqrKU17.zip',)   # as Nexus lists it
 
 
@@ -723,7 +885,7 @@ def nexus_api(fix, ids):
     for period in ('?period=1d', '?period=1w', '?period=1m', ''):   # nothing changed lately (Python 3.14 opens a
         write(f'{game}/updated.json{period}', '[]')                  # file:// URL without its query)
     archives = []
-    for d in ('nexus', 'style', 'round3', 'round4', 'round5', 'round7', 'round9', 'round10', 'round11', 'nexus-bad', 'nexus-later'):
+    for d in ('nexus', 'style', 'round3', 'round4', 'round5', 'round7', 'round9', 'round10', 'round11', 'round12', 'nexus-bad', 'nexus-later'):
         archives += [(n, f'{fix}/{d}/{n}') for n in sorted(os.listdir(f'{fix}/{d}'))]
     md5s, fid, lists = {}, 100000, {}
     for mod in ids:
@@ -741,6 +903,11 @@ def nexus_api(fix, ids):
             link = [{'name': 'Elsewhere', 'short_name': 'Elsewhere', 'URI': 'https://downloads.example.invalid/' + n},
                     {'name': 'Nexus Global Content Delivery Network', 'short_name': 'Nexus CDN', 'URI': 'file://' + path}]
             write(f'{game}/{mod}/files/{fid}/download_link.json', json.dumps(link))
+            if n in NEXUS_NO_MD5:   # as Nexus Mods lists it: its MD5 index lacks the file, its virus scan names its SHA-256
+                sha = hashlib.sha256(data).hexdigest()
+                f['external_virus_scan_url'] = 'https://www.virustotal.com/gui/file/%s/detection/f-%s-1734944204' % (sha, sha)
+                write(f'{fix}/nexusapi/no-md5-fid', str(fid))
+                continue
             md5s.setdefault(hashlib.md5(data).hexdigest(), []).append(
                 {'mod': {'mod_id': int(mod), 'name': 'mod %s' % mod}, 'file_details': dict(f, md5=hashlib.md5(data).hexdigest())})
     for mod, files in lists.items():
