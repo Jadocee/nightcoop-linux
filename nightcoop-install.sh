@@ -2508,7 +2508,16 @@ CMDS = {
 }
 if len(sys.argv) < 2 or sys.argv[1] not in CMDS:
     die('nightcoop helper: unknown command %r' % sys.argv[1:2])
-CMDS[sys.argv[1]](*sys.argv[2:])
+try:
+    try:
+        CMDS[sys.argv[1]](*sys.argv[2:])
+    finally:
+        sys.stdout.flush()   # here, not at exit, where a reader already gone made Python print "Exception ignored"
+except BrokenPipeError:   # the reader took what it needed, or the script ended first: nothing to tell
+    devnull = os.open(os.devnull, os.O_WRONLY)
+    os.dup2(devnull, sys.stdout.fileno())
+    os.dup2(devnull, sys.stderr.fileno())
+    sys.exit(1)
 PY
 
 py()     { python3 -I -c "$PYHELPER" "$@"; }
