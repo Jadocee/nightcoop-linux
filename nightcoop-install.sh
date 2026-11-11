@@ -210,9 +210,6 @@ Vehicle_Manufacturers_Resource 2.5 mods        lib  -     -                     
 Equipment_EX                  2.5 eqex        mod  -     -                                                           1.2.10 nexus:6945:+equipment-ex
 Impact_FX                     2.5 mods        mod  -     -                                                           0.8.3.3 nexus:36631
 Immersive_Audio_Distance      2.5 mods        mod  -     -                                                           1.2.0  nexus:36809:+(2.5)
-Apollo_Intensa_Emozione       2.5 mods        mod  -     -                                                           1      nexus:37233
-Countach_LPI_800-4            2.5 mods        mod  -     -                                                           1      nexus:37234
-Countach_Liberty_Walk         2.5 mods        mod  -     -                                                           1      nexus:37235
 VAZ_Oka_Yozakura              2.5 mods        mod  -     -                                                           4      nexus:36381
 Toyota_GR_Yaris               2.5 mods        mod  -     -                                                           3.3    nexus:34357:+all_purpose
 Toyota_GR_Yaris_Rocket_Bunny  2.5 mods        mod  -     -                                                           3.2    nexus:34357:+rocket_bunny
@@ -435,9 +432,6 @@ Porsche_911_GT3_RS:ArchiveXL,TweakXL,Cyber_Engine_Tweaks,Material_and_Texture_Ov
 Vehicle_Customizer:Cyber_Engine_Tweaks Vehicle_Customizer_update:Vehicle_Customizer Deceptious_Quest_Core:ArchiveXL
 VendorsXL:redscript,Codeware,ArchiveXL,TweakXL,Deceptious_Quest_Core Equipment_EX:redscript,Codeware,ArchiveXL,TweakXL
 Impact_FX:redscript,Codeware,TweakXL Immersive_Audio_Distance:redscript,Codeware,Mod_Settings Vehicle_Manufacturer_Fix:redscript
-Apollo_Intensa_Emozione:redscript,Codeware,ArchiveXL,TweakXL,Cyber_Engine_Tweaks,Virtual_Car_Dealer
-Countach_LPI_800-4:redscript,Codeware,ArchiveXL,TweakXL,Cyber_Engine_Tweaks,Virtual_Car_Dealer
-Countach_Liberty_Walk:redscript,Codeware,ArchiveXL,TweakXL,Cyber_Engine_Tweaks,Virtual_Car_Dealer
 VAZ_Oka_Yozakura:redscript,Codeware,ArchiveXL,TweakXL,Cyber_Engine_Tweaks,Virtual_Car_Dealer
 Toyota_GR_Yaris:ArchiveXL,TweakXL,Virtual_Car_Dealer Toyota_GR_Yaris_Rocket_Bunny:Toyota_GR_Yaris
 Nissan_Silvia_S14:redscript,ArchiveXL,TweakXL,Vehicle_Manufacturers_Resource,Virtual_Car_Dealer

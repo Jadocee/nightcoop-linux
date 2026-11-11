@@ -340,7 +340,6 @@ with the patch.
 | Porsche 911 GT3 RS, its Main File, with Material and Texture Override's Legacy file | [11180](https://www.nexusmods.com/cyberpunk2077/mods/11180?tab=files), [5266](https://www.nexusmods.com/cyberpunk2077/mods/5266?tab=files) | 1.2, 1.2 or newer | A 911 GT3 RS |
 | Drive an Aerial Vehicle | [13842](https://www.nexusmods.com/cyberpunk2077/mods/13842?tab=files) | 3.5.0 or newer | Fly AVs and helicopters, with an autopilot; buy them at Virtual Car Dealer |
 | Vehicle Customizer (stolen vehicles edition): SVE 3dot0, then its 3dot1 update | [9034](https://www.nexusmods.com/cyberpunk2077/mods/9034?tab=files) | 3.0, 3.1 or newer | Switch a car you own or claim between the appearances the game has for it |
-| Apollo Intensa Emozione, Lamborghini Countach LPI 800-4 and Countach Liberty Walk | [37233](https://www.nexusmods.com/cyberpunk2077/mods/37233?tab=files), [37234](https://www.nexusmods.com/cyberpunk2077/mods/37234?tab=files), [37235](https://www.nexusmods.com/cyberpunk2077/mods/37235?tab=files) | 1 or newer | xa1res's cars, tested on 2.5 |
 | VAZ Oka Yozakura Sport | [36381](https://www.nexusmods.com/cyberpunk2077/mods/36381?tab=files) | 4 or newer | A VAZ-1111 Oka in a night-sakura livery; hood and hatch on two CET hotkeys you bind |
 | Toyota GR Yaris: its All Purpose Drive Spec and its Rocket Bunny Kit | [34357](https://www.nexusmods.com/cyberpunk2077/mods/34357?tab=files) | 3.3, 3.2 or newer | A GR Yaris with an optional widebody kit |
 | Nissan Silvia S14 'Marked One', its main file, with Vehicle Manufacturers Resource | [25997](https://www.nexusmods.com/cyberpunk2077/mods/25997?tab=files), [7855](https://www.nexusmods.com/cyberpunk2077/mods/7855?tab=files) | 1.1, 1.1 or newer | A nomad-tuned S14 (a 7z archive) |
@@ -622,19 +621,15 @@ new release of the mod changes the file it ships, and your copy is backed up fir
   Pack - Basic (2023), the Porsche (2023), Material and Texture Override (2023), and
   Bikes of the Dark Future with its Vehicle Exit Fix, which was made for patch 2.3. Vehicle
   mods are mostly data and usually outlast patches, but try each once.
-- **xa1res's Apollo and Countachs, the VAZ Oka, the GR Yaris and the Silvia.** Their scripts
-  wrap game functions and call the originals: the speedometer and tachometer of the HUD, and
-  the Countach's spoiler and air brake (none in NightCoop's tables). The Apollo and both
-  Countachs take their engine sounds from SDH0's Vehicle Audio, which needs AudioXL (left out,
-  below), so in the set they drive without an engine sound. They are built on game vehicles with the game's seats, so a partner
-  riding along sits properly. The VAZ Oka's hood and hatch hotkeys are unbound until you
-  bind them in Cyber Engine Tweaks. The GR Yaris and the Silvia are data only. The Silvia
-  also ships a file for Dedka Car Dealership, which Dedka reads if you install it and is
-  inert otherwise. The GR Yaris's newest kit (3.2) is a version behind its main file (3.3),
+- **The VAZ Oka, the GR Yaris and the Silvia** are built on game vehicles with the game's
+  seats, so a partner riding along sits properly. The VAZ Oka's hood and hatch hotkeys are unbound until you
+  bind them in Cyber Engine Tweaks. The GR Yaris and the Silvia are data only. The Silvia's
+  file for Dedka Car Dealership, which the set does not have, is left out. The GR Yaris's newest kit (3.2) is a version behind its main file (3.3),
   and the car was tested on 2.31; try the kit once.
-- **Six cars are left out: the Porsche 992 GT3 R and SDH0's five Garage cars** (Porsche 911
-  Targa 4 GTS, Porsche Singer 911 Armed and three Mazda RX7s). They need AudioXL for their
-  engine sounds, and AudioXL watches whichever player body appeared last. NightCoop's
+- **Nine cars are left out: the Porsche 992 GT3 R, SDH0's five Garage cars** (Porsche 911
+  Targa 4 GTS, Porsche Singer 911 Armed and three Mazda RX7s) **and xa1res's Apollo Intensa
+  Emozione, Countach LPI 800-4 and Countach Liberty Walk**, which the set had until it was
+  found that they drove silent there. They need AudioXL for their engine sounds, and AudioXL watches whichever player body appeared last. NightCoop's
   partners' bodies are player bodies too, so in co-op AudioXL's underwater muffling can
   follow a partner instead of you. AudioXL 0.9.4 (November 2026) still does. SDH0's Ferrari
   458 Spider WBK and VW Super Beetle use the game's engine sounds and are in the set, as is the
