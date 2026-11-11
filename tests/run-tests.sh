@@ -169,6 +169,17 @@ printf '\xff' | dd of="$T/r34-changed.zip" bs=1 seek=100 conv=notrunc 2>/dev/nul
 nverify() { NIGHTCOOP_NEXUS_KEY=x hp nexus-verify "file://$FIX/nexusapi" 3.7.0 16570 "$(cat "$FIX/nexusapi/no-md5-fid")" "$1" "$(stat -c %s "$1")" "$2" | tr '\037' '|'; }
 R34SHA="$(sha256sum "$R34Z" | cut -c1-64)"
 expect "a download Nexus Mods' MD5 index lacks is taken when its SHA-256 is the one Nexus Mods recorded for the upload; refused with another, none, or one byte changed" '[ "$(nverify "$R34Z" "$R34SHA")" = ok ] && [ "$(nverify "$R34Z" "$(printf "%064d" 0)")" = "bad|no file on Nexus Mods has its MD5" ] && [ "$(nverify "$R34Z" "")" = "bad|no file on Nexus Mods has its MD5" ] && [ "$(nverify "$T/r34-changed.zip" "$R34SHA")" = "bad|no file on Nexus Mods has its MD5" ]' "$(nverify "$R34Z" "$R34SHA")"
+python3 -I -c '
+import http.server
+class H(http.server.BaseHTTPRequestHandler):   # every request answered as Cloudflare did on 11 November 2026
+    def do_GET(self):
+        self.send_response(525); self.end_headers(); self.wfile.write(b"error code: 525")
+    def log_message(self, *a): pass
+s = http.server.HTTPServer(("127.0.0.1", 0), H); print(s.server_address[1], flush=True); s.serve_forever()' > "$T/525.port" &
+S525=$!; for _ in $(seq 100); do [ -s "$T/525.port" ] && break; sleep 0.1; done
+NV525() { no_proxy=127.0.0.1 NO_PROXY=127.0.0.1 NIGHTCOOP_NEXUS_KEY=x hp nexus-verify "http://127.0.0.1:$(cat "$T/525.port")" 3.8.0 16570 1 "$R34Z" "$(stat -c %s "$R34Z")" "$1" | tr '\037' '|'; }
+expect "a download with the SHA-256 Nexus Mods recorded for its upload needs no MD5 lookup, so it is taken while that lookup fails (500, 525); without one it cannot be checked then, and the fault is named as Nexus Mods'" '[ "$(NV525 "$R34SHA")" = ok ] && [ "$(NV525 "")" = "error|it could not be checked: Nexus Mods answered 525, a fault on its side (run the script again later)" ]' "$(NV525 "$R34SHA"; NV525 "")"
+kill "$S525" 2>/dev/null; wait "$S525" 2>/dev/null
 
 if [ "$QUICK" = 1 ]; then   # --quick: the helpers alone; the installs into stand-in Steam folders take most of an hour
     printf '\n%d passed, %d failed (--quick: the installs are left out)\n' "$PASS" "$FAILED"
@@ -998,6 +1009,14 @@ expect "the cache keeps the downloads used, and no others: not an archived relea
 expect "the key is nowhere but in its file: not in the output, the cache, the records or the game folder" '[[ "$OUT" != *"$NKEY"* ]] && [ "$(grep -r -l -F -- "$NKEY" "$H" "$LIB" 2>/dev/null)" = "$H/.config/nightcoop-linux/nexus-api-key" ]' "$(grep -r -l -F -- "$NKEY" "$H" "$LIB" 2>/dev/null)"
 run check
 expect "check: the key is a Premium account's" '[[ "$OUT" == *"Nexus Mods API:"*"a Premium account'"'"'s key ($H/.config/nightcoop-linux/nexus-api-key): this script downloads the Nexus mods"* ]]' "$OUT"
+python3 -I - "$H/.cache/nightcoop-linux/nexus-api/16570.files.json" <<'EOF'   # a list as a version before 3.8.0 cached it: no upload SHA-256
+import json, sys
+p = sys.argv[1]; d = json.load(open(p))
+for f in d['files']: f.pop('external_virus_scan_url', None)
+json.dump(d, open(p, 'w'))
+EOF
+run update --yes
+expect "a file list cached without a field this script keeps now (the upload's SHA-256) is fetched again, that list alone" '[ $RC = 0 ] && [[ "$OUT" == *"Nexus Mods: the file lists of 1 mod fetched"* ]] && grep -q external_virus_scan_url "$H/.cache/nightcoop-linux/nexus-api/16570.files.json"' "$OUT"
 run uninstall --yes
 expect "uninstall puts the game folder back exactly" '[ $RC = 0 ] && [ "$PRISTINE_NAPI" = "$(snapshot "$G")" ]' "$(diff <(echo "$PRISTINE_NAPI") <(snapshot "$G"))"
 # Equipment-EX alone, handed over changed in one byte, cut short, linked elsewhere than Nexus Mods, then as it is

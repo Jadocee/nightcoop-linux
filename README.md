@@ -918,10 +918,15 @@ Each run with the key then:
 - **Downloads only what you do not have**, in your downloads or in the script's cache,
   into `~/.cache/nightcoop-linux` (the whole mod set is over 4 GB, so not into `/tmp`,
   which is often held in memory), and installs a file only after checking it: its size
-  against the one Nexus Mods lists, and its MD5 checksum with Nexus Mods, which must name
-  that mod and file. Nexus Mods' MD5 index lacks a few files (the Skyline R34's, in November
-  2026); for those, the file's SHA-256 must be the one Nexus Mods recorded at upload, in its
-  virus scan. Download links must point to Nexus Mods' own servers.
+  against the one Nexus Mods lists, then its SHA-256 against the one Nexus Mods recorded for
+  that file's upload, in its virus scan. For an upload with no recorded SHA-256, its MD5
+  checksum is looked up on Nexus Mods instead, and must name that mod and file. That lookup is
+  the fallback because its index lags behind new uploads and lacks a few old ones (the Skyline
+  R34's), and in November 2026 it failed for a time with errors 500 and 525 while Nexus Mods
+  had trouble; a file it cannot check then is named, to be fetched by the next run. An
+  error 5xx is Nexus Mods' own: run the script again later. File lists cached by an older
+  version of the script are fetched again once, to get those SHA-256 values. Download links
+  must point to Nexus Mods' own servers.
 - **Keeps the mods up to date:** a new release on Nexus Mods comes in with the next run.
   To stay on what you have, add `--no-nexus-api`.
 
@@ -1251,7 +1256,9 @@ without the installs, in a few seconds. The suite covers:
   - a new release downloaded by the next run, which fetches that mod's file list alone;
   - downloads changed in one byte (MD5), cut short (size) or linked outside Nexus Mods'
     servers refused, neither installed nor kept; a file Nexus Mods' MD5 index lacks taken by
-    the SHA-256 of its upload, and refused with another;
+    the SHA-256 of its upload, and refused with another; a file with its upload's SHA-256
+    taken while the MD5 lookup answers 525, and one without it named as unchecked, the fault
+    Nexus Mods'; a file list cached without the SHA-256 values fetched again;
   - an account without Premium: nothing downloaded, each file linked;
   - the key from `NEXUS_API_KEY`, `--nexus-key-file` or the key file (with a warning when
     others can read it), `--no-nexus-api`, a file without a key, an API that does not

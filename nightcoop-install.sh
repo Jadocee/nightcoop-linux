@@ -2166,7 +2166,7 @@ def nexus_get(base, appver, path, tries=3):
     url = base.rstrip('/') + '/v1/' + path
     headers = {'apikey': os.environ.get('NIGHTCOOP_NEXUS_KEY', ''), 'Application-Name': 'nightcoop-linux',
                'Application-Version': appver, 'User-Agent': 'nightcoop-linux/%s' % appver, 'Accept': 'application/json'}
-    why = 'no answer'
+    why, code = 'no answer', 0
     for n in range(tries):
         try:
             with urllib.request.urlopen(urllib.request.Request(url, headers=headers), timeout=30) as r:
@@ -2182,7 +2182,7 @@ def nexus_get(base, appver, path, tries=3):
             if e.code < 500:
                 raise NexusError({403: 'Nexus Mods refused the request (403)', 404: 'not on Nexus Mods (404)'}.get(
                     e.code, 'Nexus Mods answered %d' % e.code), e.code)
-            why = 'Nexus Mods answered %d' % e.code
+            why, code = 'Nexus Mods answered %d, a fault on its side (run the script again later)' % e.code, e.code
         except urllib.error.URLError as e:
             if isinstance(e.reason, FileNotFoundError):   # a file:// answer that is not there (the test suite)
                 raise NexusError('not on Nexus Mods (404)', 404)
@@ -2191,7 +2191,7 @@ def nexus_get(base, appver, path, tries=3):
             why = 'Nexus Mods gave no usable answer (%s)' % (e.__class__.__name__ if not str(e) else e)
         if n + 1 < tries:
             time.sleep(2 * (n + 1))
-    raise NexusError(why)
+    raise NexusError(why, code)
 
 
 def cmd_nexus_validate(base, appver):
@@ -2222,8 +2222,11 @@ def cmd_nexus_sync(base, appver, cache, work, *ids):
     have = {}
     for i in ids:
         try:
-            have[i] = os.path.getmtime(nexus_list_path(cache, i))
-        except OSError:
+            with open(nexus_list_path(cache, i), encoding='utf-8') as fh:
+                files = json.load(fh).get('files') or []
+            if all(k in files[0] for k in NEXUS_KEEP) if files else True:   # else an older version's list
+                have[i] = os.path.getmtime(nexus_list_path(cache, i))
+        except (OSError, ValueError, AttributeError, TypeError, IndexError):
             pass
     stale = [i for i in ids if i not in have]
     if have:   # the smallest period that covers the oldest list; older than a month: fetch them all
@@ -2334,9 +2337,11 @@ def cmd_nexus_link(base, appver, mod_id, file_id):
 
 
 def cmd_nexus_verify(base, appver, mod_id, file_id, path, size, sha256=''):
-    """Whether a download is the file Nexus Mods lists: its size, and its MD5 looked up on Nexus
-    Mods (md5_search), which must name this mod and file. Nexus Mods' MD5 index lacks some files: then
-    the SHA-256 that Nexus Mods recorded for the upload (its VirusTotal scan, sha256) must match.
+    """Whether a download is the file Nexus Mods lists: its size, then the SHA-256 that Nexus Mods
+    recorded for this file's upload (its VirusTotal scan, sha256 from the file list), which settles it
+    when it matches. Otherwise its MD5 looked up on Nexus Mods (md5_search) must name this mod and file:
+    for an upload without a recorded SHA-256, or one whose list predates it. The MD5 index lags behind
+    new uploads and fails while Nexus Mods has trouble (500, 525), so it is the fallback.
     "ok", or "bad" (or "error") and why."""
     got = os.path.getsize(path)
     if int(size or 0) and got != int(size):
@@ -2351,12 +2356,14 @@ def cmd_nexus_verify(base, appver, mod_id, file_id, path, size, sha256=''):
         for block in iter(lambda: fh.read(1 << 20), b''):
             h.update(block)
             h2.update(block)
-    upload = bool(re.fullmatch(r'[0-9a-f]{64}', sha256 or '')) and h2.hexdigest() == sha256
+    if re.fullmatch(r'[0-9a-f]{64}', sha256 or '') and h2.hexdigest() == sha256:
+        out('ok')   # the very bytes Nexus Mods recorded for this file's upload
+        return
     try:
         hits = nexus_get(base, appver, 'games/%s/mods/md5_search/%s.json' % (NEXUS_GAME, h.hexdigest()))
     except NexusError as e:
         if e.code == 404:
-            out('ok') if upload else out('bad', 'no file on Nexus Mods has its MD5')
+            out('bad', 'no file on Nexus Mods has its MD5')
         else:
             out('stop' if e.stop else 'error', 'it could not be checked: %s' % e)
         return
@@ -2365,7 +2372,7 @@ def cmd_nexus_verify(base, appver, mod_id, file_id, path, size, sha256=''):
         if str(m.get('mod_id')) == str(mod_id) and str(f.get('file_id')) == str(file_id):
             out('ok')
             return
-    out('ok') if upload else out('bad', 'its MD5 is that of another file on Nexus Mods')
+    out('bad', 'its MD5 is that of another file on Nexus Mods')
 
 
 def sha256_of(path):
