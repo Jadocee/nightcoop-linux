@@ -454,7 +454,6 @@ with the patch.
 | Status Bar Bug Fixes | [4316](https://www.nexusmods.com/cyberpunk2077/mods/4316?tab=files) | 1.8 or newer | Five fixes to the status bar's buff timers and icons and to the weapon wheel |
 | Female Standing Peeing Fix | [35082](https://www.nexusmods.com/cyberpunk2077/mods/35082?tab=files) | 1.0.0 or newer | Women in the streets no longer stand at walls to pee; every partner needs it |
 | Canyon Fixes | [25918](https://www.nexusmods.com/cyberpunk2077/mods/25918?tab=files) | 1.2.1 or newer | The eastern Badlands canyon and map border fixed, set in Native Settings UI; every partner needs it, as its tunnel walls block cars |
-| Crowd Seat Overlap - Duplication Fix | [34735](https://www.nexusmods.com/cyberpunk2077/mods/34735?tab=files) | 1.1.3 or newer | No more civilians sitting inside one another or doubled vendors; every partner needs it |
 | Epistrophy Delamain Despawn Fix | [29851](https://www.nexusmods.com/cyberpunk2077/mods/29851?tab=files) | 1.21 or newer | The Delamain cabs of Epistrophy leave once it is done, and its last holocall is fixed; install it before you finish Epistrophy; every partner needs it |
 | Leaky Interiors Fixed: its AIO file and the Voodoo Boys crypt file | [29002](https://www.nexusmods.com/cyberpunk2077/mods/29002?tab=files) | 1.1 and 1.0 or newer | Walls and ceilings that let light leak into eight interiors closed |
 | Basilisk Shadows Fix | [33808](https://www.nexusmods.com/cyberpunk2077/mods/33808?tab=files) | 1.0.0 or newer | No light leaking into the Basilisk's dark cockpit, on your own screen (a copy of the game's Basilisk appearance from September 2026: try it once) |
@@ -469,6 +468,12 @@ with the patch.
   files of Sandevistan QuickMelee And Other Bugs Fixes, call `GetStatValue` on a game object, which no script of the
   game, its frameworks or the set declares. One script that fails to compile stops all the mods' scripts, NightCoop's
   included.
+- **Removed after co-op play:** Crowd Seat Overlap - Duplication Fix, added in round 14. In a partner's game it
+  also acts on NightCoop's copies of the host's people, which that game spawns and seats itself. It destroys crowd
+  NPCs by the seats it moved and NPCs on the vendor stands it marks, and stands up people on overlapping seats.
+  Which seat of a pair it moves depends on the order in which that game loaded the area. People sitting or at
+  stalls in the host's world could vanish, or stand up through their seats, on partners' screens only. It has no
+  setting: its other mode, set in its code, stands those same people up instead.
 - **A bridge or a native check first:**
   - False Encumbrance Fix runs the game's encumbrance check itself for every player body, partners' included, past
     the guard NightCoop puts on a partner's body; that check sets your HUD's carried weight and can mark your V as
@@ -693,8 +698,8 @@ new release of the mod changes the file it ships, and your copy is backed up fir
   copy of a game file, the Herrera Outlaw's cooked appearance: if an Outlaw looks wrong on
   your screen, that is why. The Thundergod rides with the Arch's animations. The cars' files
   for Dedka Car Dealership and Nova Traffic, which the set does not have, are left out.
-- **The additions of round 14.** The three enemy combat mods, Crowd Seat Overlap Fix and Female
-  Standing Peeing Fix change how NPCs act, and the game that leads an NPC applies them, so every
+- **The additions of round 14.** The three enemy combat mods and Female Standing Peeing Fix
+  change how NPCs act, and the game that leads an NPC applies them, so every
   partner needs the same files. A finisher with Machete Finisher Kill Fix kills, decided by the
   finishing V's game. Melee Attacks Fixes And Enhancements changes your own attacks, and enemies
   react to them in the game that leads them. It replaces `MeleeStrongAttackEvents.OnEnter`, which

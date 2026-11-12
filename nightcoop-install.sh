@@ -340,7 +340,6 @@ Playable_Roulette             2.5 mods        mod  -     -                      
 Preem_Mirrors                 2.5 mods        mod  -     -                                                           1.3.1  nexus:25633:(lite):(full),reflection
 GEAR                          2.5 mods        mod  -     -                                                           2.5-1  nexus:37913
 Canyon_Fixes                  2.5 mods        mod  -     -                                                           1.2.1  nexus:25918
-Crowd_Seat_Overlap_Fix        2.5 mods        mod  -     -                                                           1.1.3  nexus:34735
 Epistrophy_Delamain_Despawn_Fix 2.5 mods        mod  -     -                                                         1.21   nexus:29851
 Leaky_Interiors_Fixed         2.5 mods        mod  -     -                                                           1.1    nexus:29002:+aio
 Leaky_Interiors_Voodoo_Crypt  2.5 mods        mod  -     -                                                           1.0    nexus:29002:+voodoo
@@ -555,7 +554,7 @@ Selkie_Hair:ArchiveXL Kaisa_Hair:ArchiveXL
 Enemies_Melee_Attacks_Fixes:TweakXL Enemy_Melee_Moves_Unlocked:TweakXL Enemy_Quickhack_Fixes:redscript,TweakXL
 Finisher_Grace_Fix:redscript Machete_Finisher_Kill_Fix:redscript Melee_Attacks_Fixes_And_Enhancements:redscript,TweakXL,Cyber_Engine_Tweaks
 Disappearing_Enemy_Health_Bar_Fix:redscript Empty_Quickhack_Menu_Fix:redscript
-Canyon_Fixes:ArchiveXL,Codeware,Cyber_Engine_Tweaks,Native_Settings_UI Crowd_Seat_Overlap_Fix:redscript,Codeware
+Canyon_Fixes:ArchiveXL,Codeware,Cyber_Engine_Tweaks,Native_Settings_UI
 Epistrophy_Delamain_Despawn_Fix:ArchiveXL Leaky_Interiors_Fixed:ArchiveXL Leaky_Interiors_Voodoo_Crypt:ArchiveXL
 Better_Quality_Sort:redscript,ArchiveXL Looting_QoL:redscript,ArchiveXL,Codeware Stash_Search:redscript,Codeware
 Backpack_Search:redscript,Codeware Vehicle_Destruction_Mesh_Fix:ArchiveXL,TweakXL
@@ -598,7 +597,7 @@ Minor_Activities_Quest_Fixes Kerry_Mansion_Scene_Fixes Quest_Vehicle_Motion_Fixe
 Canyon_Fixes Epistrophy_Delamain_Despawn_Fix"
 # Mods that change how NPCs act: the game that leads an NPC applies them, so every partner needs the same.
 NPC_MODS="Silent_Silencers Stealth_Fixes Stealth_Finishers No_Crowd_Panic_From_Devices Fixed_NPC_Vehicle_Reactions Enemies_Dodging_Fix
-Traffic_Lights_Resolved Enemies_Melee_Attacks_Fixes Enemy_Melee_Moves_Unlocked Enemy_Quickhack_Fixes Crowd_Seat_Overlap_Fix
+Traffic_Lights_Resolved Enemies_Melee_Attacks_Fixes Enemy_Melee_Moves_Unlocked Enemy_Quickhack_Fixes
 Female_Standing_Peeing_Fix"
 # Files a mod writes to while the game runs (its settings, its database, what it has learned):
 # the player's copy stays, and is replaced only when a new release changes the file it ships.

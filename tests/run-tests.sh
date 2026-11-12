@@ -949,7 +949,6 @@ Disappearing_Enemy_Health_Bar_Fix|r6/scripts/Z_BetterEnemyHealthBar.reds|1739766
 Empty_Quickhack_Menu_Fix|r6/scripts/CyberwareSlotSelectionFix/CyberwareSlotSelectionFix.reds|X32s3Ehzc
 Impact_Kill_Looting_Fix|archive/pc/mod/ImpactKillLootingFix.archive|1772990692
 Canyon_Fixes|archive/pc/mod/CanyonFixesAIO.archive|1769489512
-Crowd_Seat_Overlap_Fix|r6/scripts/Crowd Seat Overlap Fix/CrowdSeatOverlapFix.reds|cB3xB00Es
 Epistrophy_Delamain_Despawn_Fix|archive/pc/mod/EpistrophyDelamainDespawnFix.archive|tvQTvss44
 Leaky_Interiors_Fixed|archive/pc/mod/##LeakyInteriorsFixed.archive|1778789179
 Leaky_Interiors_Voodoo_Crypt|archive/pc/mod/##LeakyVoodoo.archive|1776549583
@@ -974,11 +973,12 @@ EOF
 r14own() { local c p t; while IFS='|' read -r c p t; do camei "$p" "$t" || echo "$c: $p is not from its download ($t)"; done <<<"$R14_PICKS"; }
 r14decoy() { local s; while IFS= read -r s; do [ -e "$FIX/round14/$s" ] || continue; grep -q -F -f <(cut -d'|' -f3 <<<"$R14_PICKS") <<<"$s" || echo "$s"; done < <(fromzips); }
 run install --yes --with-mods
-expect "each of the 30 components by its own file: the combat, stamina, Sandevistan, quest, world, interface and loot fixes, and the cars" '[ $RC = 0 ] && [ -z "$(r14own)" ]' "$(r14own; echo "$OUT" | grep -i -E "left out|not installed|needs ")"
+expect "each of the 29 components by its own file: the combat, stamina, Sandevistan, quest, world, interface and loot fixes, and the cars" '[ $RC = 0 ] && [ -z "$(r14own)" ]' "$(r14own; echo "$OUT" | grep -i -E "left out|not installed|needs ")"
 expect "no other file of these mods (the Removed grace, the Limited HUD bars, the driver-loot file, the Camaro's Extras, the CET stamina file, the two Sandevistan files that do not compile)" '[ -z "$(r14decoy)" ]' "$(r14decoy)"
 expect "the Dakar's copy of Vehicle Manufacturer Fix's script is left out; the set's own file stays" '[ ! -e "$G/r6/scripts/VehicleManufacturerFix.reds" ] && [ -f "$G/r6/scripts/VMF/vmf.reds" ]' "$(ls "$G/r6/scripts")"
+expect "not Crowd Seat Overlap Fix, though downloaded: in a partner's game it removes NightCoop's copies of the host's people" '[ ! -e "$G/r6/scripts/Crowd Seat Overlap Fix" ] && [ -f "$D/Crowd Seat Overlap Fix 34735 1.1.3 2026-10-15T02-51Z cB3xB00Es.zip" ]' "$(ls "$G/r6/scripts")"
 NPCL="$(echo "$OUT" | grep 'Mods that change how NPCs act')"
-expect "the co-op notes: the five NPC mods, the canyon and the Epistrophy fix among the places, the finisher, melee, looting and Sandevistan notes" '[[ "$NPCL" == *"Female Standing Peeing Fix"* ]] && [[ "$OUT" == *"Sandevistan Activation Fix in co-op"* ]] && [[ "$NPCL" == *"Enemies Melee Attacks Fixes"* ]] && [[ "$NPCL" == *"Enemy Melee Moves Unlocked"* ]] && [[ "$NPCL" == *"Enemy Quickhack Fixes"* ]] && [[ "$NPCL" == *"Crowd Seat Overlap Fix"* ]] && [[ "$OUT" == *"the canyon'"'"'s fixes and the Epistrophy cab fix): every partner needs the same files"* ]] && [[ "$OUT" == *"Machete Finisher Kill Fix in co-op"* ]] && [[ "$OUT" == *"Melee Attacks Fixes And Enhancements in co-op"* ]] && [[ "$OUT" == *"Impact Kill Looting Fix in co-op"* ]]' "$(echo "$OUT" | grep -E 'in co-op|NPCs act|cab fix')"
+expect "the co-op notes: the four NPC mods (not the crowd-seat fix), the canyon and the Epistrophy fix among the places, the finisher, melee, looting and Sandevistan notes" '[[ "$NPCL" == *"Female Standing Peeing Fix"* ]] && [[ "$OUT" == *"Sandevistan Activation Fix in co-op"* ]] && [[ "$NPCL" == *"Enemies Melee Attacks Fixes"* ]] && [[ "$NPCL" == *"Enemy Melee Moves Unlocked"* ]] && [[ "$NPCL" == *"Enemy Quickhack Fixes"* ]] && [[ "$NPCL" != *"Crowd Seat"* ]] && [[ "$OUT" == *"the canyon'"'"'s fixes and the Epistrophy cab fix): every partner needs the same files"* ]] && [[ "$OUT" == *"Machete Finisher Kill Fix in co-op"* ]] && [[ "$OUT" == *"Melee Attacks Fixes And Enhancements in co-op"* ]] && [[ "$OUT" == *"Impact Kill Looting Fix in co-op"* ]]' "$(echo "$OUT" | grep -E 'in co-op|NPCs act|cab fix')"
 run update --yes
 expect "a rerun changes nothing" '[ $RC = 0 ] && [[ "$OUT" == *"everything is up to date; nothing to do"* ]]' "$OUT"
 run uninstall --yes
