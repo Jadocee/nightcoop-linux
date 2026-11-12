@@ -388,7 +388,7 @@ with the patch.
 | Immersive First Person, its main file | [2675](https://www.nexusmods.com/cyberpunk2077/mods/2675?tab=files) | 2.2.0 or newer | A first-person camera that shows more of V's body, FreeLook (look around without turning V), and a height slider in Cyber Engine Tweaks' overlay |
 | Katana Pack 2, its file with every blade | [36164](https://www.nexusmods.com/cyberpunk2077/mods/36164?tab=files) | 1.1 or newer | Seventeen katanas and swords, some with charged attacks (a RAR archive) |
 | Curbside | [35922](https://www.nexusmods.com/cyberpunk2077/mods/35922?tab=files) | 1.0.1 or newer | A summoned car or bike comes to your level, stops beside you, and follows you if you walk off |
-| Apex Grapple | [36443](https://www.nexusmods.com/cyberpunk2077/mods/36443?tab=files) | 1.0.7 or newer | A grappling hook on the quick-melee key (not its file for 2.31); partners see you fly, but not the hook. Pulling people to V stays off |
+| Apex Grapple | [36443](https://www.nexusmods.com/cyberpunk2077/mods/36443?tab=files) | 1.0.7 or newer | A grappling hook on the quick-melee key (not its file for 2.31); partners see you fly, but not the hook. Pulling people to V stays off, and its arm implant is none (V's nails would float) |
 | Stealth Fixes | [35951](https://www.nexusmods.com/cyberpunk2077/mods/35951?tab=files) | 1.0.1 or newer | V stays crouched after a stealth melee attack, finisher kills fall with physics, and a car you drive remotely no longer turns a bystander it hits hostile |
 | Dual Wielding Fix | [36738](https://www.nexusmods.com/cyberpunk2077/mods/36738?tab=files) | 1.0.1 or newer | 12 fixes to patch 2.5's dual-wield perks |
 | Silent Silencers and Throwing Knives | [4070](https://www.nexusmods.com/cyberpunk2077/mods/4070?tab=files) | 1.6.3 or newer | A silenced shot or thrown knife that does not kill keeps you hidden; its settings are the same for everyone, its cover debuff off |
@@ -454,7 +454,6 @@ with the patch.
 | Status Bar Bug Fixes | [4316](https://www.nexusmods.com/cyberpunk2077/mods/4316?tab=files) | 1.8 or newer | Five fixes to the status bar's buff timers and icons and to the weapon wheel |
 | Female Standing Peeing Fix | [35082](https://www.nexusmods.com/cyberpunk2077/mods/35082?tab=files) | 1.0.0 or newer | Women in the streets no longer stand at walls to pee; every partner needs it |
 | Canyon Fixes | [25918](https://www.nexusmods.com/cyberpunk2077/mods/25918?tab=files) | 1.2.1 or newer | The eastern Badlands canyon and map border fixed, set in Native Settings UI; every partner needs it, as its tunnel walls block cars |
-| Crowd Seat Overlap - Duplication Fix | [34735](https://www.nexusmods.com/cyberpunk2077/mods/34735?tab=files) | 1.1.3 or newer | No more civilians sitting inside one another or doubled vendors; every partner needs it |
 | Epistrophy Delamain Despawn Fix | [29851](https://www.nexusmods.com/cyberpunk2077/mods/29851?tab=files) | 1.21 or newer | The Delamain cabs of Epistrophy leave once it is done, and its last holocall is fixed; install it before you finish Epistrophy; every partner needs it |
 | Leaky Interiors Fixed: its AIO file and the Voodoo Boys crypt file | [29002](https://www.nexusmods.com/cyberpunk2077/mods/29002?tab=files) | 1.1 and 1.0 or newer | Walls and ceilings that let light leak into eight interiors closed |
 | Basilisk Shadows Fix | [33808](https://www.nexusmods.com/cyberpunk2077/mods/33808?tab=files) | 1.0.0 or newer | No light leaking into the Basilisk's dark cockpit, on your own screen (a copy of the game's Basilisk appearance from September 2026: try it once) |
@@ -469,6 +468,12 @@ with the patch.
   files of Sandevistan QuickMelee And Other Bugs Fixes, call `GetStatValue` on a game object, which no script of the
   game, its frameworks or the set declares. One script that fails to compile stops all the mods' scripts, NightCoop's
   included.
+- **Removed after co-op play:** Crowd Seat Overlap - Duplication Fix, added in round 14. In a partner's game it
+  also acts on NightCoop's copies of the host's people, which that game spawns and seats itself. It destroys crowd
+  NPCs by the seats it moved and NPCs on the vendor stands it marks, and stands up people on overlapping seats.
+  Which seat of a pair it moves depends on the order in which that game loaded the area. People sitting or at
+  stalls in the host's world could vanish, or stand up through their seats, on partners' screens only. It has no
+  setting: its other mode, set in its code, stands those same people up instead.
 - **A bridge or a native check first:**
   - False Encumbrance Fix runs the game's encumbrance check itself for every player body, partners' included, past
     the guard NightCoop puts on a partner's body; that check sets your HUD's carried weight and can mark your V as
@@ -693,8 +698,8 @@ new release of the mod changes the file it ships, and your copy is backed up fir
   copy of a game file, the Herrera Outlaw's cooked appearance: if an Outlaw looks wrong on
   your screen, that is why. The Thundergod rides with the Arch's animations. The cars' files
   for Dedka Car Dealership and Nova Traffic, which the set does not have, are left out.
-- **The additions of round 14.** The three enemy combat mods, Crowd Seat Overlap Fix and Female
-  Standing Peeing Fix change how NPCs act, and the game that leads an NPC applies them, so every
+- **The additions of round 14.** The three enemy combat mods and Female Standing Peeing Fix
+  change how NPCs act, and the game that leads an NPC applies them, so every
   partner needs the same files. A finisher with Machete Finisher Kill Fix kills, decided by the
   finishing V's game. Melee Attacks Fixes And Enhancements changes your own attacks, and enemies
   react to them in the game that leads them. It replaces `MeleeStrongAttackEvents.OnEnter`, which
@@ -972,6 +977,7 @@ the script's next run.
 | Cyber Engine Tweaks | Overlay key | `` ` `` (tilde), only when none is set | Spares its first-launch prompt; neither NightCoop nor a mod of the sets uses it. A key you chose stays |
 | Always First Equip | Its two keys | F11 and Insert (default F2 and F3) | NightCoop's F-key quickhack set uses F1 to F4 |
 | Apex Grapple | Pull people to V, in its five profiles | Off (the default) | It would act only on your copy of an NPC a partner leads |
+| Apex Grapple | Arm implant, in its five profiles | None (default: the projectile launcher) | In first person the launcher it lends hides V's own left arm, but not the character creator's nails, which float where the hand was and do not follow the arm. With none, the rope leaves from V's hand, as up to its 1.0.2 |
 | Silent Silencers and Throwing Knives | Its cover debuff after a hit, with or without a kill | Off (default on without a kill) | It goes to the V of the game that leads the NPC hit, which may be a partner's |
 | Silent Silencers and Throwing Knives | Stealthy silenced shots and knives, their minimum distances, the detection chances and delay | Its defaults, pinned | The game that leads an NPC decides whether it heard you |
 | Sit Anywhere | Hide UI while sitting | Off (default on) | Hiding it sets V's scene tier to 3, which NightCoop reads as a scene holding V |
@@ -1086,6 +1092,17 @@ Start with `check`.
   problems) is recreated on the next launch with Steam's 2019 runtime. Run the script
   again.
 - **"Verify integrity of game files"** does not remove the mod.
+- **In cutscenes, people clip, jump or vanish on a partner's screen.**
+  - **One voice-over language for everyone.** NightCoop times each cutscene's lines to the
+    voice-over, so with different languages the scenes drift apart; NightCoop reports
+    "Voice-over differs".
+  - **NightCoop's own scene handling.** In a guest's game, NightCoop swaps a scene's people
+    between that game's own actors and copies of the host's, and removes a guest's own copy
+    of a person the host's game also shows. NightCoop 0.2.1-beta still gets this wrong at
+    times (its known issue: an NPC on a guest's screen jerks, or stands in a T-pose for a
+    second), so report such scenes to NightCoop with where and when they happened.
+  - **Crowd Seat Overlap Fix** made seated people and stall vendors vanish on partners'
+    screens. It left the set after round 14, and an update removes it.
 
 ## How this was verified
 
