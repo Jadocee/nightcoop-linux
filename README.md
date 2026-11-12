@@ -1092,6 +1092,17 @@ Start with `check`.
   problems) is recreated on the next launch with Steam's 2019 runtime. Run the script
   again.
 - **"Verify integrity of game files"** does not remove the mod.
+- **In cutscenes, people clip, jump or vanish on a partner's screen.**
+  - **One voice-over language for everyone.** NightCoop times each cutscene's lines to the
+    voice-over, so with different languages the scenes drift apart; NightCoop reports
+    "Voice-over differs".
+  - **NightCoop's own scene handling.** In a guest's game, NightCoop swaps a scene's people
+    between that game's own actors and copies of the host's, and removes a guest's own copy
+    of a person the host's game also shows. NightCoop 0.2.1-beta still gets this wrong at
+    times (its known issue: an NPC on a guest's screen jerks, or stands in a T-pose for a
+    second), so report such scenes to NightCoop with where and when they happened.
+  - **Crowd Seat Overlap Fix** made seated people and stall vendors vanish on partners'
+    screens. It left the set after round 14, and an update removes it.
 
 ## How this was verified
 
