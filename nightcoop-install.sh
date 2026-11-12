@@ -628,7 +628,9 @@ Mark_To_Sell            r6/input/MarkToSell.xml
 #     as NightCoop's quickhack wheel uses 1-8. Always First Equip: its keys moved off F2 and F3, which NightCoop's
 #     F-key quickhack set uses, to F11 and Insert (Mod Settings sets them from its file over the input file).
 #   Apex Grapple: pulling people to V off in its five profiles, as it would act only on your copy of an NPC a
-#     partner leads. Silent Silencers: the game that leads an NPC applies these, so they are the same for everyone;
+#     partner leads; its arm implant none in each, as the launcher it lends in first person hides V's own left arm
+#     but not the character creator's nails, which then float where the hand was (the rope leaves from V's hand
+#     instead, as up to its 1.0.2). Silent Silencers: the game that leads an NPC applies these, so they are the same for everyone;
 #     its cover debuff is off, as it goes to that game's own V (a partner's silenced hit put it on the host's V).
 #   Sit Anywhere: the HUD stays on while V sits, as hiding it sets V's scene tier to 3, which NightCoop reads as a
 #     scene holding V (a talk, for the story NPCs around).
@@ -653,6 +655,11 @@ Apex_Grapple                ini  red4ext/plugins/mod_settings/user.ini ApexGrapp
 Apex_Grapple                ini  red4ext/plugins/mod_settings/user.ini ApexGrappleProfile3 pullPeople false
 Apex_Grapple                ini  red4ext/plugins/mod_settings/user.ini ApexGrappleProfile4 pullPeople false
 Apex_Grapple                ini  red4ext/plugins/mod_settings/user.ini ApexGrappleProfile5 pullPeople false
+Apex_Grapple                ini  red4ext/plugins/mod_settings/user.ini ApexGrappleSettings implant None
+Apex_Grapple                ini  red4ext/plugins/mod_settings/user.ini ApexGrappleProfile2 implant None
+Apex_Grapple                ini  red4ext/plugins/mod_settings/user.ini ApexGrappleProfile3 implant None
+Apex_Grapple                ini  red4ext/plugins/mod_settings/user.ini ApexGrappleProfile4 implant None
+Apex_Grapple                ini  red4ext/plugins/mod_settings/user.ini ApexGrappleProfile5 implant None
 Silent_Silencers            json bin/x64/plugins/cyber_engine_tweaks/mods/SilentSilencersAndKnives/settings.json / afterStealthHitNoKillDebuff false
 Silent_Silencers            json bin/x64/plugins/cyber_engine_tweaks/mods/SilentSilencersAndKnives/settings.json / afterStealthHitKillDebuff false
 Silent_Silencers            json bin/x64/plugins/cyber_engine_tweaks/mods/SilentSilencersAndKnives/settings.json / shouldSilencedGunshotsBeStealthy true
@@ -4030,7 +4037,8 @@ step_addons() {   # the add-on sets (--with-flight, --with-mods), matched to the
     if [[ "$ADDON_HAVE" == *" Apex_Grapple "* ]]; then
         info "Apex Grapple in co-op: partners see your V fly, but not its hook, rope or launcher. Pulling people to V stays"
         info "off (it would act only on your copy of an NPC a partner leads). A profile's own key must be none of NightCoop's"
-        info "keys, as NightCoop cannot see it."
+        info "keys, as NightCoop cannot see it. Its arm implant is none, so the rope leaves from V's hand: the launcher it lends"
+        info "in first person hides V's own left arm but not the character creator's nails, which would float where the hand was."
     fi
     if [[ "$ADDON_HAVE" == *" Sit_Anywhere "* ]]; then
         info "Sit Anywhere in co-op: a partner sees you sit only with Sit Anywhere too (otherwise you stand on the spot). The"

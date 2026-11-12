@@ -388,7 +388,7 @@ with the patch.
 | Immersive First Person, its main file | [2675](https://www.nexusmods.com/cyberpunk2077/mods/2675?tab=files) | 2.2.0 or newer | A first-person camera that shows more of V's body, FreeLook (look around without turning V), and a height slider in Cyber Engine Tweaks' overlay |
 | Katana Pack 2, its file with every blade | [36164](https://www.nexusmods.com/cyberpunk2077/mods/36164?tab=files) | 1.1 or newer | Seventeen katanas and swords, some with charged attacks (a RAR archive) |
 | Curbside | [35922](https://www.nexusmods.com/cyberpunk2077/mods/35922?tab=files) | 1.0.1 or newer | A summoned car or bike comes to your level, stops beside you, and follows you if you walk off |
-| Apex Grapple | [36443](https://www.nexusmods.com/cyberpunk2077/mods/36443?tab=files) | 1.0.7 or newer | A grappling hook on the quick-melee key (not its file for 2.31); partners see you fly, but not the hook. Pulling people to V stays off |
+| Apex Grapple | [36443](https://www.nexusmods.com/cyberpunk2077/mods/36443?tab=files) | 1.0.7 or newer | A grappling hook on the quick-melee key (not its file for 2.31); partners see you fly, but not the hook. Pulling people to V stays off, and its arm implant is none (V's nails would float) |
 | Stealth Fixes | [35951](https://www.nexusmods.com/cyberpunk2077/mods/35951?tab=files) | 1.0.1 or newer | V stays crouched after a stealth melee attack, finisher kills fall with physics, and a car you drive remotely no longer turns a bystander it hits hostile |
 | Dual Wielding Fix | [36738](https://www.nexusmods.com/cyberpunk2077/mods/36738?tab=files) | 1.0.1 or newer | 12 fixes to patch 2.5's dual-wield perks |
 | Silent Silencers and Throwing Knives | [4070](https://www.nexusmods.com/cyberpunk2077/mods/4070?tab=files) | 1.6.3 or newer | A silenced shot or thrown knife that does not kill keeps you hidden; its settings are the same for everyone, its cover debuff off |
@@ -972,6 +972,7 @@ the script's next run.
 | Cyber Engine Tweaks | Overlay key | `` ` `` (tilde), only when none is set | Spares its first-launch prompt; neither NightCoop nor a mod of the sets uses it. A key you chose stays |
 | Always First Equip | Its two keys | F11 and Insert (default F2 and F3) | NightCoop's F-key quickhack set uses F1 to F4 |
 | Apex Grapple | Pull people to V, in its five profiles | Off (the default) | It would act only on your copy of an NPC a partner leads |
+| Apex Grapple | Arm implant, in its five profiles | None (default: the projectile launcher) | In first person the launcher it lends hides V's own left arm, but not the character creator's nails, which float where the hand was and do not follow the arm. With none, the rope leaves from V's hand, as up to its 1.0.2 |
 | Silent Silencers and Throwing Knives | Its cover debuff after a hit, with or without a kill | Off (default on without a kill) | It goes to the V of the game that leads the NPC hit, which may be a partner's |
 | Silent Silencers and Throwing Knives | Stealthy silenced shots and knives, their minimum distances, the detection chances and delay | Its defaults, pinned | The game that leads an NPC decides whether it heard you |
 | Sit Anywhere | Hide UI while sitting | Off (default on) | Hiding it sets V's scene tier to 3, which NightCoop reads as a scene holding V |
