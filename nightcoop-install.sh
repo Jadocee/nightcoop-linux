@@ -633,6 +633,9 @@ Mark_To_Sell            r6/input/MarkToSell.xml
 #     its cover debuff is off, as it goes to that game's own V (a partner's silenced hit put it on the host's V).
 #   Sit Anywhere: the HUD stays on while V sits, as hiding it sets V's scene tier to 3, which NightCoop reads as a
 #     scene holding V (a talk, for the story NPCs around).
+#   Story Quest Fixes: its bar fix in side quest sq031 off. On the quest fact NightCoop shares from the host, each
+#     game removes the first person its bar area lists, so a partner's game can remove someone the host still sees;
+#     the person standing in another at that bar stays, for everyone.
 #   Ferrari 458 Spider WBK: its roof key moved off O, Let There Be Flight's flight key while driving, to Home.
 ADDON_CONFIG="
 Loot_Icons_Extension        ini  red4ext/plugins/mod_settings/user.ini LootIconsExtension.LootIconsExtensionSSX fMS_ADSOpacity 100.0
@@ -670,6 +673,7 @@ Silent_Silencers            json bin/x64/plugins/cyber_engine_tweaks/mods/Silent
 Silent_Silencers            json bin/x64/plugins/cyber_engine_tweaks/mods/SilentSilencersAndKnives/settings.json / perHitDetectionChance 0
 Silent_Silencers            json bin/x64/plugins/cyber_engine_tweaks/mods/SilentSilencersAndKnives/settings.json / secondsToDetect 0
 Sit_Anywhere                json bin/x64/plugins/cyber_engine_tweaks/mods/sitAnywhere/config/config.json / hideUI false
+Story_Quest_Fixes           json bin/x64/plugins/cyber_engine_tweaks/mods/anygoodname_cp77_story_quest_fixes/mod_user_settings.json / enable_sq031_01c_smack_striptease false
 Ferrari_458_Spider_WBK      ini  red4ext/plugins/mod_settings/user.ini SDH0.Ferrari458WBKSettings activationKey IK_Home
 "
 # Files of a mod that are not installed, for its default configuration in co-op (or data for a mod the set does
@@ -4058,9 +4062,13 @@ step_addons() {   # the add-on sets (--with-flight, --with-mods), matched to the
     fi
     if [[ "$ADDON_HAVE" == *" Story_Quest_Fixes "* ]] || [[ "$ADDON_HAVE" == *" Minor_Activities_Quest_Fixes "* ]] \
        || [[ "$ADDON_HAVE" == *" Quest_Vehicle_Motion_Fixes "* ]]; then
-        info "Immersion Patch quest fixes in co-op: in a session they act in the host's world, whose game places the quest cars"
-        info "and people they fix; keep their fixes on (the default) for everyone. With Polish voices, four of Brendan's lines"
-        info "run longer on that player's screen."
+        info "Immersion Patch quest fixes in co-op: in a session they follow the host's quest progress, which NightCoop shares,"
+        info "and each game runs them on it; keep their fixes on (the default) for everyone. With Polish voices, four of"
+        info "Brendan's lines run longer on that player's screen."
+    fi
+    if [[ "$ADDON_HAVE" == *" Story_Quest_Fixes "* ]]; then
+        info "Story Quest Fixes' bar fix in side quest sq031 is off: each game would remove the first person it finds at that"
+        info "bar, which on a partner's screen can be someone the host still sees. The person standing in another there stays."
     fi
     if [[ "$ADDON_HAVE" == *" Story_Quest_Fixes "* ]] && [[ "$ADDON_HAVE" == *" Immersive_Bartenders "* ]]; then
         info "Pepe at El Coyote Cojo plays Story Quest Fixes' scene, which loads before Immersive Bartenders': he serves no"

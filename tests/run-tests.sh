@@ -93,6 +93,7 @@ newworld() {   # newworld <name> <layout> [options for mkfixtures.py world]
 }
 snapshot() { (cd "$1" && find . -print | sort && find . -type f -print0 | sort -z | xargs -0 sha256sum); }
 ini() { awk -v s="[$2]" -v k="$3" '$0 == s { on = 1; next } /^\[/ { on = 0 } on && $1 == k { print $3 }' "$1"; }   # ini <file> <section> <key>
+js() { python3 -I -c 'import json,sys; d=json.load(open(sys.argv[1])); print(" ".join(json.dumps(d.get(k)) for k in sys.argv[2:]))' "$@"; }   # js <file> <key>...
 camei() { local f; f="$(hp findci "$G" "$1" 2>/dev/null)" && grep -q -a -F -- "$2" "$f"; }   # camei <file> <part of a download's name>: came from it (path without case)
 fromzips() { grep -r -h -o -a ' from [^"]*\.zip' "$G" 2>/dev/null | sed 's/^ from //' | sort -u; }   # the downloads the game folder's files came from
 launch_opts() { sed -n 's/.*"LaunchOptions"[[:space:]]*"\(.*\)"$/\1/p' "$LC"; }
@@ -779,7 +780,6 @@ expect "uninstall puts the player's own files back exactly" '[ $RC = 0 ] && [ "$
 section "Mods (--with-mods): round 9: hair, makeup and eyes, menus, combat, crowds, places and a car"
 R9_DL=("${R7_DL[@]}" "$FIX/round3/Deceptious Quest Core 7831 3.3.3 2026-10-27T04-49Z E91D9ddiK.zip"
        "$FIX/round3/Immersive Voice Distance (2.5) 36809 1.2.0 2026-11-07T13-09Z NEnvE30eR.zip" "$FIX/style/Material and Texture Override-5266-1-2-1695907754.zip")
-js() { python3 -I -c 'import json,sys; d=json.load(open(sys.argv[1])); print(" ".join(json.dumps(d.get(k)) for k in sys.argv[2:]))' "$@"; }   # js <file> <key>...
 newworld round9 native; OSR="$T/os-arch"; D="$H/Downloads"; mkdir -p "$D" "$G/archive/pc/ep1"
 PRISTINE_R9="$(snapshot "$G")"; AM="$G/archive/pc/mod"; CETM="$G/bin/x64/plugins/cyber_engine_tweaks/mods"; R6S="$G/r6/scripts"
 MS="$G/red4ext/Plugins/mod_settings/user.ini" SSJ="$CETM/SilentSilencersAndKnives/settings.json" SAJ="$CETM/sitAnywhere/config/config.json"
@@ -833,10 +833,14 @@ PRISTINE_R11="$(snapshot "$G")"; AM="$G/archive/pc/mod"; R6S="$G/r6/scripts"; CE
 cp "${R9_DL[@]}" "$FIX"/round11/* "$FIX/round9/Immersive Bartenders-7203-2-0-3-1752967023.zip" "$D/"
 run install --yes --with-mods
 expect "the gameplay fixes, Dash Fix and Easier Controller Sprint by their 2.5 releases (not 1.0.0 and 1.1.0)" '[ $RC = 0 ] && grep -q Q6xF6llzo "$R6S/DashFix/DashFix.reds" && [ -f "$AM/DashFix.archive.xl" ] && grep -q 5em9eooDJ "$R6S/EasierControllerSprint.reds" && [ -f "$R6S/HolsterStaminaBarBugFix.reds" ] && [ -f "$R6S/DodgesFix.reds" ] && [ -f "$R6S/Eye In The Sky Highlight Fix.reds" ] && [ -f "$R6S/Melee Finisher Camera Fix/MeleeFinisherCameraFix.reds" ]' "$OUT"
-expect "the quest fixes with their CET parts, the Kerry scene, vehicle motion, the voiceline, the adverts and the air traffic fix" '[ -f "$AM/! anygoodname_cp77_story_quest_fixes.xl" ] && [ -f "$CETM/anygoodname_cp77_story_quest_fixes/init.lua" ] && [ -f "$AM/! minor_activities_quest_fixes.xl" ] && [ -f "$CETM/minor_activities_quest_fixes/init.lua" ] && [ -f "$AM/! holding_on_kerry_mansion_scene_fixes.archive" ] && [ -f "$AM/! quest_vehicle_motion_fixes.xl" ] && [ -f "$AM/Delete Few Weeks Tops.archive" ] && [ -f "$AM/!Fix_Advert_Animations.archive" ] && [ -f "$AM/AirTrafficDupeFix.archive" ]' "$OUT"
-expect "the co-op notes: the dodging fix among the NPC mods, the quest fixes among the places and their own note, Pepe with Immersive Bartenders" '[[ "$OUT" == *"Mods that change how NPCs act (Enemies Dodging Fix)"* ]] && [[ "$OUT" == *"the Immersion Patch quest fixes, the"* ]] && [[ "$OUT" == *"or other scenes and vote choices"* ]] && [[ "$OUT" == *"Immersion Patch quest fixes in co-op: in a session they act in the host"* ]] && [[ "$OUT" == *"Pepe at El Coyote Cojo plays Story Quest Fixes"* ]]' "$OUT"
+expect "the quest fixes with their CET parts (Story Quest Fixes' sq031 bar fix off), the Kerry scene, vehicle motion, the voiceline, the adverts and the air traffic fix" '[ -f "$AM/! anygoodname_cp77_story_quest_fixes.xl" ] && [ -f "$CETM/anygoodname_cp77_story_quest_fixes/init.lua" ] && [ "$(js "$CETM/anygoodname_cp77_story_quest_fixes/mod_user_settings.json" enable_sq031_01c_smack_striptease)" = false ] && [ -f "$AM/! minor_activities_quest_fixes.xl" ] && [ -f "$CETM/minor_activities_quest_fixes/init.lua" ] && [ -f "$AM/! holding_on_kerry_mansion_scene_fixes.archive" ] && [ -f "$AM/! quest_vehicle_motion_fixes.xl" ] && [ -f "$AM/Delete Few Weeks Tops.archive" ] && [ -f "$AM/!Fix_Advert_Animations.archive" ] && [ -f "$AM/AirTrafficDupeFix.archive" ]' "$OUT"
+expect "the co-op notes: the dodging fix among the NPC mods, the quest fixes among the places and their own note, Pepe with Immersive Bartenders" '[[ "$OUT" == *"Mods that change how NPCs act (Enemies Dodging Fix)"* ]] && [[ "$OUT" == *"the Immersion Patch quest fixes, the"* ]] && [[ "$OUT" == *"or other scenes and vote choices"* ]] && [[ "$OUT" == *"Immersion Patch quest fixes in co-op: in a session they follow the host"* ]] && [[ "$OUT" == *"bar fix in side quest sq031 is off"* ]] && [[ "$OUT" == *"Pepe at El Coyote Cojo plays Story Quest Fixes"* ]]' "$OUT"
 run update --yes
 expect "a rerun changes nothing" '[ $RC = 0 ] && [[ "$OUT" == *"everything is up to date; nothing to do"* ]]' "$OUT"
+SQJ="$CETM/anygoodname_cp77_story_quest_fixes/mod_user_settings.json"
+printf '{"enable_sq031_01c_smack_striptease": true, "enable_q104_02a_breaking_antenna": false}' > "$SQJ"   # the player's choices in the file the mod rewrites
+run update --yes
+expect "the next run turns the sq031 bar fix off again and keeps the player's other choices" '[ $RC = 0 ] && [ "$(js "$SQJ" enable_sq031_01c_smack_striptease enable_q104_02a_breaking_antenna)" = "false false" ]' "$(cat "$SQJ")"
 run uninstall --yes
 expect "uninstall puts the game folder back exactly" '[ $RC = 0 ] && [ "$PRISTINE_R11" = "$(snapshot "$G")" ]' "$(diff <(echo "$PRISTINE_R11") <(snapshot "$G"))"
 newworld round11old native; OSR="$T/os-arch"; D="$H/Downloads"; mkdir -p "$D"   # only the releases before 2.5

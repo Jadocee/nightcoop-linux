@@ -399,7 +399,7 @@ with the patch.
 | Immersive Rippers and Immersive Bartenders (Deceptious) | [7064](https://www.nexusmods.com/cyberpunk2077/mods/7064?tab=files), [7203](https://www.nexusmods.com/cyberpunk2077/mods/7203?tab=files) | 2.6.2, 2.0.3 or newer | V sits in the ripperdoc's chair and has animated drinks at bars; Fingers can be paid to serve you again. Every partner needs them (Bartenders dates from 2025: try it once on 2.5) |
 | Deceptious Bug Fixes | [18318](https://www.nexusmods.com/cyberpunk2077/mods/18318?tab=files) | 1.4.3 or newer | About forty world, TV and quest fixes in one mod, for 2.5's world sectors; every partner needs it, and in a session its quest fixes act in the host's world |
 | Apartment Cats: Corpo Plaza, Japantown, Northside Motel, The Glen and Dogtown, with Custom Cats' Base files | [6329](https://www.nexusmods.com/cyberpunk2077/mods/6329?tab=files), [6493](https://www.nexusmods.com/cyberpunk2077/mods/6493?tab=files), [6379](https://www.nexusmods.com/cyberpunk2077/mods/6379?tab=files), [6276](https://www.nexusmods.com/cyberpunk2077/mods/6276?tab=files), [10325](https://www.nexusmods.com/cyberpunk2077/mods/10325?tab=files), [6837](https://www.nexusmods.com/cyberpunk2077/mods/6837?tab=files) | 3.0.0, 3.0.1, 3.0.0, 3.0.1, 2.0.0, 1.3.0 or newer | A cat to pet in each of V's other homes (Dogtown's needs Phantom Liberty), each with a look of its own from Custom Cats (not its 4k replacer or the apartment variants files; Corpo Plaza's Leia stays a red hologram, as Custom Cats' look for her needs the Colour Variants file). Their files date from before patch 2.5: try each apartment's bed, shower, wardrobe and mirror once |
-| Immersion Patch: Cyberpunk Story Quest Fixes and Minor Activities Quest Fixes (anygoodname) | [29152](https://www.nexusmods.com/cyberpunk2077/mods/29152?tab=files), [27162](https://www.nexusmods.com/cyberpunk2077/mods/27162?tab=files) | 1.21.1, 1.15.1 or newer | Fixes to story, side, gig, cyberpsycho and NCPD quests (scenes, choices, quest cars and people), built for 2.5; every partner needs them, and in a session they act in the host's world. Pepe at El Coyote Cojo plays Story Quest Fixes' scene, not Immersive Bartenders' |
+| Immersion Patch: Cyberpunk Story Quest Fixes and Minor Activities Quest Fixes (anygoodname) | [29152](https://www.nexusmods.com/cyberpunk2077/mods/29152?tab=files), [27162](https://www.nexusmods.com/cyberpunk2077/mods/27162?tab=files) | 1.21.1, 1.15.1 or newer | Fixes to story, side, gig, cyberpsycho and NCPD quests (scenes, choices, quest cars and people), built for 2.5; every partner needs them, and in a session they follow the host's quest progress, which NightCoop shares. Pepe at El Coyote Cojo plays Story Quest Fixes' scene, not Immersive Bartenders'. Story Quest Fixes' bar fix in side quest sq031 is off |
 | Immersion Patch: Holdin' On (Kerry's mansion scene) and Quest Vehicle Motion Fixes | [25792](https://www.nexusmods.com/cyberpunk2077/mods/25792?tab=files), [24772](https://www.nexusmods.com/cyberpunk2077/mods/24772?tab=files) | 1.0.0, 1.10.1 or newer | Kerry's whisky glass, and quest vehicles that jump or float; parts of both date from before patch 2.5, tested on 2.5 by their author |
 | Air Traffic Dupe Fix (Deceptious) | [31304](https://www.nexusmods.com/cyberpunk2077/mods/31304?tab=files) | 1.0.0 or newer | No duplicated or clipping AVs in the sky (its sectors date from before patch 2.5: try it once) |
 | Fix Advert Animations | [17726](https://www.nexusmods.com/cyberpunk2077/mods/17726?tab=files) | 1.1 or newer | Four billboard adverts move again; only your own screen |
@@ -825,9 +825,12 @@ new release of the mod changes the file it ships, and your copy is backed up fir
   an NPC picks its dodge, and keeps the game's call to `AICondition.Check`, where NightCoop's
   redirect sits.
 - **The quest fixes of round 11** replace or add quest phases and scenes and patch scenes as
-  they load, and their Cyber Engine Tweaks parts move the quest cars and people they fix. In
-  a session the host's game does that for everyone, so every partner needs the same files
-  for the scenes and vote choices to match. Quest Vehicle Motion Fixes checks each sector's
+  they load, and their Cyber Engine Tweaks parts move the quest cars they fix to set places.
+  In a session those parts run in every game, on the quest facts that NightCoop shares from
+  the host, so every partner needs the same files for the scenes and vote choices to match.
+  Story Quest Fixes' bar fix in side quest sq031 instead removes the first person its area
+  lists at that bar, which in a partner's game can be someone the host still sees; the script
+  turns that one fix off. Quest Vehicle Motion Fixes checks each sector's
   node count before it deletes a node, so a sector that 2.5 changed is skipped, not broken;
   one Phantom Liberty sector it replaces whole, and the Kerry scene and the air traffic
   sectors are copies from before 2.5.
@@ -981,6 +984,7 @@ the script's next run.
 | Silent Silencers and Throwing Knives | Its cover debuff after a hit, with or without a kill | Off (default on without a kill) | It goes to the V of the game that leads the NPC hit, which may be a partner's |
 | Silent Silencers and Throwing Knives | Stealthy silenced shots and knives, their minimum distances, the detection chances and delay | Its defaults, pinned | The game that leads an NPC decides whether it heard you |
 | Sit Anywhere | Hide UI while sitting | Off (default on) | Hiding it sets V's scene tier to 3, which NightCoop reads as a scene holding V |
+| Story Quest Fixes | Its bar fix in side quest sq031 | Off (default on) | On the quest fact that NightCoop shares from the host, each game removes the first person its bar area lists, so on a partner's screen it can remove someone the host still sees. The person standing in another at that bar stays, for everyone |
 | FPP Speedometer | Toggle key | Left out | Let There Be Flight uses O |
 
 The values of Mod Settings' mods are in `red4ext/plugins/mod_settings/user.ini`. NightCoop's keys
@@ -1103,6 +1107,9 @@ Start with `check`.
     second), so report such scenes to NightCoop with where and when they happened.
   - **Crowd Seat Overlap Fix** made seated people and stall vendors vanish on partners'
     screens. It left the set after round 14, and an update removes it.
+  - **Story Quest Fixes' bar fix in side quest sq031** removed the first person its area
+    listed at that bar in each game, which on a partner's screen could be someone the host
+    still saw. The script turns that fix off.
 
 ## How this was verified
 
